@@ -76,7 +76,6 @@ pub struct AuthResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct RefreshTokenRequest {
-    #[allow(dead_code)]
     pub refresh_token: String,
 }
 

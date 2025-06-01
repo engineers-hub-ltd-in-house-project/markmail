@@ -1,1 +1,0 @@
-cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/home/yusuke/engineers-hub.ltd/in-house-project/markmail/backend/target/debug/build/mime_guess-13f0dd0a9da371d9/out/mime_types_generated.rs

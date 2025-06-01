@@ -12,7 +12,7 @@ pub async fn register(
     Json(payload): Json<RegisterRequest>,
 ) -> Result<Json<Value>, StatusCode> {
     // バリデーション
-    if payload.validate().is_err() {
+    if let Err(_) = payload.validate() {
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -36,7 +36,7 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<Value>, StatusCode> {
     // バリデーション
-    if payload.validate().is_err() {
+    if let Err(_) = payload.validate() {
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -55,7 +55,8 @@ pub async fn login(
 }
 
 pub async fn refresh_token(
-    Json(_payload): Json<RefreshTokenRequest>,
+    State(_state): State<AppState>,
+    Json(payload): Json<RefreshTokenRequest>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: リフレッシュトークンロジックを実装
     // - リフレッシュトークンの検証

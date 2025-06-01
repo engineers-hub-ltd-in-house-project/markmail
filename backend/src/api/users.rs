@@ -16,7 +16,7 @@ pub async fn get_profile(State(_state): State<AppState>) -> Result<Json<Value>, 
 
 pub async fn update_profile(
     State(_state): State<AppState>,
-    Json(_payload): Json<Value>,
+    Json(payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: プロフィール更新ロジックを実装
     Ok(Json(json!({

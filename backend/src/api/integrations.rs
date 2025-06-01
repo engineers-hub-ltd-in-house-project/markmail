@@ -12,22 +12,11 @@ pub async fn github_repos(State(_state): State<AppState>) -> Result<Json<Value>,
 
 pub async fn import_from_github(
     State(_state): State<AppState>,
-    Json(_payload): Json<Value>,
+    Json(payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: GitHub からのインポートロジックを実装
     Ok(Json(json!({
         "message": "GitHubからのインポートが完了しました",
         "imported_files": []
-    })))
-}
-
-#[allow(dead_code)]
-pub async fn configure_email_service(
-    State(_state): State<AppState>,
-    Json(_payload): Json<Value>,
-) -> Result<Json<Value>, StatusCode> {
-    // TODO: メールサービスの設定ロジックを実装
-    Ok(Json(json!({
-        "message": "メールサービスの設定が完了しました"
     })))
 }
