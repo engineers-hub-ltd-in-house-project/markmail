@@ -17,6 +17,20 @@
 - **自動整形**: lefthook + Prettier + rustfmt
 - **デプロイ**: Docker + Railway/Fly.io
 
+## 🏗️ システムアーキテクチャ
+
+以下は MarkMail のシステム全体のアーキテクチャ図です：
+
+![MarkMail システムアーキテクチャ](docs/architecture.svg)
+
+### アーキテクチャの特徴
+
+- **マイクロサービス指向**: フロントエンド、バックエンド、データ層が分離された設計
+- **高パフォーマンス**: Rust と SvelteKit による高速なレスポンス
+- **スケーラブル**: Redis キャッシュと PostgreSQL による高いスケーラビリティ
+- **セキュア**: JWT 認証と多層防御によるセキュリティ
+- **開発体験**: Docker と自動整形による快適な開発環境
+
 ## 🚀 クイックスタート
 
 ### 前提条件
@@ -66,7 +80,7 @@ sqlx migrate run
 ### アクセス先
 
 - **フロントエンド**: http://localhost:5173
-- **バックエンドAPI**: http://localhost:3000
+- **バックエンド API**: http://localhost:3000
 - **MailHog (メール確認)**: http://localhost:8025
 
 ## ✨ 自動整形機能
@@ -76,7 +90,7 @@ sqlx migrate run
 **lefthook**を使用して、コミット時に自動的にコードを整形します：
 
 - **git commit 時**:
-  - Rustコード → `cargo fmt` で整形
+  - Rust コード → `cargo fmt` で整形
   - フロントエンドコード → `prettier` で整形
   - リンターチェック → `cargo clippy` & `eslint`
 - **git push 時**:
@@ -100,11 +114,11 @@ npm run lint
 
 ### 🔧 VS Code 自動整形
 
-VS Codeを使用している場合、以下が自動で設定されます：
+VS Code を使用している場合、以下が自動で設定されます：
 
 - **保存時自動整形**: ファイル保存時に自動フォーマット
 - **ペースト時自動整形**: コードペースト時に自動フォーマット
-- **推奨拡張機能**: Rust Analyzer、Svelte、Prettier等
+- **推奨拡張機能**: Rust Analyzer、Svelte、Prettier 等
 
 ## 📁 プロジェクト構造
 
@@ -209,10 +223,10 @@ npm run lint
 
 ### 📋 今後の予定
 
-- [ ] GitHub連携
-- [ ] VSCode拡張機能
+- [ ] GitHub 連携
+- [ ] VSCode 拡張機能
 - [ ] 分析・レポート機能
-- [ ] A/Bテスト機能
+- [ ] A/B テスト機能
 - [ ] API ドキュメント自動生成
 
 ## 🧪 テスト
@@ -266,8 +280,8 @@ npm run test
 
 ### フォーマット設定
 
-- **インデント**: スペース2文字（Rustは4文字）
-- **行幅**: 100文字
+- **インデント**: スペース 2 文字（Rust は 4 文字）
+- **行幅**: 100 文字
 - **改行**: LF
 - **セミコロン**: あり
 - **クォート**: シングルクォート
