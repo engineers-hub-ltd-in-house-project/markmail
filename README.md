@@ -22,8 +22,62 @@
 以下は MarkMail のシステム全体のアーキテクチャ図です：
 
 <div align="center">
-  <img src="docs/architecture.svg" alt="MarkMail システムアーキテクチャ" width="100%">
+  <img src="docs/architecture-simple.svg" alt="MarkMail システムアーキテクチャ" width="100%">
 </div>
+
+<details>
+<summary>詳細なアーキテクチャ図</summary>
+
+![詳細アーキテクチャ](docs/architecture.svg)
+
+</details>
+
+<details>
+<summary>テキストベースのアーキテクチャ図</summary>
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    MarkMail システムアーキテクチャ                    │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌───────────────┐    API Calls    ┌───────────────┐    API Calls    ┌───────────────┐
+│   Frontend    │ ──────────────► │   Backend     │ ──────────────► │ External      │
+│  (SvelteKit)  │                 │   (Rust)      │                 │ Services      │
+│               │                 │               │                 │               │
+│ • UI          │                 │ • Axum API    │                 │ • AWS SES     │
+│ • MD Editor   │                 │ • JWT Auth    │                 │ • SendGrid    │
+│ • Preview     │                 │ • Email Mgr   │                 │ • GitHub API  │
+│ • TypeScript  │                 │ • Template    │                 │ • S3 Storage  │
+│ • Tailwind    │                 │ • Campaign    │                 │               │
+│               │                 │ • User Mgr    │                 │               │
+│ Port: 5173    │                 │ Port: 3000    │                 │               │
+└───────────────┘                 └───────┬───────┘                 └───────────────┘
+                                          │
+                                      SQL/Cache
+                                          │
+                                          ▼
+                    ┌─────────────────────────────────────┐
+                    │            Data Layer               │
+                    │                                     │
+                    │  ┌─────────────┐  ┌─────────────┐  │
+                    │  │ PostgreSQL  │  │    Redis    │  │
+                    │  │    (DB)     │  │  (Cache)    │  │
+                    │  └─────────────┘  └─────────────┘  │
+                    └─────────────────────────────────────┘
+
+┌───────────────┐
+│ Development   │
+│ Tools         │
+│               │
+│ • Docker      │
+│ • MailHog     │
+│ • Railway     │
+│ • GitHub      │
+│   Actions     │
+└───────────────┘
+```
+
+</details>
 
 ### アーキテクチャの特徴
 
