@@ -15,19 +15,19 @@ pre-commit:
     # フロントエンド フォーマット
     frontend-format:
       glob: 'frontend/**/*.{js,ts,svelte,json,css,md}'
-      run: cd frontend && npx prettier --write {staged_files}
+      run: npx --yes prettier --write {staged_files}
       stage_fixed: true
 
     # フロントエンド リンター
     frontend-lint:
       glob: 'frontend/**/*.{js,ts,svelte}'
-      run: cd frontend && npx eslint --fix {staged_files}
-      stage_fixed: true
+      exclude: 'frontend/.svelte-kit/**/*'
+      run: npx eslint --config frontend/eslint.config.js --ignore-pattern "**/.svelte-kit/**" {staged_files}
 
     # ルートレベルファイル フォーマット
     root-format:
       glob: '*.{js,ts,json,md,yaml,yml}'
-      run: npx prettier --write {staged_files}
+      run: npx --yes prettier --write {staged_files}
       stage_fixed: true
 
 pre-push:
