@@ -1,4 +1,7 @@
 {
 	"/": [],
-	"/auth": []
+	"/auth": [],
+	"/campaigns": [],
+	"/dashboard": [],
+	"/templates": []
 }

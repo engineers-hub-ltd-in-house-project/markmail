@@ -29,6 +29,7 @@ declare module '$env/static/private' {
 	export const LESSOPEN: string;
 	export const USER: string;
 	export const npm_config_user_agent: string;
+	export const GIT_EXEC_PATH: string;
 	export const STARSHIP_SHELL: string;
 	export const GIT_ASKPASS: string;
 	export const npm_node_execpath: string;
@@ -36,13 +37,14 @@ declare module '$env/static/private' {
 	export const npm_config_noproxy: string;
 	export const HOME: string;
 	export const OLDPWD: string;
-	export const TERM_PROGRAM_VERSION: string;
 	export const NVM_BIN: string;
+	export const TERM_PROGRAM_VERSION: string;
 	export const VSCODE_IPC_HOOK_CLI: string;
 	export const npm_package_json: string;
-	export const PYENV_SHELL: string;
 	export const NVM_INC: string;
+	export const PYENV_SHELL: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
+	export const GIT_PREFIX: string;
 	export const VSCODE_GIT_ASKPASS_NODE: string;
 	export const npm_config_userconfig: string;
 	export const npm_config_local_prefix: string;
@@ -54,8 +56,8 @@ declare module '$env/static/private' {
 	export const WAYLAND_DISPLAY: string;
 	export const LOGNAME: string;
 	export const NAME: string;
-	export const WSL_INTEROP: string;
 	export const PULSE_SERVER: string;
+	export const WSL_INTEROP: string;
 	export const _: string;
 	export const npm_config_prefix: string;
 	export const npm_config_npm_version: string;
@@ -69,8 +71,8 @@ declare module '$env/static/private' {
 	export const DISPLAY: string;
 	export const LANG: string;
 	export const LS_COLORS: string;
-	export const VSCODE_GIT_IPC_HANDLE: string;
 	export const TERM_PROGRAM: string;
+	export const VSCODE_GIT_IPC_HANDLE: string;
 	export const npm_lifecycle_script: string;
 	export const SHELL: string;
 	export const npm_package_version: string;
@@ -87,12 +89,18 @@ declare module '$env/static/private' {
 	export const npm_config_global_prefix: string;
 	export const STARSHIP_SESSION_KEY: string;
 	export const npm_command: string;
-	export const WSL2_GUI_APPS_ENABLED: string;
 	export const HOSTTYPE: string;
+	export const WSL2_GUI_APPS_ENABLED: string;
 	export const WSLENV: string;
 	export const INIT_CWD: string;
 	export const EDITOR: string;
+	export const TEST: string;
+	export const VITEST: string;
 	export const NODE_ENV: string;
+	export const PROD: string;
+	export const DEV: string;
+	export const BASE_URL: string;
+	export const MODE: string;
 }
 
 /**
@@ -125,6 +133,7 @@ declare module '$env/dynamic/private' {
 		LESSOPEN: string;
 		USER: string;
 		npm_config_user_agent: string;
+		GIT_EXEC_PATH: string;
 		STARSHIP_SHELL: string;
 		GIT_ASKPASS: string;
 		npm_node_execpath: string;
@@ -132,13 +141,14 @@ declare module '$env/dynamic/private' {
 		npm_config_noproxy: string;
 		HOME: string;
 		OLDPWD: string;
-		TERM_PROGRAM_VERSION: string;
 		NVM_BIN: string;
+		TERM_PROGRAM_VERSION: string;
 		VSCODE_IPC_HOOK_CLI: string;
 		npm_package_json: string;
-		PYENV_SHELL: string;
 		NVM_INC: string;
+		PYENV_SHELL: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;
+		GIT_PREFIX: string;
 		VSCODE_GIT_ASKPASS_NODE: string;
 		npm_config_userconfig: string;
 		npm_config_local_prefix: string;
@@ -150,8 +160,8 @@ declare module '$env/dynamic/private' {
 		WAYLAND_DISPLAY: string;
 		LOGNAME: string;
 		NAME: string;
-		WSL_INTEROP: string;
 		PULSE_SERVER: string;
+		WSL_INTEROP: string;
 		_: string;
 		npm_config_prefix: string;
 		npm_config_npm_version: string;
@@ -165,8 +175,8 @@ declare module '$env/dynamic/private' {
 		DISPLAY: string;
 		LANG: string;
 		LS_COLORS: string;
-		VSCODE_GIT_IPC_HANDLE: string;
 		TERM_PROGRAM: string;
+		VSCODE_GIT_IPC_HANDLE: string;
 		npm_lifecycle_script: string;
 		SHELL: string;
 		npm_package_version: string;
@@ -183,12 +193,18 @@ declare module '$env/dynamic/private' {
 		npm_config_global_prefix: string;
 		STARSHIP_SESSION_KEY: string;
 		npm_command: string;
-		WSL2_GUI_APPS_ENABLED: string;
 		HOSTTYPE: string;
+		WSL2_GUI_APPS_ENABLED: string;
 		WSLENV: string;
 		INIT_CWD: string;
 		EDITOR: string;
+		TEST: string;
+		VITEST: string;
 		NODE_ENV: string;
+		PROD: string;
+		DEV: string;
+		BASE_URL: string;
+		MODE: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
 	}
