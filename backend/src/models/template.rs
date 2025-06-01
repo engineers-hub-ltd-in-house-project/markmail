@@ -42,7 +42,9 @@ pub struct CreateTemplateRequest {
     ))]
     pub subject_template: String,
 
+    #[allow(dead_code)]
     pub tags: Vec<String>,
+    #[allow(dead_code)]
     pub is_public: Option<bool>,
 }
 
@@ -68,7 +70,9 @@ pub struct UpdateTemplateRequest {
     ))]
     pub subject_template: Option<String>,
 
+    #[allow(dead_code)]
     pub tags: Option<Vec<String>>,
+    #[allow(dead_code)]
     pub is_public: Option<bool>,
 }
 

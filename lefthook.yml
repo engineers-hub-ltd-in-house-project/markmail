@@ -3,39 +3,28 @@ pre-commit:
   commands:
     # Rust フォーマット
     rust-fmt:
-      glob: "backend/**/*.rs"
+      glob: 'backend/**/*.rs'
       run: cd backend && cargo fmt
-      stage_fixed: true
-    
-    # Rust リンター
-    rust-clippy:
-      glob: "backend/**/*.rs"
-      run: cd backend && cargo clippy -- -D warnings
-    
-    # フロントエンド フォーマット
     frontend-format:
-      glob: "frontend/**/*.{js,ts,svelte,json,css,md}"
+      glob: 'frontend/src/**/*.{js,ts,svelte,json}'
       run: cd frontend && npx prettier --write {staged_files}
-      stage_fixed: true
-    
-    # フロントエンド リンター
     frontend-lint:
-      glob: "frontend/**/*.{js,ts,svelte}"
-      run: cd frontend && npx eslint --fix {staged_files}
-      stage_fixed: true
-    
-    # ルートレベルファイル フォーマット
+      glob: 'frontend/src/**/*.{js,ts,svelte}'
+      run: cd frontend && npx eslint {staged_files} --fix
     root-format:
-      glob: "*.{js,ts,json,md,yaml,yml}"
+      glob: '*.{js,ts,json,md,yaml,yml}'
       run: npx prettier --write {staged_files}
-      stage_fixed: true
+    rust-clippy:
+      glob: 'backend/**/*.rs'
+      run: cd backend && cargo clippy -- -D warnings
 
 pre-push:
+  parallel: true
   commands:
     # プッシュ前のテスト実行
     backend-test:
       run: cd backend && cargo test
-    
+
     frontend-test:
       run: cd frontend && npm run test
 
@@ -43,4 +32,4 @@ commit-msg:
   commands:
     # コミットメッセージの検証（オプション）
     commitlint:
-      run: echo "Commit message validation passed" 
+      run: echo "Commit message validation passed"

@@ -25,7 +25,7 @@ pub async fn create_template(
     Json(payload): Json<CreateTemplateRequest>,
 ) -> Result<Json<Value>, StatusCode> {
     // バリデーション
-    if let Err(_) = payload.validate() {
+    if payload.validate().is_err() {
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -58,7 +58,7 @@ pub async fn update_template(
     Json(payload): Json<UpdateTemplateRequest>,
 ) -> Result<Json<Value>, StatusCode> {
     // バリデーション
-    if let Err(_) = payload.validate() {
+    if payload.validate().is_err() {
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -82,12 +82,25 @@ pub async fn delete_template(
 
 pub async fn preview_template(
     State(_state): State<AppState>,
-    Path(id): Path<Uuid>,
-    Json(variables): Json<Value>,
+    Path(_id): Path<Uuid>,
+    Json(_variables): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: テンプレートプレビューロジックを実装
     Ok(Json(json!({
         "html_preview": "<h1>プレビュー</h1>",
         "subject_preview": "メール件名プレビュー"
+    })))
+}
+
+#[allow(dead_code)]
+pub async fn render_template(
+    State(_state): State<AppState>,
+    Path(_id): Path<Uuid>,
+    Json(_variables): Json<Value>,
+) -> Result<Json<Value>, StatusCode> {
+    // TODO: テンプレートレンダリングロジックを実装
+    Ok(Json(json!({
+        "html_rendered": "<h1>レンダリングされたHTML</h1>",
+        "subject_rendered": "レンダリングされたメール件名"
     })))
 }

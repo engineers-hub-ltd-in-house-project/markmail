@@ -21,8 +21,9 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.28.0",
-    "eslint-plugin-svelte": "^2.30.0",
     "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-svelte": "^2.30.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.0.0",
     "prettier-plugin-svelte": "^3.0.0",
     "svelte": "^4.0.5",
@@ -33,17 +34,17 @@
     "vitest": "^0.34.0"
   },
   "dependencies": {
-    "@tailwindcss/typography": "^0.5.10",
-    "tailwindcss": "^3.3.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
-    "@codemirror/view": "^6.22.0",
-    "@codemirror/state": "^6.3.1",
     "@codemirror/lang-markdown": "^6.2.1",
+    "@codemirror/state": "^6.3.1",
     "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/view": "^6.22.0",
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.16",
     "codemirror": "^6.0.1",
-    "marked": "^9.1.2",
     "dompurify": "^3.0.5",
-    "lucide-svelte": "^0.288.0"
+    "lucide-svelte": "^0.288.0",
+    "marked": "^9.1.2",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.0"
   }
-} 
+}

@@ -5,7 +5,7 @@ use crate::AppState;
 
 pub async fn render_markdown(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: マークダウンレンダリングロジックを実装
     Ok(Json(json!({
@@ -16,11 +16,23 @@ pub async fn render_markdown(
 
 pub async fn validate_markdown(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
     // TODO: マークダウンバリデーションロジックを実装
     Ok(Json(json!({
         "valid": true,
         "errors": []
+    })))
+}
+
+#[allow(dead_code)]
+pub async fn preview_template(
+    State(_state): State<AppState>,
+    Json(_payload): Json<Value>,
+) -> Result<Json<Value>, StatusCode> {
+    // TODO: プレビューテンプレートロジックを実装
+    Ok(Json(json!({
+        "html": "<h1>プレビューテンプレート</h1>",
+        "variables": []
     })))
 }
