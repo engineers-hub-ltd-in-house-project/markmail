@@ -21,7 +21,9 @@
 
 以下は MarkMail のシステム全体のアーキテクチャ図です：
 
-![MarkMail システムアーキテクチャ](docs/architecture.svg)
+<div align="center">
+  <img src="docs/architecture.svg" alt="MarkMail システムアーキテクチャ" width="100%">
+</div>
 
 ### アーキテクチャの特徴
 
