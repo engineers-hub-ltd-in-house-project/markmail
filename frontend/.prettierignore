@@ -1,0 +1,13 @@
+# 生成されたファイル
+.svelte-kit/
+build/
+dist/
+node_modules/
+
+# 設定ファイル
+*.config.js
+*.config.ts
+
+# その他
+coverage/
+.nyc_output/ 

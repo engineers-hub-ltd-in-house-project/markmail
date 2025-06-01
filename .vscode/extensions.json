@@ -1,0 +1,30 @@
+{
+  "recommendations": [
+    // Rust 開発
+    "rust-lang.rust-analyzer",
+    "vadimcn.vscode-lldb",
+    
+    // フロントエンド開発
+    "svelte.svelte-vscode",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    
+    // 一般的な開発ツール
+    "ms-vscode.vscode-typescript-next",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-markdown",
+    
+    // Git 関連
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    
+    // Docker
+    "ms-azuretools.vscode-docker",
+    
+    // その他便利ツール
+    "ms-vscode.vscode-todo-highlight",
+    "streetsidesoftware.code-spell-checker"
+  ]
+} 

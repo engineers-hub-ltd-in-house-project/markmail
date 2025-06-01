@@ -1,0 +1,14 @@
+{
+  "name": "markmail",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && cargo fmt",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && cargo clippy -- -D warnings",
+    "setup": "./scripts/setup-lefthook.sh"
+  }
+} 

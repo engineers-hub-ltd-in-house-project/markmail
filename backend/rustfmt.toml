@@ -1,0 +1,38 @@
+# Rustfmt 設定ファイル
+
+# 基本設定
+edition = "2021"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+
+# インポート設定
+imports_granularity = "Crate"
+reorder_imports = true
+group_imports = "StdExternalCrate"
+
+# 関数とメソッド
+fn_args_layout = "Tall"
+brace_style = "SameLineWhere"
+
+# 構造体とenum
+struct_field_align_threshold = 0
+enum_discrim_align_threshold = 0
+
+# コメント設定
+comment_width = 80
+wrap_comments = true
+format_code_in_doc_comments = true
+
+# 文字列設定
+format_strings = true
+
+# その他
+newline_style = "Unix"
+remove_nested_parens = true
+use_small_heuristics = "Default"
+
+# 実験的機能（必要に応じて有効化）
+# unstable_features = true
+# format_macro_matchers = true
+# format_macro_bodies = true 

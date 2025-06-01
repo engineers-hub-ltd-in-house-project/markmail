@@ -1,0 +1,51 @@
+[package]
+name = "markmail-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web フレームワーク
+axum = { version = "0.7", features = ["json"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
+
+# データベース
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
+
+# シリアライゼーション
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 認証・セキュリティ
+jsonwebtoken = "9.0"
+bcrypt = "0.15"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# 日時
+chrono = { version = "0.4", features = ["serde"] }
+
+# 環境変数
+dotenvy = "0.15"
+
+# マークダウン処理
+pulldown-cmark = "0.10"
+comrak = "0.21"
+
+# メール
+lettre = "0.11"
+handlebars = "4.5"
+
+# ログ
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Redis
+redis = { version = "0.24", features = ["tokio-comp"] }
+
+# バリデーション
+validator = { version = "0.16", features = ["derive"] }
+
+# エラーハンドリング
+anyhow = "1.0"
+thiserror = "1.0" 

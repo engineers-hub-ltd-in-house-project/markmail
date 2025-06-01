@@ -1,0 +1,60 @@
+use axum::{
+    routing::{delete, get, post, put},
+    Router,
+};
+
+use crate::AppState;
+
+pub mod auth;
+pub mod campaigns;
+pub mod integrations;
+pub mod markdown;
+pub mod subscribers;
+pub mod templates;
+pub mod users;
+
+pub fn create_routes() -> Router<AppState> {
+    Router::new()
+        // 認証
+        .route("/api/auth/login", post(auth::login))
+        .route("/api/auth/register", post(auth::register))
+        .route("/api/auth/refresh", post(auth::refresh_token))
+        // ユーザー管理
+        .route("/api/users/profile", get(users::get_profile))
+        .route("/api/users/profile", put(users::update_profile))
+        // テンプレート管理
+        .route("/api/templates", get(templates::list_templates))
+        .route("/api/templates", post(templates::create_template))
+        .route("/api/templates/:id", get(templates::get_template))
+        .route("/api/templates/:id", put(templates::update_template))
+        .route("/api/templates/:id", delete(templates::delete_template))
+        .route(
+            "/api/templates/:id/preview",
+            post(templates::preview_template),
+        )
+        // キャンペーン管理
+        .route("/api/campaigns", get(campaigns::list_campaigns))
+        .route("/api/campaigns", post(campaigns::create_campaign))
+        .route("/api/campaigns/:id", get(campaigns::get_campaign))
+        .route("/api/campaigns/:id/send", post(campaigns::send_campaign))
+        .route(
+            "/api/campaigns/:id/schedule",
+            post(campaigns::schedule_campaign),
+        )
+        // 購読者管理
+        .route("/api/subscribers", get(subscribers::list_subscribers))
+        .route("/api/subscribers", post(subscribers::add_subscriber))
+        .route("/api/subscribers/import", post(subscribers::import_csv))
+        // マークダウン処理
+        .route("/api/markdown/render", post(markdown::render_markdown))
+        .route("/api/markdown/validate", post(markdown::validate_markdown))
+        // GitHub連携
+        .route(
+            "/api/integrations/github/repos",
+            get(integrations::github_repos),
+        )
+        .route(
+            "/api/integrations/github/import",
+            post(integrations::import_from_github),
+        )
+}

@@ -1,0 +1,60 @@
+{
+  // 自動整形設定
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+
+  // ファイル別フォーマッター設定
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Rust 設定
+  "rust-analyzer.rustfmt.extraArgs": [
+    "+nightly"
+  ],
+  "rust-analyzer.check.command": "clippy",
+
+  // Svelte 設定
+  "svelte.enable-ts-plugin": true,
+
+  // ファイル監視設定
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/.svelte-kit/**": true
+  },
+
+  // 自動保存設定
+  "files.autoSave": "onFocusChange",
+  
+  // タブ設定
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "[rust]": {
+    "editor.tabSize": 4
+  }
+} 

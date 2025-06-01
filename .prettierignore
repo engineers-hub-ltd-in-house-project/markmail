@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+target/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+
+# Lock files
+package-lock.json
+yarn.lock
+Cargo.lock
+
+# Generated files
+*.min.js
+*.min.css
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp 
