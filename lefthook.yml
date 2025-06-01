@@ -37,7 +37,7 @@ pre-push:
       run: cd backend && cargo test
 
     frontend-test:
-      run: cd frontend && npm run test
+      run: cd frontend && npm run test -- --run
 
 commit-msg:
   commands:
