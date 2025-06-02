@@ -12,11 +12,10 @@ pub async fn github_repos(State(_state): State<AppState>) -> Result<Json<Value>,
 
 pub async fn import_from_github(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
-    // TODO: GitHub からのインポートロジックを実装
+    // TODO: GitHub連携ロジックを実装
     Ok(Json(json!({
-        "message": "GitHubからのインポートが完了しました",
-        "imported_files": []
+        "message": "GitHubからのインポートが完了しました"
     })))
 }

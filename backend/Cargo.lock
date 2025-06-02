@@ -1477,6 +1477,7 @@ dependencies = [
  "jsonwebtoken",
  "lettre",
  "pulldown-cmark",
+ "rand",
  "redis",
  "serde",
  "serde_json",

@@ -17,10 +17,14 @@ pub async fn list_campaigns(State(_state): State<AppState>) -> Result<Json<Value
 
 pub async fn create_campaign(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
+    // TODO: キャンペーン作成ロジックを実装
     Ok(Json(json!({
-        "message": "キャンペーンが作成されました"
+        "message": "キャンペーンが作成されました",
+        "campaign": {
+            "id": "dummy-campaign-id"
+        }
     })))
 }
 
@@ -49,10 +53,10 @@ pub async fn send_campaign(
 pub async fn schedule_campaign(
     State(_state): State<AppState>,
     Path(id): Path<Uuid>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
+    // TODO: キャンペーンスケジュール設定ロジックを実装
     Ok(Json(json!({
-        "message": "キャンペーンがスケジュールされました",
-        "campaign_id": id
+        "message": format!("キャンペーン {} がスケジュールされました", id)
     })))
 }

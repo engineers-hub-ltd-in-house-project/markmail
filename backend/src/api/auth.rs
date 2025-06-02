@@ -3,67 +3,110 @@ use serde_json::{json, Value};
 use validator::Validate;
 
 use crate::{
-    models::user::{LoginRequest, RefreshTokenRequest, RegisterRequest},
+    models::user::{AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest},
+    services::auth_service::{AuthError, AuthService},
     AppState,
 };
 
+/// ユーザー登録エンドポイント
 pub async fn register(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
-) -> Result<Json<Value>, StatusCode> {
+) -> Result<Json<AuthResponse>, (StatusCode, Json<Value>)> {
     // バリデーション
-    if let Err(_) = payload.validate() {
-        return Err(StatusCode::BAD_REQUEST);
+    if let Err(errors) = payload.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "バリデーションエラー",
+                "details": errors
+            })),
+        ));
     }
 
-    // TODO: ユーザー登録ロジックを実装
-    // - メールアドレスの重複チェック
-    // - パスワードのハッシュ化
-    // - データベースへの保存
-    // - JWTトークンの生成
+    let auth_service = AuthService::new(state.db.clone());
 
-    Ok(Json(json!({
-        "message": "ユーザー登録が完了しました",
-        "user": {
-            "email": payload.email,
-            "name": payload.name
+    match auth_service.register(payload).await {
+        Ok(response) => Ok(Json(response)),
+        Err(AuthError::EmailAlreadyExists) => Err((
+            StatusCode::CONFLICT,
+            Json(json!({
+                "error": "メールアドレスは既に使用されています"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("ユーザー登録エラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "ユーザー登録に失敗しました"
+                })),
+            ))
         }
-    })))
+    }
 }
 
+/// ログインエンドポイント
 pub async fn login(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
-) -> Result<Json<Value>, StatusCode> {
+) -> Result<Json<AuthResponse>, (StatusCode, Json<Value>)> {
     // バリデーション
-    if let Err(_) = payload.validate() {
-        return Err(StatusCode::BAD_REQUEST);
+    if let Err(errors) = payload.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "バリデーションエラー",
+                "details": errors
+            })),
+        ));
     }
 
-    // TODO: ログインロジックを実装
-    // - ユーザーの存在確認
-    // - パスワードの検証
-    // - JWTトークンの生成
+    let auth_service = AuthService::new(state.db.clone());
 
-    Ok(Json(json!({
-        "message": "ログインが完了しました",
-        "token": "dummy_jwt_token",
-        "user": {
-            "email": payload.email
+    match auth_service.login(payload).await {
+        Ok(response) => Ok(Json(response)),
+        Err(AuthError::InvalidCredentials) => Err((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "メールアドレスまたはパスワードが正しくありません"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("ログインエラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "ログインに失敗しました"
+                })),
+            ))
         }
-    })))
+    }
 }
 
+/// リフレッシュトークンエンドポイント
 pub async fn refresh_token(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<RefreshTokenRequest>,
-) -> Result<Json<Value>, StatusCode> {
-    // TODO: リフレッシュトークンロジックを実装
-    // - リフレッシュトークンの検証
-    // - 新しいJWTトークンの生成
+) -> Result<Json<AuthResponse>, (StatusCode, Json<Value>)> {
+    let auth_service = AuthService::new(state.db.clone());
 
-    Ok(Json(json!({
-        "message": "トークンが更新されました",
-        "token": "new_dummy_jwt_token"
-    })))
+    match auth_service.refresh_token(&payload.refresh_token).await {
+        Ok(response) => Ok(Json(response)),
+        Err(AuthError::InvalidRefreshToken) => Err((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "無効なリフレッシュトークンです"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("トークン更新エラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "トークンの更新に失敗しました"
+                })),
+            ))
+        }
+    }
 }

@@ -1,9 +1,10 @@
 use axum::{
+    middleware,
     routing::{delete, get, post, put},
     Router,
 };
 
-use crate::AppState;
+use crate::{middleware::auth::auth_middleware, AppState};
 
 pub mod auth;
 pub mod campaigns;
@@ -14,11 +15,14 @@ pub mod templates;
 pub mod users;
 
 pub fn create_routes() -> Router<AppState> {
-    Router::new()
-        // 認証
+    // 公開ルート（認証不要）
+    let public_routes = Router::new()
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/register", post(auth::register))
-        .route("/api/auth/refresh", post(auth::refresh_token))
+        .route("/api/auth/refresh", post(auth::refresh_token));
+
+    // 保護されたルート（認証必要）
+    let protected_routes = Router::new()
         // ユーザー管理
         .route("/api/users/profile", get(users::get_profile))
         .route("/api/users/profile", put(users::update_profile))
@@ -57,4 +61,9 @@ pub fn create_routes() -> Router<AppState> {
             "/api/integrations/github/import",
             post(integrations::import_from_github),
         )
+        // 認証ミドルウェアをレイヤーとして適用
+        .layer(middleware::from_fn(auth_middleware));
+
+    // ルートを結合
+    Router::new().merge(public_routes).merge(protected_routes)
 }

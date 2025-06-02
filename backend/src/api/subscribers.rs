@@ -12,8 +12,9 @@ pub async fn list_subscribers(State(_state): State<AppState>) -> Result<Json<Val
 
 pub async fn add_subscriber(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
+    // TODO: 購読者追加ロジックを実装
     Ok(Json(json!({
         "message": "購読者が追加されました"
     })))
@@ -21,10 +22,11 @@ pub async fn add_subscriber(
 
 pub async fn import_csv(
     State(_state): State<AppState>,
-    Json(payload): Json<Value>,
+    Json(_payload): Json<Value>,
 ) -> Result<Json<Value>, StatusCode> {
+    // TODO: CSV インポートロジックを実装
     Ok(Json(json!({
-        "message": "CSVファイルからの購読者インポートが完了しました",
-        "imported_count": 0
+        "message": "CSVのインポートが完了しました",
+        "imported": 0
     })))
 }

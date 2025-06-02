@@ -20,25 +20,30 @@ pub struct Template {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate)]
+#[allow(dead_code)]
 pub struct CreateTemplateRequest {
     #[validate(length(
         min = 1,
-        max = 255,
-        message = "テンプレート名は1文字以上255文字以下である必要があります"
+        max = 200,
+        message = "テンプレート名は1文字以上200文字以下である必要があります"
     ))]
     pub name: String,
 
-    #[validate(length(max = 1000, message = "説明は1000文字以下である必要があります"))]
+    #[validate(length(max = 500, message = "説明は500文字以下である必要があります"))]
     pub description: Option<String>,
 
-    #[validate(length(min = 1, message = "マークダウンコンテンツは必須です"))]
+    #[validate(length(
+        min = 1,
+        max = 50000,
+        message = "コンテンツは1文字以上50000文字以下である必要があります"
+    ))]
     pub markdown_content: String,
 
     #[validate(length(
         min = 1,
-        max = 255,
-        message = "件名テンプレートは1文字以上255文字以下である必要があります"
+        max = 200,
+        message = "件名テンプレートは1文字以上200文字以下である必要があります"
     ))]
     pub subject_template: String,
 
@@ -46,25 +51,30 @@ pub struct CreateTemplateRequest {
     pub is_public: Option<bool>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate)]
+#[allow(dead_code)]
 pub struct UpdateTemplateRequest {
     #[validate(length(
         min = 1,
-        max = 255,
-        message = "テンプレート名は1文字以上255文字以下である必要があります"
+        max = 200,
+        message = "テンプレート名は1文字以上200文字以下である必要があります"
     ))]
     pub name: Option<String>,
 
-    #[validate(length(max = 1000, message = "説明は1000文字以下である必要があります"))]
+    #[validate(length(max = 500, message = "説明は500文字以下である必要があります"))]
     pub description: Option<String>,
 
-    #[validate(length(min = 1, message = "マークダウンコンテンツは必須です"))]
+    #[validate(length(
+        min = 1,
+        max = 50000,
+        message = "コンテンツは1文字以上50000文字以下である必要があります"
+    ))]
     pub markdown_content: Option<String>,
 
     #[validate(length(
         min = 1,
-        max = 255,
-        message = "件名テンプレートは1文字以上255文字以下である必要があります"
+        max = 200,
+        message = "件名テンプレートは1文字以上200文字以下である必要があります"
     ))]
     pub subject_template: Option<String>,
 

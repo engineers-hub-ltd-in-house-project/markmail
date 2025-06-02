@@ -48,4 +48,7 @@ validator = { version = "0.16", features = ["derive"] }
 
 # エラーハンドリング
 anyhow = "1.0"
-thiserror = "1.0" 
+thiserror = "1.0"
+
+# 乱数生成
+rand = "0.8" 
