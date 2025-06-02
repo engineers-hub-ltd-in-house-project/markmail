@@ -130,8 +130,16 @@ docker-compose up -d
 ```bash
 cd backend
 cargo install sqlx-cli
+
+# DATABASE_URL環境変数を設定（重要！）
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/markmail"
+
+# マイグレーション実行
 sqlx migrate run
 ```
+
+**注意**:
+SQLx のコンパイル時には`DATABASE_URL`環境変数が必要です。VSCode を使用している場合は、ターミナルを再起動するか、`.env`ファイルから環境変数を読み込んでください。
 
 ### アクセス先
 
@@ -267,28 +275,36 @@ npm run lint
 - [x] データモデルの定義
 - [x] **自動整形システム (lefthook)**
 - [x] **VS Code 開発環境設定**
-- [x] **認証システム (JWT)**
-  - [x] ユーザー登録・ログイン
-  - [x] JWT トークン発行・検証
-  - [x] リフレッシュトークン
-  - [x] 認証ミドルウェア
-  - [x] プロフィール管理 API
+- [x] **認証システム (JWT) - 完全動作確認済み**
+  - [x] ユーザー登録・ログイン API
+  - [x] JWT トークン発行・検証（24 時間有効）
+  - [x] リフレッシュトークン（30 日間有効）
+  - [x] 認証ミドルウェア（Axum from_fn）
+  - [x] パスワードハッシュ化（bcrypt）
+  - [x] データベーステーブル（users, refresh_tokens）
 
 ### 🚧 開発中
 
-- [ ] マークダウンエディター
-- [ ] テンプレート管理
-- [ ] メール送信機能
-- [ ] キャンペーン管理
-- [ ] 購読者管理
+- [ ] プロフィール管理 API（取得・更新）
+- [ ] テンプレート管理機能
+  - [ ] データベーステーブル設計
+  - [ ] CRUD API 実装
+  - [ ] マークダウンから HTML への変換
+- [ ] マークダウンエディター（フロントエンド）
+- [ ] テンプレート変数システム
 
 ### 📋 今後の予定
 
-- [ ] GitHub 連携
-- [ ] VSCode 拡張機能
+- [ ] メール送信機能（AWS SES/SendGrid 統合）
+- [ ] キャンペーン管理システム
+- [ ] 購読者管理・インポート機能
+- [ ] GitHub 連携（README 直接インポート）
 - [ ] 分析・レポート機能
 - [ ] A/B テスト機能
-- [ ] API ドキュメント自動生成
+- [ ] API レート制限
+- [ ] メールプレビュー機能
+- [ ] スケジュール送信
+- [ ] Webhook 統合
 
 ## 🧪 テスト
 
@@ -306,27 +322,71 @@ cd frontend
 npm run test
 ```
 
+### API テスト例（curl）
+
+```bash
+# ユーザー登録
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123",
+    "name": "テストユーザー"
+  }'
+
+# ログイン
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+
+# トークン更新（リフレッシュトークンを使用）
+curl -X POST http://localhost:3000/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "YOUR_REFRESH_TOKEN_HERE"
+  }'
+```
+
 ## 📚 API ドキュメント
 
-### 認証
+### 認証 ✅（動作確認済み）
 
-- `POST /api/auth/login` - ログイン
 - `POST /api/auth/register` - ユーザー登録
+  - リクエスト:
+    `{"email": "user@example.com", "password": "password123", "name": "ユーザー名"}`
+  - レスポンス: JWT トークン、リフレッシュトークン、ユーザー情報
+- `POST /api/auth/login` - ログイン
+  - リクエスト: `{"email": "user@example.com", "password": "password123"}`
+  - レスポンス: JWT トークン、リフレッシュトークン、ユーザー情報
 - `POST /api/auth/refresh` - トークン更新
+  - リクエスト: `{"refresh_token": "..."}`
+  - レスポンス: 新しい JWT トークン、新しいリフレッシュトークン
 
-### テンプレート
+### テンプレート（未実装）
 
 - `GET /api/templates` - テンプレート一覧
 - `POST /api/templates` - テンプレート作成
 - `GET /api/templates/:id` - テンプレート取得
 - `PUT /api/templates/:id` - テンプレート更新
 - `DELETE /api/templates/:id` - テンプレート削除
+- `POST /api/templates/:id/preview` - テンプレートプレビュー
 
-### キャンペーン
+### キャンペーン（未実装）
 
 - `GET /api/campaigns` - キャンペーン一覧
 - `POST /api/campaigns` - キャンペーン作成
+- `GET /api/campaigns/:id` - キャンペーン詳細
 - `POST /api/campaigns/:id/send` - キャンペーン送信
+- `POST /api/campaigns/:id/schedule` - キャンペーンスケジュール
+
+### 購読者（未実装）
+
+- `GET /api/subscribers` - 購読者一覧
+- `POST /api/subscribers` - 購読者追加
+- `POST /api/subscribers/import` - CSV 一括インポート
 
 ## 🎨 コーディング規約
 
