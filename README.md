@@ -275,20 +275,20 @@ npm run lint
 - [x] データモデルの定義
 - [x] **自動整形システム (lefthook)**
 - [x] **VS Code 開発環境設定**
-- [x] **認証システム (JWT) - 完全動作確認済み**
+- [x] **認証システム (JWT) - API 実装・テスト済み**
   - [x] ユーザー登録・ログイン API
   - [x] JWT トークン発行・検証（24 時間有効）
   - [x] リフレッシュトークン（30 日間有効）
   - [x] 認証ミドルウェア（Axum from_fn）
   - [x] パスワードハッシュ化（bcrypt）
   - [x] データベーステーブル（users, refresh_tokens）
-- [x] **プロフィール管理 API（取得・更新）- 動作確認済み**
-- [x] **テンプレート管理機能（バックエンド）- 完全動作確認済み**
+- [x] **プロフィール管理 API（取得・更新）- API 実装済み**
+- [x] **テンプレート管理機能（バックエンド）- API 実装・テスト済み**
   - [x] データベーステーブル設計・作成（templates）
   - [x] CRUD API 実装（作成・取得・更新・削除・一覧）
   - [x] マークダウンから HTML への変換機能
   - [x] テンプレート変数システム（{{variable_name}}形式）
-  - [x] プレビュー機能（変数置換 + HTML 変換）
+  - [x] プレビュー API（変数置換 + HTML 変換）
   - [x] メール用 CSS スタイリング
   - [x] マークダウン構文検証機能
 
@@ -306,6 +306,11 @@ npm run lint
 - [ ] キャンペーン管理システム
 - [ ] 購読者管理・インポート機能
 - [ ] GitHub 連携（README 直接インポート）
+- [ ] **外部システム連携機能**
+  - [ ] Salesforce インテグレーション
+  - [ ] HubSpot 連携
+  - [ ] Zapier Webhook 対応
+  - [ ] REST API for 外部システム
 - [ ] 分析・レポート機能
 - [ ] A/B テスト機能
 - [ ] API レート制限
@@ -389,7 +394,7 @@ curl -X POST http://localhost:3000/api/markdown/render \
 
 ## 📚 API ドキュメント
 
-### 認証 ✅（動作確認済み）
+### 認証 ✅（API 実装・テスト済み）
 
 - `POST /api/auth/register` - ユーザー登録
   - リクエスト:
@@ -402,7 +407,7 @@ curl -X POST http://localhost:3000/api/markdown/render \
   - リクエスト: `{"refresh_token": "..."}`
   - レスポンス: 新しい JWT トークン、新しいリフレッシュトークン
 
-### プロフィール ✅（動作確認済み）
+### プロフィール ✅（API 実装済み）
 
 - `GET /api/users/profile` - プロフィール取得
   - レスポンス: ユーザー情報（ID、メール、名前、アバター等）
@@ -410,7 +415,7 @@ curl -X POST http://localhost:3000/api/markdown/render \
   - リクエスト: `{"name": "新しい名前", "avatar_url": "https://..."}`
   - レスポンス: 更新されたユーザー情報
 
-### テンプレート ✅（動作確認済み）
+### テンプレート ✅（API 実装・テスト済み）
 
 - `GET /api/templates` - テンプレート一覧取得
   - パラメータ: `?limit=50&offset=0`
@@ -431,7 +436,7 @@ curl -X POST http://localhost:3000/api/markdown/render \
     `{"variables": {"user_name": "田中太郎", "company_name": "株式会社例"}}`
   - レスポンス: `{"html": "変換されたHTML", "subject": "変数置換済み件名"}`
 
-### マークダウン処理 ✅（動作確認済み）
+### マークダウン処理 ✅（API 実装・テスト済み）
 
 - `POST /api/markdown/render` - マークダウンを HTML に変換
   - リクエスト:
