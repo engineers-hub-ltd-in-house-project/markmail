@@ -31,6 +31,7 @@ dotenvy = "0.15"
 # マークダウン処理
 pulldown-cmark = "0.10"
 comrak = "0.21"
+regex = "1.10"
 
 # メール
 lettre = "0.11"

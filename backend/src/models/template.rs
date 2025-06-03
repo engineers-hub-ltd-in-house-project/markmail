@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use uuid::Uuid;
 use validator::Validate;
@@ -9,19 +10,16 @@ pub struct Template {
     pub id: Uuid,
     pub user_id: Uuid,
     pub name: String,
-    pub description: Option<String>,
-    pub markdown_content: String,
-    pub html_content: String,
     pub subject_template: String,
-    pub variables: Vec<String>, // JSON array
-    pub tags: Vec<String>,      // JSON array
+    pub markdown_content: String,
+    pub html_content: Option<String>,
+    pub variables: Value, // JSONB型
     pub is_public: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
-#[allow(dead_code)]
 pub struct CreateTemplateRequest {
     #[validate(length(
         min = 1,
@@ -30,16 +28,6 @@ pub struct CreateTemplateRequest {
     ))]
     pub name: String,
 
-    #[validate(length(max = 500, message = "説明は500文字以下である必要があります"))]
-    pub description: Option<String>,
-
-    #[validate(length(
-        min = 1,
-        max = 50000,
-        message = "コンテンツは1文字以上50000文字以下である必要があります"
-    ))]
-    pub markdown_content: String,
-
     #[validate(length(
         min = 1,
         max = 200,
@@ -47,12 +35,18 @@ pub struct CreateTemplateRequest {
     ))]
     pub subject_template: String,
 
-    pub tags: Vec<String>,
+    #[validate(length(
+        min = 1,
+        max = 50000,
+        message = "マークダウンコンテンツは1文字以上50000文字以下である必要があります"
+    ))]
+    pub markdown_content: String,
+
+    pub variables: Option<Value>,
     pub is_public: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
-#[allow(dead_code)]
 pub struct UpdateTemplateRequest {
     #[validate(length(
         min = 1,
@@ -61,16 +55,6 @@ pub struct UpdateTemplateRequest {
     ))]
     pub name: Option<String>,
 
-    #[validate(length(max = 500, message = "説明は500文字以下である必要があります"))]
-    pub description: Option<String>,
-
-    #[validate(length(
-        min = 1,
-        max = 50000,
-        message = "コンテンツは1文字以上50000文字以下である必要があります"
-    ))]
-    pub markdown_content: Option<String>,
-
     #[validate(length(
         min = 1,
         max = 200,
@@ -78,20 +62,27 @@ pub struct UpdateTemplateRequest {
     ))]
     pub subject_template: Option<String>,
 
-    pub tags: Option<Vec<String>>,
+    #[validate(length(
+        min = 1,
+        max = 50000,
+        message = "マークダウンコンテンツは1文字以上50000文字以下である必要があります"
+    ))]
+    pub markdown_content: Option<String>,
+
+    pub html_content: Option<String>,
+    pub variables: Option<Value>,
     pub is_public: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct TemplateResponse {
     pub id: Uuid,
+    pub user_id: Uuid,
     pub name: String,
-    pub description: Option<String>,
-    pub markdown_content: String,
-    pub html_content: String,
     pub subject_template: String,
-    pub variables: Vec<String>,
-    pub tags: Vec<String>,
+    pub markdown_content: String,
+    pub html_content: Option<String>,
+    pub variables: Value,
     pub is_public: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -101,16 +92,34 @@ impl From<Template> for TemplateResponse {
     fn from(template: Template) -> Self {
         Self {
             id: template.id,
+            user_id: template.user_id,
             name: template.name,
-            description: template.description,
+            subject_template: template.subject_template,
             markdown_content: template.markdown_content,
             html_content: template.html_content,
-            subject_template: template.subject_template,
             variables: template.variables,
-            tags: template.tags,
             is_public: template.is_public,
             created_at: template.created_at,
             updated_at: template.updated_at,
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct TemplateListResponse {
+    pub templates: Vec<TemplateResponse>,
+    pub total: i64,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PreviewTemplateRequest {
+    pub variables: Value,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PreviewTemplateResponse {
+    pub html: String,
+    pub subject: String,
 }

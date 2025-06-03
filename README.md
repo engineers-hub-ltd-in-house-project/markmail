@@ -282,16 +282,23 @@ npm run lint
   - [x] 認証ミドルウェア（Axum from_fn）
   - [x] パスワードハッシュ化（bcrypt）
   - [x] データベーステーブル（users, refresh_tokens）
+- [x] **プロフィール管理 API（取得・更新）- 動作確認済み**
+- [x] **テンプレート管理機能（バックエンド）- 完全動作確認済み**
+  - [x] データベーステーブル設計・作成（templates）
+  - [x] CRUD API 実装（作成・取得・更新・削除・一覧）
+  - [x] マークダウンから HTML への変換機能
+  - [x] テンプレート変数システム（{{variable_name}}形式）
+  - [x] プレビュー機能（変数置換 + HTML 変換）
+  - [x] メール用 CSS スタイリング
+  - [x] マークダウン構文検証機能
 
 ### 🚧 開発中
 
-- [ ] プロフィール管理 API（取得・更新）
-- [ ] テンプレート管理機能
-  - [ ] データベーステーブル設計
-  - [ ] CRUD API 実装
-  - [ ] マークダウンから HTML への変換
-- [ ] マークダウンエディター（フロントエンド）
-- [ ] テンプレート変数システム
+- [ ] **テンプレート管理機能（フロントエンド）**
+  - [ ] テンプレート一覧画面
+  - [ ] テンプレート作成・編集画面
+  - [ ] マークダウンエディター（リアルタイムプレビュー付き）
+  - [ ] テンプレート変数管理 UI
 
 ### 📋 今後の予定
 
@@ -348,6 +355,36 @@ curl -X POST http://localhost:3000/api/auth/refresh \
   -d '{
     "refresh_token": "YOUR_REFRESH_TOKEN_HERE"
   }'
+
+# テンプレート作成（認証必要）
+curl -X POST http://localhost:3000/api/templates \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ウェルカムメール",
+    "subject_template": "{{company_name}}へようこそ、{{user_name}}さん！",
+    "markdown_content": "# ようこそ {{user_name}} さん！\n\n{{company_name}}へのご登録ありがとうございます。"
+  }'
+
+# テンプレートプレビュー（認証必要）
+curl -X POST http://localhost:3000/api/templates/TEMPLATE_ID/preview \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "variables": {
+      "user_name": "田中太郎",
+      "company_name": "株式会社MarkMail"
+    }
+  }'
+
+# マークダウンレンダリング（認証必要）
+curl -X POST http://localhost:3000/api/markdown/render \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "markdown": "# テスト {{name}} さん",
+    "variables": {"name": "太郎"}
+  }'
 ```
 
 ## 📚 API ドキュメント
@@ -365,14 +402,46 @@ curl -X POST http://localhost:3000/api/auth/refresh \
   - リクエスト: `{"refresh_token": "..."}`
   - レスポンス: 新しい JWT トークン、新しいリフレッシュトークン
 
-### テンプレート（未実装）
+### プロフィール ✅（動作確認済み）
 
-- `GET /api/templates` - テンプレート一覧
+- `GET /api/users/profile` - プロフィール取得
+  - レスポンス: ユーザー情報（ID、メール、名前、アバター等）
+- `PUT /api/users/profile` - プロフィール更新
+  - リクエスト: `{"name": "新しい名前", "avatar_url": "https://..."}`
+  - レスポンス: 更新されたユーザー情報
+
+### テンプレート ✅（動作確認済み）
+
+- `GET /api/templates` - テンプレート一覧取得
+  - パラメータ: `?limit=50&offset=0`
+  - レスポンス: テンプレート一覧、総数、ページング情報
 - `POST /api/templates` - テンプレート作成
+  - リクエスト:
+    `{"name": "テンプレート名", "subject_template": "件名テンプレート", "markdown_content": "# マークダウン", "variables": {"key": "value"}, "is_public": false}`
+  - レスポンス: 作成されたテンプレート情報
 - `GET /api/templates/:id` - テンプレート取得
+  - レスポンス: テンプレート詳細情報
 - `PUT /api/templates/:id` - テンプレート更新
+  - リクエスト: 更新したいフィールドのみ
+  - レスポンス: 更新されたテンプレート情報
 - `DELETE /api/templates/:id` - テンプレート削除
+  - レスポンス: 削除確認メッセージ
 - `POST /api/templates/:id/preview` - テンプレートプレビュー
+  - リクエスト:
+    `{"variables": {"user_name": "田中太郎", "company_name": "株式会社例"}}`
+  - レスポンス: `{"html": "変換されたHTML", "subject": "変数置換済み件名"}`
+
+### マークダウン処理 ✅（動作確認済み）
+
+- `POST /api/markdown/render` - マークダウンを HTML に変換
+  - リクエスト:
+    `{"markdown": "# マークダウンテキスト", "variables": {"key": "value"}}`
+  - レスポンス:
+    `{"html": "変換されたHTML", "extracted_variables": ["変数一覧"]}`
+- `POST /api/markdown/validate` - マークダウン構文検証
+  - リクエスト: `{"markdown": "# マークダウンテキスト"}`
+  - レスポンス:
+    `{"valid": true, "errors": [], "extracted_variables": ["変数一覧"]}`
 
 ### キャンペーン（未実装）
 
