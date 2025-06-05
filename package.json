@@ -10,5 +10,9 @@
     "lint:frontend": "cd frontend && npm run lint",
     "lint:backend": "cd backend && cargo clippy -- -D warnings",
     "setup": "./scripts/setup-lefthook.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.4.0"
   }
-} 
+}
