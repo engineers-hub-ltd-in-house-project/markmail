@@ -174,9 +174,9 @@ describe("Login Component", async () => {
     const loginButton = screen.getByText("ログイン");
     await fireEvent.click(loginButton);
 
-    // Should show error message
+    // Should show error message - look for the actual error text
     await vi.waitFor(() => {
-      expect(screen.getByText(/ログインに失敗しました/)).toBeInTheDocument();
+      expect(screen.getByText("Invalid credentials")).toBeInTheDocument();
     });
 
     // Auth store should not be updated

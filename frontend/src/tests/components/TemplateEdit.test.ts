@@ -60,6 +60,9 @@ describe("Template Edit", async () => {
     // Reset mocks
     vi.resetAllMocks();
 
+    // Mock page params
+    mockParams.mockReturnValue({ id: "test-template-id" });
+
     // Set up authStore
     authStore.login("test-token", "test-refresh-token", {
       id: "user-1",
