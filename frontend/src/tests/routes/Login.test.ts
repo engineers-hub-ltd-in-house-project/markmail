@@ -176,9 +176,7 @@ describe("Login Component", async () => {
 
     // Should show error message
     await vi.waitFor(() => {
-      expect(
-        screen.getByText(/認証情報が正しくありません/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/ログインに失敗しました/)).toBeInTheDocument();
     });
 
     // Auth store should not be updated
@@ -204,7 +202,9 @@ describe("Login Component", async () => {
     // Act
     render(LoginComponent);
 
-    // Assert - should redirect immediately
-    expect(goto).toHaveBeenCalledWith("/templates");
+    // Assert - wait for onMount and redirect
+    await vi.waitFor(() => {
+      expect(goto).toHaveBeenCalledWith("/templates");
+    });
   });
 });

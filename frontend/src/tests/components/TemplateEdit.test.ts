@@ -76,12 +76,20 @@ describe("Template Edit", async () => {
           return Promise.resolve({
             ok: true,
             json: () =>
-              Promise.resolve({ ...mockTemplate, ...JSON.parse(options.body) }),
+              Promise.resolve({
+                template: { ...mockTemplate, ...JSON.parse(options.body) },
+              }),
           });
         }
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(mockTemplate),
+          json: () => Promise.resolve({ template: mockTemplate }),
+        });
+      }
+      if (url.includes("/api/markdown/render")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPreviewResponse),
         });
       }
       return Promise.resolve({ ok: false });

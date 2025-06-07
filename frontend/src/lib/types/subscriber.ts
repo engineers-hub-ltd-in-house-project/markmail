@@ -34,7 +34,7 @@ export interface CreateSubscriberRequest {
   email: string;
   name?: string;
   tags?: string[];
-  custom_fields?: Record<string, any>;
+  custom_fields?: Record<string, unknown>;
 }
 
 /**
@@ -44,7 +44,7 @@ export interface UpdateSubscriberRequest {
   name?: string;
   status?: SubscriberStatus;
   tags?: string[];
-  custom_fields?: Record<string, any>;
+  custom_fields?: Record<string, unknown>;
 }
 
 /**
