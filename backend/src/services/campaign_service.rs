@@ -199,14 +199,16 @@ mod tests {
     use mockall::*;
 
     // テスト用のモックを作成
-    mock! {
+    #[cfg(test)]
+    mockall::mock! {
         pub TemplateRepo {}
         impl TemplateRepo {
             pub async fn find_template_by_id(&self, id: Uuid, user_id: Option<Uuid>) -> Result<Option<crate::models::template::Template>, sqlx::Error>;
         }
     }
 
-    mock! {
+    #[cfg(test)]
+    mockall::mock! {
         pub CampaignRepo {}
         impl CampaignRepo {
             pub async fn create_campaign(&self, user_id: Uuid, request: &CreateCampaignRequest) -> Result<Campaign, sqlx::Error>;
