@@ -1,4 +1,10 @@
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::Json,
+    routing::{get, post},
+    Router,
+};
 use serde_json::{json, Value};
 
 use crate::AppState;
@@ -18,4 +24,11 @@ pub async fn import_from_github(
     Ok(Json(json!({
         "message": "GitHubからのインポートが完了しました"
     })))
+}
+
+/// 統合関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/github/repos", get(github_repos))
+        .route("/github/import", post(import_from_github))
 }

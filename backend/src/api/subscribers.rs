@@ -1,4 +1,10 @@
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::Json,
+    routing::{get, post},
+    Router,
+};
 use serde_json::{json, Value};
 
 use crate::AppState;
@@ -29,4 +35,11 @@ pub async fn import_csv(
         "message": "CSVのインポートが完了しました",
         "imported": 0
     })))
+}
+
+/// 購読者関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_subscribers).post(add_subscriber))
+        .route("/import", post(import_csv))
 }

@@ -2,6 +2,8 @@ use axum::{
     extract::{Extension, Path, Query, State},
     http::StatusCode,
     response::Json,
+    routing::{get, post},
+    Router,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -284,4 +286,19 @@ pub async fn preview_campaign(
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PreviewCampaignResponse {
     pub html: String,
+}
+
+/// キャンペーン関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_campaigns).post(create_campaign))
+        .route(
+            "/:id",
+            get(get_campaign)
+                .put(update_campaign)
+                .delete(delete_campaign),
+        )
+        .route("/:id/send", post(send_campaign))
+        .route("/:id/schedule", post(schedule_campaign))
+        .route("/:id/preview", get(preview_campaign))
 }

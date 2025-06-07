@@ -19,7 +19,7 @@ pub struct Template {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct CreateTemplateRequest {
     #[validate(length(
         min = 1,
@@ -46,7 +46,7 @@ pub struct CreateTemplateRequest {
     pub is_public: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct UpdateTemplateRequest {
     #[validate(length(
         min = 1,

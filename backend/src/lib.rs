@@ -20,7 +20,10 @@ pub async fn create_test_app() -> (
     redis::Client,
     std::sync::Arc<utils::config::Config>,
 ) {
-    use axum::routing::{get, post};
+    use axum::{
+        middleware::from_fn,
+        routing::{get, post},
+    };
     use middleware::{auth::auth_middleware, cors::cors_layer, logging::logging_layer};
 
     dotenvy::dotenv().ok();
@@ -43,7 +46,7 @@ pub async fn create_test_app() -> (
         .nest("/api/integrations", api::integrations::router())
         .layer(logging_layer())
         .layer(cors_layer())
-        .layer(auth_middleware())
+        .layer(from_fn(auth_middleware))
         .with_state(app_state);
 
     (router, pool, redis, config)

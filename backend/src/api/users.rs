@@ -2,6 +2,8 @@ use axum::{
     extract::{Extension, State},
     http::StatusCode,
     response::Json,
+    routing::get,
+    Router,
 };
 use serde_json::{json, Value};
 use validator::Validate;
@@ -74,4 +76,9 @@ pub async fn update_profile(
             ))
         }
     }
+}
+
+/// ユーザー関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new().route("/profile", get(get_profile).put(update_profile))
 }

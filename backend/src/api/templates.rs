@@ -2,6 +2,8 @@ use axum::{
     extract::{Extension, Path, Query, State},
     http::StatusCode,
     response::Json,
+    routing::{get, post},
+    Router,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -262,4 +264,17 @@ pub async fn preview_template(
     }
 
     Ok(Json(PreviewTemplateResponse { html, subject }))
+}
+
+/// テンプレート関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_templates).post(create_template))
+        .route(
+            "/:id",
+            get(get_template)
+                .put(update_template)
+                .delete(delete_template),
+        )
+        .route("/:id/preview", post(preview_template))
 }

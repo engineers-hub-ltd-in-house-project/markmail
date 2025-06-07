@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{extract::State, http::StatusCode, response::Json, routing::post, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use validator::Validate;
@@ -124,4 +124,11 @@ pub async fn validate_markdown(
         errors: validation_errors,
         extracted_variables,
     }))
+}
+
+/// マークダウン関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/render", post(render_markdown))
+        .route("/validate", post(validate_markdown))
 }

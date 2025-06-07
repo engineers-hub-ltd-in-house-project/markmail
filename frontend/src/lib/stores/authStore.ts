@@ -36,7 +36,7 @@ function createAuthStore() {
     const refreshToken = localStorage.getItem("refresh_token");
     const userJson = localStorage.getItem("user");
 
-    if (token && userJson) {
+    if (token && refreshToken && userJson) {
       try {
         const user = JSON.parse(userJson) as User;
         set({
@@ -45,8 +45,8 @@ function createAuthStore() {
           token,
           refreshToken,
         });
-      } catch (err) {
-        console.error("Failed to parse user data from localStorage", err);
+      } catch (_err) {
+        // Failed to parse user data from localStorage
       }
     }
   }
