@@ -406,3 +406,116 @@ async fn test_campaign_preview() {
     assert!(html.contains("href=\"https://markmail.example.com/login\""));
     assert!(html.contains("href=\"https://markmail.example.com/unsubscribe?id=12345\""));
 }
+
+#[tokio::test]
+#[ignore] // テストDBが必要
+async fn test_delete_campaign() {
+    let (app, pool, _redis, _config) = create_app().await;
+
+    // テストユーザーとトークンを作成
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
+
+    // テストテンプレートを作成
+    let template = create_test_template(&pool, user_id).await;
+
+    // テストキャンペーンを作成
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template.id)
+        .await
+        .unwrap();
+
+    // キャンペーンを削除
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/campaigns/{}", campaign.id))
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let delete_response: Value = serde_json::from_slice(&body).unwrap();
+
+    // 削除成功メッセージを確認
+    assert_eq!(
+        delete_response["message"].as_str().unwrap(),
+        "キャンペーンが削除されました"
+    );
+
+    // 削除後、取得できないことを確認
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/api/campaigns/{}", campaign.id))
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+#[ignore] // テストDBが必要
+async fn test_cannot_delete_sent_campaign() {
+    let (app, pool, _redis, _config) = create_app().await;
+
+    // テストユーザーとトークンを作成
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
+
+    // テストテンプレートを作成
+    let template = create_test_template(&pool, user_id).await;
+
+    // テストキャンペーンを作成
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template.id)
+        .await
+        .unwrap();
+
+    // キャンペーンのステータスを直接送信済みに更新
+    sqlx::query!(
+        "UPDATE campaigns SET status = 'sent' WHERE id = $1",
+        campaign.id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // 送信済みキャンペーンの削除を試みる
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/campaigns/{}", campaign.id))
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let error_response: Value = serde_json::from_slice(&body).unwrap();
+
+    // エラーメッセージを確認
+    assert!(error_response["error"]
+        .as_str()
+        .unwrap()
+        .contains("送信済み/送信中のキャンペーンは削除できません"));
+}

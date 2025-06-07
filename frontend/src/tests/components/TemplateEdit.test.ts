@@ -41,6 +41,12 @@ vi.mock("marked", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// mockPreviewResponseの定義
+const mockPreviewResponse = {
+  html: "<h1>Test Content</h1><p>With test value</p>",
+  subject: "Test Subject with test value",
+};
+
 // テストデータ
 const mockTemplate = {
   id: "test-template-id",
@@ -59,9 +65,6 @@ describe("Template Edit", async () => {
   beforeEach(async () => {
     // Reset mocks
     vi.resetAllMocks();
-
-    // Mock page params
-    mockParams.mockReturnValue({ id: "test-template-id" });
 
     // Set up authStore
     authStore.login("test-token", "test-refresh-token", {

@@ -253,7 +253,12 @@ pub async fn delete_campaign(
     // まずキャンペーンを取得して状態を確認
     let current_campaign = sqlx::query_as::<_, Campaign>(
         r#"
-        SELECT status FROM campaigns WHERE id = $1 AND user_id = $2
+        SELECT 
+            id, user_id, template_id, name, description, subject, status, 
+            scheduled_at, sent_at, recipient_count, sent_count, opened_count, 
+            clicked_count, created_at, updated_at
+        FROM campaigns 
+        WHERE id = $1 AND user_id = $2
         FOR UPDATE
         "#,
     )
