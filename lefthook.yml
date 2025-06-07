@@ -32,12 +32,12 @@ pre-commit:
 
 pre-push:
   commands:
-    # プッシュ前のテスト実行（一時的に無効化 - 後日修正予定）
-    # backend-test:
-    #   run: cd backend && cargo test
+    # プッシュ前のテスト実行
+    backend-test:
+      run: cd backend && cargo test
 
-    # frontend-test:
-    #   run: cd frontend && npm run test -- --run
+    frontend-test:
+      run: cd frontend && npm run test -- --run
 
 commit-msg:
   commands:
