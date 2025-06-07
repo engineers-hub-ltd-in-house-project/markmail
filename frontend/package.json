@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "test": "echo 'Tests temporarily disabled'",
+    "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",

@@ -1,5 +1,5 @@
 use axum::{
-    body::Body,
+    body::{self, Body},
     extract::rejection::JsonRejection,
     http::{Method, Request, StatusCode},
 };
@@ -53,7 +53,7 @@ pub async fn create_test_campaign(
         .unwrap();
 
     let status = response.status();
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let body: Value = serde_json::from_slice(&body).unwrap();
 
     if status != StatusCode::OK {
@@ -97,7 +97,7 @@ async fn test_create_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let campaign_response: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // レスポンスの検証
@@ -149,7 +149,7 @@ async fn test_get_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let campaign_response: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // レスポンスの検証
@@ -198,7 +198,7 @@ async fn test_update_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let updated_campaign: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // 更新が反映されていることを確認
@@ -254,7 +254,7 @@ async fn test_schedule_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let scheduled_campaign: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // ステータスとスケジュール日時が更新されていることを確認
@@ -319,7 +319,7 @@ async fn test_list_campaigns() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let campaigns_response: Value = serde_json::from_slice(&body).unwrap();
 
     // 少なくとも作成したキャンペーンの数だけあることを確認
@@ -373,7 +373,7 @@ async fn test_campaign_preview() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let template_response: Value = serde_json::from_slice(&body).unwrap();
     let template_id = Uuid::parse_str(template_response["id"].as_str().unwrap()).unwrap();
 
@@ -398,7 +398,7 @@ async fn test_campaign_preview() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body()).await.unwrap();
     let preview_response: Value = serde_json::from_slice(&body).unwrap();
 
     // HTMLが生成されていることを確認

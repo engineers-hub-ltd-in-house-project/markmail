@@ -2,10 +2,23 @@
   import { goto } from "$app/navigation";
   import type { Template } from "$lib/types/template";
   import { onMount } from "svelte";
+  import { authStore } from "$lib/stores/authStore";
+  import { templateApi } from "$lib/services/api";
 
   let templates: Template[] = [];
   let loading = true;
   let error = "";
+  let token: string | null = null;
+
+  // 認証状態を監視
+  authStore.subscribe((state) => {
+    token = state.token;
+
+    // 非認証状態のリダイレクト
+    if (!state.isAuthenticated && typeof window !== "undefined") {
+      goto("/auth/login");
+    }
+  });
 
   onMount(async () => {
     await loadTemplates();
@@ -16,20 +29,17 @@
       loading = true;
       error = "";
 
-      // TODO: JWTトークンを取得して認証ヘッダーに含める
-      const response = await fetch("/api/templates", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`テンプレートの取得に失敗しました: ${response.status}`);
+      if (!token) {
+        throw new Error("認証されていません。ログインしてください。");
       }
 
-      const data = await response.json();
-      templates = data.templates || [];
+      const response = await templateApi.getTemplates(50, 0);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      templates = response.data?.templates || [];
     } catch (err) {
       error = err instanceof Error ? err.message : "エラーが発生しました";
       console.error("Templates loading error:", err);
@@ -44,18 +54,17 @@
     }
 
     try {
-      const response = await fetch(`/api/templates/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await templateApi.deleteTemplate(id);
 
-      if (!response.ok) {
-        throw new Error("テンプレートの削除に失敗しました");
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      await loadTemplates(); // リストを再読み込み
+      // 成功メッセージを表示
+      alert("テンプレートを削除しました");
+
+      // リストを再読み込み
+      await loadTemplates();
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました");
     }

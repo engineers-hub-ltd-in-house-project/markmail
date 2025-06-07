@@ -1,7 +1,9 @@
 use crate::{
     api::templates,
     middleware::auth::AuthUser,
-    models::template::{CreateTemplateRequest, PreviewTemplateRequest, Template, UpdateTemplateRequest},
+    models::template::{
+        CreateTemplateRequest, PreviewTemplateRequest, Template, UpdateTemplateRequest,
+    },
     services::auth_service::AuthService,
     utils::jwt::{Claims, TokenType},
     AppState,
@@ -51,7 +53,8 @@ pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
     let template_request = CreateTemplateRequest {
         name: "テストテンプレート".to_string(),
         description: Some("これはテスト用のテンプレートです".to_string()),
-        markdown_content: "# テスト\n\nこれは**テスト**です。\n\n{{name}}さん、こんにちは！".to_string(),
+        markdown_content: "# テスト\n\nこれは**テスト**です。\n\n{{name}}さん、こんにちは！"
+            .to_string(),
         html_content: None,
         category: Some("テスト".to_string()),
         variables: Some(vec!["name".to_string()]),
@@ -100,16 +103,16 @@ pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
 // テスト用のJWTトークンを取得するヘルパー関数
 pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
     let user_id = create_test_user(pool).await;
-    
+
     let claims = Claims {
         sub: user_id.to_string(),
         exp: chrono::Utc::now().timestamp() + 3600, // 1時間有効
         email: format!("test-{}@example.com", user_id),
         token_type: TokenType::Access,
     };
-    
+
     let token = crate::utils::jwt::generate_token(&claims).expect("Failed to generate JWT");
-    
+
     (user_id, format!("Bearer {}", token))
 }
 

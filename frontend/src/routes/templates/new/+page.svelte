@@ -3,14 +3,9 @@
   import DOMPurify from "dompurify";
   import { marked } from "marked";
   import { onMount } from "svelte";
-
-  type CreateTemplateRequest = {
-    name: string;
-    subject_template: string;
-    markdown_content: string;
-    variables?: Record<string, string>;
-    is_public?: boolean;
-  };
+  import { authStore } from "$lib/stores/authStore";
+  import { templateApi, markdownApi } from "$lib/services/api";
+  import type { CreateTemplateRequest } from "$lib/types/template";
 
   let name = "";
   let subjectTemplate = "";
@@ -23,6 +18,14 @@
   let showPreview = false;
   let saving = false;
   let error = "";
+
+  // 認証状態を監視
+  authStore.subscribe((state) => {
+    // 非認証状態のリダイレクト
+    if (!state.isAuthenticated && typeof window !== "undefined") {
+      goto("/auth/login");
+    }
+  });
 
   // マークダウンプレビューを更新
   $: updatePreview(markdownContent, subjectTemplate, variablesText);
@@ -37,22 +40,43 @@
     try {
       const variables = parseVariables(vars);
 
-      // マークダウンをHTMLに変換
-      let html = await marked(content);
-      let processedSubject = subject;
-
-      // 変数を置換
-      Object.entries(variables).forEach(([key, value]) => {
-        const placeholder = `{{${key}}}`;
-        html = html.replace(new RegExp(placeholder, "g"), value);
-        processedSubject = processedSubject.replace(
-          new RegExp(placeholder, "g"),
-          value,
+      // サーバーサイドでマークダウンをレンダリング
+      if (content) {
+        const renderResponse = await markdownApi.renderMarkdown(
+          content,
+          variables,
         );
-      });
+        if (!renderResponse.error && renderResponse.data) {
+          previewHtml = DOMPurify.sanitize(renderResponse.data.html);
+        } else {
+          // ローカル変換をフォールバックとして使用
+          let html = await marked(content);
 
-      previewHtml = DOMPurify.sanitize(html);
-      previewSubject = processedSubject;
+          // 変数を置換
+          Object.entries(variables).forEach(([key, value]) => {
+            const placeholder = `{{${key}}}`;
+            html = html.replace(new RegExp(placeholder, "g"), value);
+          });
+
+          previewHtml = DOMPurify.sanitize(html);
+        }
+      }
+
+      // 件名プレビュー
+      if (subject) {
+        let processedSubject = subject;
+
+        // 変数を置換
+        Object.entries(variables).forEach(([key, value]) => {
+          const placeholder = `{{${key}}}`;
+          processedSubject = processedSubject.replace(
+            new RegExp(placeholder, "g"),
+            value,
+          );
+        });
+
+        previewSubject = processedSubject;
+      }
     } catch (err) {
       console.error("Preview error:", err);
       previewHtml = '<p class="text-red-500">プレビューエラー</p>';
@@ -102,21 +126,10 @@
         is_public: isPublic,
       };
 
-      const response = await fetch("/api/templates", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templateData),
-      });
+      const createResponse = await templateApi.createTemplate(templateData);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message ||
-            `テンプレートの作成に失敗しました: ${response.status}`,
-        );
+      if (createResponse.error) {
+        throw new Error(createResponse.error);
       }
 
       goto("/templates");
