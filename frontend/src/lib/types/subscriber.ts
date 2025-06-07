@@ -1,4 +1,4 @@
-import type { User } from "../stores/authStore";
+// import type { User } from "../stores/authStore";
 
 /**
  * 購読者のステータス
@@ -20,7 +20,7 @@ export interface Subscriber {
   name?: string;
   status: SubscriberStatus;
   tags: string[];
-  custom_fields: Record<string, any>;
+  custom_fields: Record<string, unknown>;
   subscribed_at: string;
   unsubscribed_at?: string;
   created_at: string;
@@ -51,7 +51,7 @@ export interface UpdateSubscriberRequest {
  * 購読者CSV一括インポートリクエスト
  */
 export interface ImportSubscribersRequest {
-  file: File;
+  file: unknown; // File type from DOM API
   tag?: string;
 }
 
