@@ -30,6 +30,24 @@ pre-commit:
       run: npx --yes prettier --write {staged_files}
       stage_fixed: true
 
+    # Infrastructure TypeScript フォーマット
+    infrastructure-format:
+      glob: 'infrastructure/**/*.{ts,js,json,md}'
+      exclude: 'infrastructure/{node_modules,cdk.out,dist,coverage}/**/*'
+      run: |
+        files=$(echo {staged_files} | sed 's|infrastructure/||g')
+        cd infrastructure && npx prettier --write $files
+      stage_fixed: true
+
+    # Infrastructure TypeScript リンター
+    infrastructure-lint:
+      glob: 'infrastructure/**/*.ts'
+      exclude: 'infrastructure/{node_modules,cdk.out,dist,coverage}/**/*'
+      run: |
+        files=$(echo {staged_files} | sed 's|infrastructure/||g')
+        cd infrastructure && npx eslint $files --fix
+      stage_fixed: true
+
 pre-push:
   commands:
     # プッシュ前のテスト実行
@@ -38,6 +56,9 @@ pre-push:
 
     frontend-test:
       run: cd frontend && npm run test -- --run
+
+    infrastructure-test:
+      run: cd infrastructure && npm test
 
 commit-msg:
   commands:

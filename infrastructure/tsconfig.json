@@ -25,5 +25,5 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "exclude": ["node_modules", "cdk.out"]
+  "exclude": ["node_modules", "cdk.out", "dist"]
 }
