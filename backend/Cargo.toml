@@ -46,6 +46,7 @@ redis = { version = "0.24", features = ["tokio-comp"] }
 
 # バリデーション
 validator = { version = "0.16", features = ["derive"] }
+lazy_static = "1.4"
 
 # エラーハンドリング
 anyhow = "1.0"

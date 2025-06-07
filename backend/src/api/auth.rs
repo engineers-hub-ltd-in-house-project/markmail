@@ -24,6 +24,7 @@ pub async fn register(
         ));
     }
 
+    tracing::debug!("register - db pool: {:?}", state.db);
     let auth_service = AuthService::new(state.db.clone());
 
     match auth_service.register(payload).await {
@@ -39,7 +40,8 @@ pub async fn register(
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
-                    "error": "ユーザー登録に失敗しました"
+                    "error": "ユーザー登録に失敗しました",
+                    "details": format!("{:?}", e)
                 })),
             ))
         }

@@ -40,10 +40,16 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/campaigns", get(campaigns::list_campaigns))
         .route("/api/campaigns", post(campaigns::create_campaign))
         .route("/api/campaigns/:id", get(campaigns::get_campaign))
+        .route("/api/campaigns/:id", put(campaigns::update_campaign))
+        .route("/api/campaigns/:id", delete(campaigns::delete_campaign))
         .route("/api/campaigns/:id/send", post(campaigns::send_campaign))
         .route(
             "/api/campaigns/:id/schedule",
             post(campaigns::schedule_campaign),
+        )
+        .route(
+            "/api/campaigns/:id/preview",
+            get(campaigns::preview_campaign),
         )
         // 購読者管理
         .route("/api/subscribers", get(subscribers::list_subscribers))

@@ -29,28 +29,23 @@ async fn main() {
     // 環境変数読み込み
     dotenvy::dotenv().ok();
 
-    // データベース接続プール作成
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://markmail:markmail_password@localhost:5432/markmail_dev".to_string()
-    });
+    // 設定ロード
+    let config = std::sync::Arc::new(utils::config::Config::new());
 
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(20)
-        .connect(&database_url)
+    // データベース接続プール作成
+    let pool = database::connection::create_pool(&config.database_url, 20)
         .await
         .expect("データベースに接続できませんでした");
 
     // Redis接続
-    let redis_url =
-        std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
-
-    let redis_client =
-        redis::Client::open(redis_url).expect("Redisクライアントの作成に失敗しました");
+    let redis_client = redis::Client::open(config.redis_url.clone())
+        .expect("Redisクライアントの作成に失敗しました");
 
     // アプリケーション状態
     let app_state = AppState {
         db: pool,
         redis: redis_client,
+        config,
     };
 
     // ルーター作成
@@ -107,4 +102,5 @@ async fn health_check() -> Result<Json<Value>, StatusCode> {
 pub struct AppState {
     pub db: sqlx::PgPool,
     pub redis: redis::Client,
+    pub config: std::sync::Arc<utils::config::Config>,
 }

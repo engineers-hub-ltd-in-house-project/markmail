@@ -39,12 +39,28 @@ impl Claims {
 
 /// JWTトークンを生成する
 pub fn generate_token(claims: &Claims) -> Result<String, JwtError> {
-    let secret = std::env::var("JWT_SECRET").map_err(|_| JwtError::SecretNotSet)?;
-    let token = encode(
+    let secret = match std::env::var("JWT_SECRET") {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!("JWT_SECRET環境変数が設定されていません: {:?}", e);
+            return Err(JwtError::SecretNotSet);
+        }
+    };
+
+    tracing::debug!("JWTトークンをエンコードします");
+    let token = match encode(
         &Header::default(),
         claims,
         &EncodingKey::from_secret(secret.as_ref()),
-    )?;
+    ) {
+        Ok(token) => token,
+        Err(e) => {
+            tracing::error!("JWTエンコードエラー: {:?}", e);
+            return Err(JwtError::EncodeError(e));
+        }
+    };
+
+    tracing::debug!("JWTトークンエンコード成功");
     Ok(token)
 }
 

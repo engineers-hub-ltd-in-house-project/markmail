@@ -44,22 +44,47 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(pool: PgPool) -> Self {
+        tracing::debug!("AuthService::new - pool: {:?}", pool);
         Self { pool }
     }
 
     /// ユーザー登録
     pub async fn register(&self, request: RegisterRequest) -> Result<AuthResponse, AuthError> {
+        tracing::debug!(
+            "register - email: {}, name: {}",
+            request.email,
+            request.name
+        );
+
         // メールアドレスの重複チェック
         if users::email_exists(&self.pool, &request.email).await? {
+            tracing::debug!("メールアドレスが既に使用されています: {}", request.email);
             return Err(AuthError::EmailAlreadyExists);
         }
 
         // パスワードをハッシュ化
-        let password_hash = hash_password(&request.password)?;
+        tracing::debug!("パスワードのハッシュ化を実行します");
+        let password_hash = match hash_password(&request.password) {
+            Ok(hash) => hash,
+            Err(e) => {
+                tracing::error!("パスワードハッシュ化エラー: {:?}", e);
+                return Err(AuthError::PasswordError(e));
+            }
+        };
+        tracing::debug!("パスワードのハッシュ化が完了しました");
 
         // ユーザーを作成
+        tracing::debug!("ユーザーを作成します: {}", request.email);
         let user =
-            users::create_user(&self.pool, &request.email, &password_hash, &request.name).await?;
+            match users::create_user(&self.pool, &request.email, &password_hash, &request.name)
+                .await
+            {
+                Ok(user) => user,
+                Err(e) => {
+                    tracing::error!("ユーザー作成エラー: {:?}", e);
+                    return Err(AuthError::DatabaseError(e));
+                }
+            };
 
         // JWTトークンを生成
         let claims = Claims::new(user.id, user.email.clone(), user.name.clone(), 24);

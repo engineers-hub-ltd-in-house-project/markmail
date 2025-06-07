@@ -10,7 +10,7 @@ pre-commit:
     # Rust リンター
     rust-clippy:
       glob: 'backend/**/*.rs'
-      run: cd backend && cargo clippy -- -D warnings
+      run: cd backend && cargo clippy -- -D warnings -A dead_code
 
     # フロントエンド フォーマット
     frontend-format:

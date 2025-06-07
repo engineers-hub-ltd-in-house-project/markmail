@@ -1,11 +1,16 @@
 // マークダウン処理サービス
-// TODO: マークダウンからHTMLへの変換、変数抽出の実装
 
 use pulldown_cmark::{html, Options, Parser};
 use regex::Regex;
 use serde_json::Value;
 
 pub struct MarkdownService;
+
+impl Default for MarkdownService {
+    fn default() -> Self {
+        Self
+    }
+}
 
 impl MarkdownService {
     pub fn new() -> Self {
@@ -212,5 +217,186 @@ impl MarkdownService {
         variables: &Value,
     ) -> Result<String, String> {
         self.substitute_variables(subject_template, variables)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_markdown_to_html_conversion() {
+        let service = MarkdownService::new();
+
+        // Basic conversion test
+        let markdown = "# Hello\n\nThis is a **test**.";
+        let html = service.render_to_html(markdown);
+        assert!(
+            html.contains("<h1>Hello</h1>"),
+            "HTML should contain h1 header"
+        );
+        assert!(
+            html.contains("<strong>test</strong>"),
+            "HTML should contain strong tag"
+        );
+
+        // Test with more complex markdown
+        let complex_markdown = r#"
+# Header 1
+## Header 2
+
+*Italic* and **bold** text.
+
+- List item 1
+- List item 2
+
+1. Ordered item 1
+2. Ordered item 2
+
+[A link](https://example.com)
+
+> A blockquote
+
+```
+Code block
+```
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+"#;
+
+        let html = service.render_to_html(complex_markdown);
+        assert!(html.contains("<h1>Header 1</h1>"), "HTML should contain h1");
+        assert!(html.contains("<h2>Header 2</h2>"), "HTML should contain h2");
+        assert!(
+            html.contains("<em>Italic</em>"),
+            "HTML should contain em tag"
+        );
+        assert!(
+            html.contains("<strong>bold</strong>"),
+            "HTML should contain strong tag"
+        );
+        assert!(
+            html.contains("<li>List item"),
+            "HTML should contain list items"
+        );
+        assert!(
+            html.contains("<a href=\"https://example.com\">"),
+            "HTML should contain link"
+        );
+        assert!(
+            html.contains("<blockquote>"),
+            "HTML should contain blockquote"
+        );
+        assert!(
+            html.contains("<pre><code>"),
+            "HTML should contain code block"
+        );
+        assert!(html.contains("<table>"), "HTML should contain table");
+    }
+
+    #[test]
+    fn test_variable_extraction() {
+        let service = MarkdownService::new();
+
+        // Test with no variables
+        let text = "This is a simple text without variables.";
+        let variables = service.extract_variables(text);
+        assert_eq!(variables.len(), 0, "Should extract no variables");
+
+        // Test with variables
+        let text = "Hello {{name}}, welcome to {{company}}!";
+        let variables = service.extract_variables(text);
+        assert_eq!(variables.len(), 2, "Should extract two variables");
+        assert!(
+            variables.contains(&"name".to_string()),
+            "Should extract 'name'"
+        );
+        assert!(
+            variables.contains(&"company".to_string()),
+            "Should extract 'company'"
+        );
+
+        // Test with repeated variables
+        let text = "Hello {{name}}, {{name}} is a nice name!";
+        let variables = service.extract_variables(text);
+        assert_eq!(variables.len(), 1, "Should extract one unique variable");
+        assert_eq!(variables[0], "name", "Should extract 'name'");
+
+        // Test with spaces in variable syntax
+        let text = "Hello {{ name }}, welcome to {{  company  }}!";
+        let variables = service.extract_variables(text);
+        assert_eq!(variables.len(), 2, "Should extract variables with spaces");
+    }
+
+    #[test]
+    fn test_variable_substitution() {
+        let service = MarkdownService::new();
+
+        // Basic substitution
+        let template = "Hello {{name}}, welcome to {{company}}!";
+        let variables = json!({
+            "name": "John",
+            "company": "MarkMail"
+        });
+
+        let result = service.substitute_variables(template, &variables).unwrap();
+        assert_eq!(result, "Hello John, welcome to MarkMail!");
+
+        // Test with different variable types
+        let template = "User {{name}} has {{age}} years and premium status: {{is_premium}}.";
+        let variables = json!({
+            "name": "Alice",
+            "age": 30,
+            "is_premium": true
+        });
+
+        let result = service.substitute_variables(template, &variables).unwrap();
+        assert_eq!(result, "User Alice has 30 years and premium status: true.");
+
+        // Test with missing variable
+        let template = "Hello {{name}}, your score is {{score}}.";
+        let variables = json!({
+            "name": "Bob"
+            // missing "score"
+        });
+
+        let result = service.substitute_variables(template, &variables);
+        assert!(result.is_err(), "Should error on missing variable");
+    }
+
+    #[test]
+    fn test_validate_markdown() {
+        let service = MarkdownService::new();
+
+        // Valid markdown
+        let valid = "# Title\n\nThis is valid markdown.";
+        let validation = service.validate_markdown(valid).unwrap();
+        assert_eq!(validation.len(), 0, "No errors for valid markdown");
+
+        // Empty markdown
+        let empty = "";
+        let validation = service.validate_markdown(empty).unwrap();
+        assert_eq!(
+            validation.len(),
+            1,
+            "Should have one error for empty markdown"
+        );
+
+        // Unclosed code block
+        let unclosed_code = "# Title\n\n```\nUnclosed code block";
+        let validation = service.validate_markdown(unclosed_code).unwrap();
+        assert_eq!(
+            validation.len(),
+            1,
+            "Should have one error for unclosed code block"
+        );
+
+        // Empty URL in link
+        let empty_url = "# Title\n\n[Empty link]()";
+        let validation = service.validate_markdown(empty_url).unwrap();
+        assert_eq!(validation.len(), 1, "Should have one error for empty URL");
     }
 }
