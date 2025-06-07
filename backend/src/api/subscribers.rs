@@ -63,7 +63,9 @@ pub async fn list_subscribers(
     Ok(Json(json!({
         "subscribers": result.subscribers,
         "total": result.total,
-        "available_tags": result.available_tags
+        "available_tags": result.available_tags,
+        "limit": query.limit.unwrap_or(50),
+        "offset": query.offset.unwrap_or(0)
     })))
 }
 
@@ -195,10 +197,28 @@ pub async fn import_subscribers_from_csv(
     })))
 }
 
+/// 購読者タグ一覧を取得
+pub async fn get_subscriber_tags(
+    State(state): State<AppState>,
+    Extension(auth_user): Extension<AuthUser>,
+) -> Result<Json<Value>, StatusCode> {
+    let tags = crate::database::subscribers::get_all_tags(&state.db, auth_user.user_id)
+        .await
+        .map_err(|e| {
+            eprintln!("タグ一覧取得エラー: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(json!({
+        "tags": tags
+    })))
+}
+
 /// 購読者関連のルーターを構築
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_subscribers).post(add_subscriber))
+        .route("/tags", get(get_subscriber_tags))
         .route("/import", post(import_subscribers_from_csv))
         .route(
             "/:id",

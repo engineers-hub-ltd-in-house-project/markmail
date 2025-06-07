@@ -63,6 +63,7 @@ export interface SubscriberListResponse {
   total: number;
   limit: number;
   offset: number;
+  available_tags?: string[];
 }
 
 /**
