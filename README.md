@@ -324,6 +324,7 @@ npm run lint
   - [x] プロバイダー抽象化（trait EmailProvider）
   - [x] テンプレート変数の動的置換
   - [x] 送信エラーハンドリング
+  - [x] ドメイン検証とDKIM設定
 
 ### 🚧 開発中
 
@@ -346,6 +347,13 @@ npm run lint
   - [x] キャンペーン送信ボタンとAPI連携
   - [x] 送信進捗表示
   - [x] エラーハンドリング
+  - [x] 送信成功/失敗の状態表示
+- [x] **AWS インフラストラクチャ（CDK）**
+  - [x] AWS SES設定（Configuration Set、SNSトピック）
+  - [x] IAMユーザーとポリシー設定
+  - [x] S3バケット（バウンスメール保存）
+  - [x] ドメイン検証とDKIM設定
+  - [x] SPFレコード設定
 
 ### 📋 今後の予定
 
@@ -660,11 +668,14 @@ MarkMail のメール送信システムは、開発環境と本番環境で異�
    - Web UIでメール確認可能（http://localhost:8025）
    - 実際のメール送信なし
 
-2. **AWS SES（本番環境）**
+2. **AWS SES（本番環境）** ✅
    - 高い配信性能と信頼性
    - 詳細な配信統計
    - バウンス・苦情処理の自動化
    - リージョン: 東京（ap-northeast-1）
+   - Configuration Set による送信イベント追跡
+   - ドメイン検証とDKIM署名によるメール認証
+   - SPFレコードによるなりすまし防止
 
 #### メール送信アーキテクチャ
 
@@ -707,6 +718,7 @@ AWS_REGION=ap-northeast-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_SES_FROM_EMAIL=noreply@example.com
+AWS_SES_CONFIGURATION_SET=markmail-configuration-set
 
 # メール送信制限
 EMAIL_RATE_LIMIT=14  # 秒あたりの送信数（AWS SESのデフォルト）
@@ -730,3 +742,46 @@ EMAIL_BATCH_SIZE=50  # バッチ送信のサイズ
 - **恒久的エラー**: エラーログに記録して次の購読者へ
 - **レート制限**: `EMAIL_RATE_LIMIT` に基づいて送信速度を調整
 - **バウンス処理**: AWS SES のSNS通知を受信して自動処理
+
+### AWS インフラストラクチャ設定
+
+MarkMailはAWS CDKを使用してSES関連のインフラストラクチャを管理しています：
+
+#### インフラストラクチャ構成
+
+- **AWS SES Configuration Set**: メール送信イベントの追跡
+- **SNSトピック**: バウンス・苦情通知の受信
+- **S3バケット**: バウンスメールの保存（90日後自動削除）
+- **IAMユーザー**: SES送信専用のアクセス権限
+
+#### セットアップ手順
+
+1. **AWS CDKのインストール**
+
+   ```bash
+   npm install -g aws-cdk
+   ```
+
+2. **インフラストラクチャのデプロイ**
+
+   ```bash
+   cd infrastructure
+   npm install
+   npm run deploy
+   ```
+
+3. **ドメイン検証（必須）**
+
+   - AWS SESコンソールでドメインまたはメールアドレスを検証
+   - DNSレコード（DKIM、SPF）を設定
+
+4. **環境変数の更新**
+   - デプロイ後に表示されるアクセスキーを`.env`に設定
+
+#### サンドボックスモードについて
+
+新しいAWS SESアカウントはサンドボックスモードで開始されます：
+
+- 検証済みのメールアドレスにのみ送信可能
+- 1日あたり200通、1秒あたり1通の制限
+- 本番環境への移行はAWSサポートへ申請が必要

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use aws_sdk_sesv2::config::Credentials as AwsCredentials;
 use lettre::{
     message::Message, transport::smtp::AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
 };
@@ -161,7 +162,7 @@ impl EmailService {
 
     /// 環境変数から設定を読み込む
     pub fn from_env() -> Result<EmailConfig, EmailError> {
-        let provider = match std::env::var("MAIL_PROVIDER")
+        let provider = match std::env::var("EMAIL_PROVIDER")
             .unwrap_or_else(|_| "mailhog".to_string())
             .as_str()
         {
@@ -330,11 +331,26 @@ struct AwsSesProvider {
 
 impl AwsSesProvider {
     async fn new(config: AwsSesConfig, from_email: String) -> Result<Self, EmailError> {
-        let aws_config = if let (Some(_access_key), Some(_secret_key)) = (
+        tracing::info!(
+            "AWS SESプロバイダーを初期化中: region={}, from={}",
+            config.region,
+            from_email
+        );
+
+        let aws_config = if let (Some(access_key), Some(secret_key)) = (
             config.access_key_id.as_ref(),
             config.secret_access_key.as_ref(),
         ) {
+            tracing::info!("AWS認証情報を使用してSESクライアントを作成");
+            // 認証情報を明示的に設定
+            let credentials = AwsCredentials::new(
+                access_key, secret_key, None, // session_token
+                None, // expiry
+                "markmail",
+            );
+
             aws_config::defaults(aws_config::BehaviorVersion::latest())
+                .credentials_provider(credentials)
                 .region(aws_config::Region::new(config.region.clone()))
                 .load()
                 .await
@@ -361,6 +377,13 @@ impl EmailProvider for AwsSesProvider {
         if message.to.is_empty() {
             return Err(EmailError::Build("宛先が指定されていません".to_string()));
         }
+
+        tracing::info!(
+            "AWS SESでメール送信: from={}, to={:?}, subject={}",
+            self.from_email,
+            message.to,
+            message.subject
+        );
 
         let destination = Destination::builder()
             .set_to_addresses(Some(message.to.clone()))
@@ -403,6 +426,11 @@ impl EmailProvider for AwsSesProvider {
             .destination(destination)
             .content(email_content);
 
+        // Configuration Setを設定
+        if let Ok(config_set) = std::env::var("AWS_SES_CONFIGURATION_SET") {
+            request = request.configuration_set_name(config_set);
+        }
+
         if let Some(reply_to) = &message.reply_to {
             request = request.reply_to_addresses(reply_to.clone());
         }
@@ -416,11 +444,14 @@ impl EmailProvider for AwsSesProvider {
                     error: None,
                 })
             }
-            Err(e) => Ok(EmailResult {
-                message_id: "".to_string(),
-                status: EmailStatus::Failed,
-                error: Some(format!("AWS SESエラー: {}", e)),
-            }),
+            Err(e) => {
+                tracing::error!("AWS SES送信エラー: {:?}", e);
+                Ok(EmailResult {
+                    message_id: "".to_string(),
+                    status: EmailStatus::Failed,
+                    error: Some(format!("AWS SESエラー: {}", e)),
+                })
+            }
         }
     }
 
