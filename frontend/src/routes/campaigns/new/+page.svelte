@@ -7,7 +7,7 @@
   import { ArrowLeftIcon, SendIcon } from "lucide-svelte";
 
   // テンプレート取得用
-  import { apiService } from "$lib/services/apiService";
+  import { templateApi } from "$lib/services/api";
 
   // 状態管理
   let isLoading = false;
@@ -72,8 +72,13 @@
     templateError = null;
 
     try {
-      const response = await apiService.getTemplates();
-      templates = response.templates;
+      const response = await templateApi.getTemplates();
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      templates = response.data?.templates || [];
     } catch (err) {
       console.error("テンプレート取得エラー:", err);
       templateError =
@@ -244,9 +249,7 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         placeholder="例: 【重要】新製品のお知らせ"
       />
-      <p class="mt-1 text-xs text-gray-500">
-        テンプレート変数（例: {{ name }}）を使用できます
-      </p>
+      <p class="mt-1 text-xs text-gray-500">テンプレート変数を使用できます</p>
       {#if validationErrors.subject}
         <p class="mt-1 text-sm text-red-600">{validationErrors.subject}</p>
       {/if}

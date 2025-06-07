@@ -1,4 +1,16 @@
-<script context="module">
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { campaignService } from "$lib/services/campaignService";
+  import type { Campaign, UpdateCampaignRequest } from "$lib/types/campaign";
+  import { CampaignStatus } from "$lib/types/campaign";
+
+  import type { Template } from "$lib/types/template";
+  import { templateApi } from "$lib/services/api";
+  import { ArrowLeftIcon, SaveIcon, EyeIcon } from "lucide-svelte";
+
+  // ステータスのフォーマット関数
   function formatStatus(status: string): string {
     const statusMap: Record<string, string> = {
       draft: "下書き",
@@ -9,18 +21,39 @@
     };
     return statusMap[status] || status;
   }
-</script>
 
-<script lang="ts">
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { campaignService } from "$lib/services/campaignService";
-  import type { Campaign, UpdateCampaignRequest } from "$lib/types/campaign";
-  import { CampaignStatus } from "$lib/types/campaign";
-  import type { Template } from "$lib/types/template";
-  import { apiService } from "$lib/services/apiService";
-  import { ArrowLeftIcon, SaveIcon, EyeIcon } from "lucide-svelte";
+  // ステータスに応じたバッジスタイルを取得
+  function getStatusBadgeClass(status: CampaignStatus): string {
+    const baseClass = "px-2 py-1 text-xs font-medium rounded-full";
+
+    switch (status) {
+      case CampaignStatus.DRAFT:
+        return `${baseClass} bg-gray-200 text-gray-800`;
+      case CampaignStatus.SCHEDULED:
+        return `${baseClass} bg-blue-100 text-blue-800`;
+      case CampaignStatus.SENDING:
+        return `${baseClass} bg-yellow-100 text-yellow-800`;
+      case CampaignStatus.SENT:
+        return `${baseClass} bg-green-100 text-green-800`;
+      case CampaignStatus.CANCELED:
+        return `${baseClass} bg-red-100 text-red-800`;
+      default:
+        return baseClass;
+    }
+  }
+
+  // 日付フォーマット
+  function formatDate(dateString?: string): string {
+    if (!dateString) return "未設定";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    }).format(date);
+  }
 
   // URLパラメータからキャンペーンIDを取得
   const campaignId = $page.params.id;
@@ -92,10 +125,16 @@
 
     try {
       // 並列で両方のデータを取得
-      const [campaignData, templatesData] = await Promise.all([
+      const [campaignData, templatesResponse] = await Promise.all([
         campaignService.getCampaign(campaignId),
-        apiService.getTemplates(),
+        templateApi.getTemplates(),
       ]);
+
+      if (templatesResponse.error) {
+        throw new Error(templatesResponse.error);
+      }
+
+      const templatesData = templatesResponse.data;
 
       campaign = campaignData;
       templates = templatesData.templates;
