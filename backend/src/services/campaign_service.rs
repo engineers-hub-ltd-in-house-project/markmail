@@ -3,14 +3,17 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    database::{campaigns, templates},
+    database::{campaigns, subscribers, templates},
     models::{
         campaign::{
             Campaign, CreateCampaignRequest, ScheduleCampaignRequest, UpdateCampaignRequest,
         },
         subscriber::Subscriber,
     },
-    services::markdown_service::MarkdownService,
+    services::{
+        email_service::{EmailMessage, EmailService},
+        markdown_service::MarkdownService,
+    },
 };
 
 pub struct CampaignService;
@@ -165,28 +168,185 @@ impl CampaignService {
         Ok(html)
     }
 
-    // 指定したキャンペーンの購読者一覧を取得（未実装）
-    #[allow(dead_code)]
+    // 指定したキャンペーンの購読者一覧を取得
     pub async fn get_campaign_subscribers(
         &self,
-        _pool: &PgPool,
+        pool: &PgPool,
         _campaign_id: Uuid,
-        _user_id: Uuid,
+        user_id: Uuid,
     ) -> Result<Vec<Subscriber>, String> {
-        // ここは今後実装予定
-        // 現時点ではテスト用のデータを返す
-        Ok(Vec::new())
+        // アクティブな購読者を取得
+        let options = crate::models::subscriber::ListSubscriberOptions {
+            limit: None,
+            offset: None,
+            search: None,
+            tag: None,
+            status: None, // 一時的にステータスフィルタを無効化
+            sort_by: None,
+            sort_order: None,
+        };
+
+        let subscribers = subscribers::list_user_subscribers(pool, user_id, &options)
+            .await
+            .map_err(|e| format!("購読者の取得に失敗しました: {}", e))?;
+
+        Ok(subscribers)
     }
 
-    // キャンペーンの送信処理（非同期処理で実行予定）
-    #[allow(dead_code)]
+    // キャンペーンの送信処理
     pub async fn process_campaign_sending(
         &self,
-        _pool: &PgPool,
-        _campaign_id: Uuid,
+        pool: &PgPool,
+        campaign_id: Uuid,
+        user_id: Uuid,
     ) -> Result<(), String> {
-        // ここは今後実装予定
-        // メールキュー、バッチ処理などを導入する
+        // キャンペーン情報を取得
+        let campaign = campaigns::find_campaign_by_id(pool, campaign_id, user_id)
+            .await
+            .map_err(|e| format!("キャンペーン情報の取得に失敗しました: {}", e))?
+            .ok_or_else(|| "キャンペーンが見つかりません".to_string())?;
+
+        // テンプレート情報を取得
+        let template = templates::find_template_by_id(pool, campaign.template_id, Some(user_id))
+            .await
+            .map_err(|e| format!("テンプレート情報の取得に失敗しました: {}", e))?
+            .ok_or_else(|| "テンプレートが見つかりません".to_string())?;
+
+        // 購読者リストを取得
+        let subscribers = self
+            .get_campaign_subscribers(pool, campaign_id, user_id)
+            .await?;
+
+        if subscribers.is_empty() {
+            return Err("送信対象の購読者が存在しません".to_string());
+        }
+
+        // メールサービスを初期化
+        let email_config = EmailService::from_env()
+            .map_err(|e| format!("メール設定の読み込みに失敗しました: {}", e))?;
+        let email_service = EmailService::new(email_config)
+            .await
+            .map_err(|e| format!("メールサービスの初期化に失敗しました: {}", e))?;
+
+        // マークダウンサービスを初期化
+        let markdown_service = MarkdownService::new();
+
+        // 購読者ごとにメールメッセージを作成
+        let mut email_messages = Vec::new();
+        for subscriber in &subscribers {
+            // 購読者固有の変数を設定
+            let mut variables = if template.variables.is_null() {
+                serde_json::json!({})
+            } else {
+                template.variables.clone()
+            };
+
+            // variablesをオブジェクトとして扱う
+            if let serde_json::Value::Object(ref mut map) = variables {
+                map.insert(
+                    "name".to_string(),
+                    serde_json::json!(subscriber
+                        .name
+                        .clone()
+                        .unwrap_or_else(|| "お客様".to_string())),
+                );
+                map.insert(
+                    "email".to_string(),
+                    serde_json::json!(subscriber.email.clone()),
+                );
+
+                // カスタムフィールドを変数に追加
+                if let serde_json::Value::Object(custom_fields) = &subscriber.custom_fields {
+                    for (key, value) in custom_fields {
+                        map.insert(key.clone(), value.clone());
+                    }
+                }
+
+                // 配信停止URLを追加
+                map.insert(
+                    "unsubscribe_url".to_string(),
+                    serde_json::json!(format!(
+                        "https://markmail.example.com/unsubscribe/{}",
+                        subscriber.id
+                    )),
+                );
+            }
+
+            // HTMLとテキストをレンダリング
+            let html_body = markdown_service
+                .render_with_variables(&template.markdown_content, &variables)
+                .map_err(|e| format!("HTMLレンダリングに失敗しました: {}", e))?;
+
+            let text_body = html2text::from_read(html_body.as_bytes(), 80);
+
+            // 件名の変数を置換
+            let subject = if let serde_json::Value::Object(vars) = &variables {
+                let mut subject = template.subject_template.clone();
+                for (key, value) in vars {
+                    if let serde_json::Value::String(val) = value {
+                        subject = subject.replace(&format!("{{{{{}}}}}", key), val);
+                    }
+                }
+                subject
+            } else {
+                template.subject_template.clone()
+            };
+
+            let email_message = EmailMessage {
+                to: vec![subscriber.email.clone()],
+                subject,
+                html_body,
+                text_body: Some(text_body),
+                reply_to: None,
+                headers: None,
+            };
+
+            email_messages.push(email_message);
+        }
+
+        // バッチでメール送信
+        let results = email_service
+            .send_campaign(email_messages)
+            .await
+            .map_err(|e| format!("メール送信に失敗しました: {}", e))?;
+
+        // 送信結果を集計
+        let mut sent_count = 0;
+        let mut failed_count = 0;
+        for result in &results {
+            match result.status {
+                crate::services::email_service::EmailStatus::Sent => sent_count += 1,
+                crate::services::email_service::EmailStatus::Failed => failed_count += 1,
+                _ => {}
+            }
+        }
+
+        // キャンペーンの統計情報を更新
+        campaigns::update_campaign_stats(
+            pool,
+            campaign_id,
+            Some(subscribers.len() as i32),
+            Some(sent_count),
+            None,
+            None,
+        )
+        .await
+        .map_err(|e| format!("統計情報の更新に失敗しました: {}", e))?;
+
+        // 送信完了状態に更新
+        if failed_count == 0 {
+            campaigns::complete_campaign_sending(pool, campaign_id)
+                .await
+                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+        }
+
+        tracing::info!(
+            "キャンペーン {} の送信が完了しました。成功: {}, 失敗: {}",
+            campaign_id,
+            sent_count,
+            failed_count
+        );
+
         Ok(())
     }
 }

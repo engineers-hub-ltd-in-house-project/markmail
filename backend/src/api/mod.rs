@@ -8,6 +8,7 @@ use crate::{middleware::auth::auth_middleware, AppState};
 
 pub mod auth;
 pub mod campaigns;
+pub mod email;
 pub mod integrations;
 pub mod markdown;
 pub mod subscribers;
@@ -51,8 +52,14 @@ pub fn create_routes() -> Router<AppState> {
             "/api/campaigns/:id/preview",
             get(campaigns::preview_campaign),
         )
+        .route(
+            "/api/campaigns/:id/subscribers",
+            get(campaigns::get_campaign_subscribers),
+        )
         // 購読者管理
         .nest("/api/subscribers", subscribers::router())
+        // メール送信（開発環境のみ）
+        .nest("/api/email", email::router())
         // マークダウン処理
         .route("/api/markdown/render", post(markdown::render_markdown))
         .route("/api/markdown/validate", post(markdown::validate_markdown))

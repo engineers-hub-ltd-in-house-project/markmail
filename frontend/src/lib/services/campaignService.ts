@@ -8,6 +8,7 @@ import type {
   ScheduleCampaignRequest,
   UpdateCampaignRequest,
 } from "../types/campaign";
+import type { Subscriber } from "../types/subscriber";
 
 /**
  * API エラーレスポンス
@@ -220,5 +221,26 @@ export const campaignService = {
     }
 
     return await response.json();
+  },
+
+  /**
+   * キャンペーンの購読者を取得
+   */
+  async getCampaignSubscribers(id: string): Promise<Subscriber[]> {
+    const response = await fetch(`/api/campaigns/${id}/subscribers`, {
+      method: "GET",
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new ApiError(
+        errorData.error || "キャンペーンの購読者取得に失敗しました",
+        response.status,
+      );
+    }
+
+    const data = await response.json();
+    return data.subscribers || [];
   },
 };

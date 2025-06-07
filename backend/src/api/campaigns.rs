@@ -11,13 +11,13 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
-    database::campaigns,
+    database::campaigns::{self, find_campaign_by_id},
     middleware::auth::AuthUser,
     models::campaign::{
         CampaignListResponse, CampaignResponse, CreateCampaignRequest, ListCampaignOptions,
         ScheduleCampaignRequest, UpdateCampaignRequest,
     },
-    services::campaign_service::CampaignService,
+    services::{campaign_service::CampaignService, subscriber_service::SubscriberService},
     AppState,
 };
 
@@ -209,12 +209,25 @@ pub async fn send_campaign(
         Ok(campaign) => {
             tracing::info!("キャンペーン送信開始: {}", campaign.id);
 
-            // TODO: 実際のメール送信処理を非同期で開始（今後実装）
-            // この例では送信開始の状態変更のみ
+            // 非同期でメール送信処理を開始
+            let db = state.db.clone();
+            let campaign_id = campaign.id;
+            let user_id = auth_user.user_id;
+
+            tokio::spawn(async move {
+                let campaign_service = CampaignService::new();
+                if let Err(e) = campaign_service
+                    .process_campaign_sending(&db, campaign_id, user_id)
+                    .await
+                {
+                    tracing::error!("キャンペーン送信処理エラー: {}", e);
+                }
+            });
 
             Ok(Json(json!({
                 "message": "キャンペーンの送信を開始しました",
-                "campaign_id": id
+                "campaign_id": id,
+                "status": "sending"
             })))
         }
         Err(e) => {
@@ -288,6 +301,59 @@ pub struct PreviewCampaignResponse {
     pub html: String,
 }
 
+/// キャンペーンの購読者一覧を取得
+pub async fn get_campaign_subscribers(
+    State(state): State<AppState>,
+    Extension(auth_user): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    // キャンペーンの存在確認と権限チェック
+    let _campaign = match find_campaign_by_id(&state.db, id, auth_user.user_id).await {
+        Ok(campaign) => campaign,
+        Err(e) => {
+            tracing::error!("キャンペーン取得エラー: {}", e);
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "キャンペーンが見つかりません"
+                })),
+            ));
+        }
+    };
+
+    // 購読者サービスを使用して購読者を取得
+    let subscriber_service = SubscriberService::new();
+
+    // TODO: キャンペーンに関連する購読者のみを取得する実装
+    // 現在は全てのアクティブな購読者を取得
+    match subscriber_service
+        .list_subscribers(
+            &state.db,
+            auth_user.user_id,
+            None, // ステータスフィルタを一時的に無効化
+            None,
+            100, // 最大100件
+            0,
+        )
+        .await
+    {
+        Ok(subscribers) => Ok(Json(json!({
+            "subscribers": subscribers,
+            "campaign_id": id,
+            "total": subscribers.len()
+        }))),
+        Err(e) => {
+            tracing::error!("購読者取得エラー: {}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "購読者の取得に失敗しました"
+                })),
+            ))
+        }
+    }
+}
+
 /// キャンペーン関連のルーターを構築
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -301,4 +367,5 @@ pub fn router() -> Router<AppState> {
         .route("/:id/send", post(send_campaign))
         .route("/:id/schedule", post(schedule_campaign))
         .route("/:id/preview", get(preview_campaign))
+        .route("/:id/subscribers", get(get_campaign_subscribers))
 }

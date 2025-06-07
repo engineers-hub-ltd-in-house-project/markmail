@@ -9,6 +9,45 @@ use crate::models::subscriber::{
     SubscriberListResponse, SubscriberStatus, UpdateSubscriberRequest,
 };
 
+/// 購読者サービス構造体
+pub struct SubscriberService;
+
+impl Default for SubscriberService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SubscriberService {
+    /// 新しいインスタンスを作成
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// 購読者一覧を取得
+    pub async fn list_subscribers(
+        &self,
+        pool: &PgPool,
+        user_id: Uuid,
+        status: Option<SubscriberStatus>,
+        tag: Option<&str>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Subscriber>> {
+        let subscribers = subscribers::list_subscribers(
+            pool,
+            user_id,
+            Some(limit),
+            Some(offset),
+            status,
+            None,
+            tag,
+        )
+        .await?;
+        Ok(subscribers)
+    }
+}
+
 /// 購読者一覧を取得（フィルタリング、ページネーション対応）
 pub async fn list_subscribers(
     pool: &PgPool,

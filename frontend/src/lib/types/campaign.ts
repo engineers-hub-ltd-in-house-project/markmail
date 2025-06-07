@@ -25,7 +25,8 @@ export interface Campaign {
   recipient_list?: string[];
   scheduled_at?: string;
   sent_at?: string;
-  total_recipients: number;
+  recipient_count: number;
+  sent_count: number;
   opened_count: number;
   clicked_count: number;
   created_at: string;

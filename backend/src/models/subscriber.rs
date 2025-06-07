@@ -72,6 +72,18 @@ pub struct CustomFieldMapping {
     pub column: usize,
 }
 
+// 購読者一覧リクエストオプション
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct ListSubscriberOptions {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub status: Option<String>,
+    pub sort_by: Option<String>,
+    pub sort_order: Option<String>,
+}
+
 // 購読者一覧レスポンス
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SubscriberListResponse {

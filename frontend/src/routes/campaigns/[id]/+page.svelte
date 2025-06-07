@@ -21,12 +21,16 @@
   // 状態管理
   let isLoading = true;
   let isPreviewLoading = false;
+  let isSending = false;
+  let isScheduling = false;
   let error: string | null = null;
   let campaign: Campaign | null = null;
   let previewHtml: string | null = null;
   let showPreview = false;
   let showScheduleModal = false;
   let scheduleDate: string = "";
+  let sendingProgress = 0;
+  let subscriberCount = 0;
 
   // キャンペーン情報を取得
   async function fetchCampaign() {
@@ -102,20 +106,81 @@
   async function sendCampaign() {
     if (!campaign) return;
 
-    if (!confirm("このキャンペーンを今すぐ送信してもよろしいですか？")) {
-      return;
+    // 購読者数を取得
+    try {
+      const subscribers =
+        await campaignService.getCampaignSubscribers(campaignId);
+      subscriberCount = subscribers.length;
+
+      if (subscriberCount === 0) {
+        error =
+          "送信先の購読者が設定されていません。購読者を登録してからお試しください。";
+        return;
+      }
+
+      if (
+        !confirm(
+          `このキャンペーンを${subscriberCount}人の購読者に今すぐ送信してもよろしいですか？`,
+        )
+      ) {
+        return;
+      }
+    } catch (err) {
+      console.error("購読者数取得エラー:", err);
+      // エンドポイントが存在しない場合は、とりあえず送信を続行（後で修正）
+      if (err instanceof Error && err.message.includes("404")) {
+        if (!confirm("このキャンペーンを送信してもよろしいですか？")) {
+          return;
+        }
+      } else {
+        error = "購読者数の取得に失敗しました";
+        return;
+      }
     }
 
     error = null;
+    isSending = true;
+    sendingProgress = 0;
 
     try {
+      // 送信進捗のシミュレーション（実際にはWebSocketやSSEで実装することを推奨）
+      const progressInterval = setInterval(() => {
+        if (sendingProgress < 90) {
+          sendingProgress += Math.random() * 20;
+          if (sendingProgress > 90) sendingProgress = 90;
+        }
+      }, 500);
+
       await campaignService.sendCampaign(campaignId);
-      // 送信成功後、キャンペーン情報を再取得
-      fetchCampaign();
+
+      clearInterval(progressInterval);
+      sendingProgress = 100;
+
+      // 送信成功後、少し待ってからキャンペーン情報を再取得
+      setTimeout(() => {
+        fetchCampaign();
+        isSending = false;
+        sendingProgress = 0;
+      }, 1500);
     } catch (err) {
       console.error("キャンペーン送信エラー:", err);
-      error =
-        err instanceof Error ? err.message : "キャンペーンの送信に失敗しました";
+      isSending = false;
+      sendingProgress = 0;
+
+      // エラーメッセージの詳細化
+      if (err instanceof Error) {
+        if (err.message.includes("rate limit")) {
+          error =
+            "送信レート制限に達しました。しばらく待ってから再度お試しください。";
+        } else if (err.message.includes("email service")) {
+          error =
+            "メール送信サービスでエラーが発生しました。管理者に連絡してください。";
+        } else {
+          error = err.message;
+        }
+      } else {
+        error = "キャンペーンの送信に失敗しました";
+      }
     }
   }
 
@@ -124,6 +189,7 @@
     if (!campaign || !scheduleDate) return;
 
     error = null;
+    isScheduling = true;
 
     try {
       const scheduledAt = new Date(scheduleDate).toISOString();
@@ -140,6 +206,8 @@
         err instanceof Error
           ? err.message
           : "キャンペーンのスケジュールに失敗しました";
+    } finally {
+      isScheduling = false;
     }
   }
 
@@ -284,11 +352,19 @@
               {/if}
 
               <button
-                class="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+                class="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 on:click={sendCampaign}
+                disabled={isSending}
               >
-                <Send class="w-4 h-4 mr-2" />
-                今すぐ送信
+                {#if isSending}
+                  <div
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                  ></div>
+                  送信中...
+                {:else}
+                  <Send class="w-4 h-4 mr-2" />
+                  今すぐ送信
+                {/if}
               </button>
             {/if}
 
@@ -304,6 +380,31 @@
           </div>
         </div>
       </div>
+
+      <!-- 送信進捗バー -->
+      {#if isSending}
+        <div class="px-6 py-4 bg-blue-50 border-b border-blue-200">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-blue-700">
+              キャンペーンを送信中...
+            </span>
+            <span class="text-sm text-blue-600">
+              {Math.round(sendingProgress)}%
+            </span>
+          </div>
+          <div class="w-full bg-blue-200 rounded-full h-2">
+            <div
+              class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style="width: {sendingProgress}%"
+            ></div>
+          </div>
+          {#if subscriberCount > 0}
+            <p class="text-xs text-blue-600 mt-2">
+              {subscriberCount}人の購読者にメールを送信しています
+            </p>
+          {/if}
+        </div>
+      {/if}
 
       <!-- キャンペーン詳細情報 -->
       <div class="p-6">
@@ -371,15 +472,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">送信数</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.total_recipients}
+                    {campaign.sent_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封率</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.total_recipients > 0
-                      ? `${Math.round((campaign.opened_count / campaign.total_recipients) * 100)}%`
+                    {campaign.sent_count > 0
+                      ? `${Math.round((campaign.opened_count / campaign.sent_count) * 100)}%`
                       : "0%"}
                   </dd>
                 </div>
@@ -387,15 +488,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封数</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.opened_count}
+                    {campaign.opened_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">クリック率</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.total_recipients > 0
-                      ? `${Math.round((campaign.clicked_count / campaign.total_recipients) * 100)}%`
+                    {campaign.sent_count > 0
+                      ? `${Math.round((campaign.clicked_count / campaign.sent_count) * 100)}%`
                       : "0%"}
                   </dd>
                 </div>
@@ -499,11 +600,19 @@
               キャンセル
             </button>
             <button
-              class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               on:click={scheduleCampaign}
+              disabled={isScheduling}
             >
-              <Calendar class="w-4 h-4 mr-2" />
-              スケジュール設定
+              {#if isScheduling}
+                <div
+                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                ></div>
+                設定中...
+              {:else}
+                <Calendar class="w-4 h-4 mr-2" />
+                スケジュール設定
+              {/if}
             </button>
           </div>
         </div>

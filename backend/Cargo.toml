@@ -34,8 +34,16 @@ comrak = "0.21"
 regex = "1.10"
 
 # メール
-lettre = "0.11"
+lettre = { version = "0.11", features = ["tokio1-native-tls", "smtp-transport", "hostname", "pool", "builder"] }
 handlebars = "4.5"
+html2text = "0.12"
+
+# AWS SDK
+aws-config = "1.5"
+aws-sdk-sesv2 = "1.47"
+
+# 非同期トレイト
+async-trait = "0.1"
 
 # ログ
 tracing = "0.1"

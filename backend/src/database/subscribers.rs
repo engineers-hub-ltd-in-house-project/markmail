@@ -3,8 +3,35 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::subscriber::{
-    CreateSubscriberRequest, Subscriber, SubscriberStatus, UpdateSubscriberRequest,
+    CreateSubscriberRequest, ListSubscriberOptions, Subscriber, SubscriberStatus,
+    UpdateSubscriberRequest,
 };
+
+/// 購読者一覧を取得（オプション指定版）
+pub async fn list_user_subscribers(
+    pool: &PgPool,
+    user_id: Uuid,
+    options: &ListSubscriberOptions,
+) -> Result<Vec<Subscriber>, sqlx::Error> {
+    let status = options.status.as_ref().and_then(|s| match s.as_str() {
+        "active" => Some(SubscriberStatus::Active),
+        "unsubscribed" => Some(SubscriberStatus::Unsubscribed),
+        "bounced" => Some(SubscriberStatus::Bounced),
+        "complained" => Some(SubscriberStatus::Complained),
+        _ => None,
+    });
+
+    list_subscribers(
+        pool,
+        user_id,
+        options.limit,
+        options.offset,
+        status,
+        options.search.as_deref(),
+        options.tag.as_deref(),
+    )
+    .await
+}
 
 /// 購読者一覧を取得（ユーザー別、ページネーション対応）
 pub async fn list_subscribers(
