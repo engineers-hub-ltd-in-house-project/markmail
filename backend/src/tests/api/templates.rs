@@ -52,12 +52,11 @@ pub async fn create_test_user(pool: &PgPool) -> Uuid {
 pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
     let template_request = CreateTemplateRequest {
         name: "テストテンプレート".to_string(),
-        description: Some("これはテスト用のテンプレートです".to_string()),
+        subject_template: "テスト件名".to_string(),
         markdown_content: "# テスト\n\nこれは**テスト**です。\n\n{{name}}さん、こんにちは！"
             .to_string(),
-        html_content: None,
-        category: Some("テスト".to_string()),
-        variables: Some(vec!["name".to_string()]),
+        variables: Some(json!({"name": "テスト値"})),
+        is_public: Some(false),
     };
 
     // データベースに直接挿入
@@ -65,19 +64,19 @@ pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
     sqlx::query!(
         r#"
         INSERT INTO templates (
-            id, user_id, name, description, markdown_content, html_content, 
-            category, variables, created_at, updated_at
+            id, user_id, name, subject_template, markdown_content, html_content, 
+            variables, is_public, created_at, updated_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         "#,
         template_id,
         user_id,
         template_request.name,
-        template_request.description,
+        template_request.subject_template,
         template_request.markdown_content,
-        template_request.html_content,
-        template_request.category,
-        &template_request.variables.unwrap_or_default() as &[String],
+        Option::<String>::None,
+        template_request.variables.unwrap_or(json!({})),
+        template_request.is_public.unwrap_or(false),
     )
     .execute(pool)
     .await
@@ -88,8 +87,8 @@ pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
         Template,
         r#"
         SELECT 
-            id, user_id, name, description, markdown_content, html_content,
-            category, variables, created_at, updated_at
+            id, user_id, name, subject_template, markdown_content, html_content,
+            variables, is_public, created_at, updated_at
         FROM templates
         WHERE id = $1
         "#,
@@ -107,7 +106,9 @@ pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
     let claims = Claims {
         sub: user_id.to_string(),
         exp: chrono::Utc::now().timestamp() + 3600, // 1時間有効
+        iat: chrono::Utc::now().timestamp(),
         email: format!("test-{}@example.com", user_id),
+        name: "Test User".to_string(),
         token_type: TokenType::Access,
     };
 

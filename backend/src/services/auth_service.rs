@@ -9,7 +9,7 @@ use crate::{
     database::{refresh_tokens, users},
     models::user::{AuthResponse, LoginRequest, RegisterRequest, UserResponse},
     utils::{
-        jwt::{generate_refresh_token, generate_token, verify_token, Claims},
+        jwt::{generate_refresh_token, generate_token, verify_token, Claims, TokenType},
         password::{hash_password, verify_password},
     },
 };
@@ -40,6 +40,14 @@ pub enum AuthError {
 
 pub struct AuthService {
     pool: PgPool,
+}
+
+impl Default for AuthService {
+    fn default() -> Self {
+        let pool = PgPool::connect_lazy("postgres://invalid_url_for_default")
+            .expect("This is only for default impl and should never be used");
+        Self { pool }
+    }
 }
 
 impl AuthService {
@@ -87,7 +95,13 @@ impl AuthService {
             };
 
         // JWTトークンを生成
-        let claims = Claims::new(user.id, user.email.clone(), user.name.clone(), 24);
+        let claims = Claims::new(
+            user.id,
+            user.email.clone(),
+            user.name.clone(),
+            24,
+            TokenType::Access,
+        );
         let token = generate_token(&claims)?;
 
         // リフレッシュトークンを生成して保存
@@ -119,7 +133,13 @@ impl AuthService {
         }
 
         // JWTトークンを生成
-        let claims = Claims::new(user.id, user.email.clone(), user.name.clone(), 24);
+        let claims = Claims::new(
+            user.id,
+            user.email.clone(),
+            user.name.clone(),
+            24,
+            TokenType::Access,
+        );
         let token = generate_token(&claims)?;
 
         // リフレッシュトークンを生成して保存
@@ -154,7 +174,13 @@ impl AuthService {
         refresh_tokens::delete_refresh_token(&self.pool, refresh_token).await?;
 
         // 新しいJWTトークンを生成
-        let claims = Claims::new(user.id, user.email.clone(), user.name.clone(), 24);
+        let claims = Claims::new(
+            user.id,
+            user.email.clone(),
+            user.name.clone(),
+            24,
+            TokenType::Access,
+        );
         let token = generate_token(&claims)?;
 
         // 新しいリフレッシュトークンを生成して保存

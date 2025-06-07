@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{extract::State, http::StatusCode, response::Json, routing::post, Router};
 use serde_json::{json, Value};
 use validator::Validate;
 
@@ -111,4 +111,12 @@ pub async fn refresh_token(
             ))
         }
     }
+}
+
+/// 認証関連のルーターを構築
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/register", post(register))
+        .route("/login", post(login))
+        .route("/refresh", post(refresh_token))
 }

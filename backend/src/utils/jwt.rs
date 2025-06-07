@@ -4,6 +4,13 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
+// トークンタイプ
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+pub enum TokenType {
+    Access,
+    Refresh,
+}
+
 #[derive(Error, Debug)]
 pub enum JwtError {
     #[error("JWTエンコードエラー: {0}")]
@@ -18,12 +25,19 @@ pub struct Claims {
     pub sub: String, // ユーザーID
     pub email: String,
     pub name: String,
-    pub exp: i64, // 有効期限
-    pub iat: i64, // 発行日時
+    pub exp: i64,              // 有効期限
+    pub iat: i64,              // 発行日時
+    pub token_type: TokenType, // トークンタイプ
 }
 
 impl Claims {
-    pub fn new(user_id: Uuid, email: String, name: String, expiration_hours: i64) -> Self {
+    pub fn new(
+        user_id: Uuid,
+        email: String,
+        name: String,
+        expiration_hours: i64,
+        token_type: TokenType,
+    ) -> Self {
         let now = Utc::now();
         let exp = now + Duration::hours(expiration_hours);
 
@@ -33,6 +47,7 @@ impl Claims {
             name,
             exp: exp.timestamp(),
             iat: now.timestamp(),
+            token_type,
         }
     }
 }
@@ -119,6 +134,7 @@ mod tests {
             "test@example.com".to_string(),
             "Test User".to_string(),
             24, // 24時間
+            TokenType::Access,
         );
 
         let token = generate_token(&claims).unwrap();
@@ -127,5 +143,6 @@ mod tests {
         let verified = verify_token(&token).unwrap();
         assert_eq!(verified.claims.sub, user_id.to_string());
         assert_eq!(verified.claims.email, "test@example.com");
+        assert_eq!(verified.claims.token_type, TokenType::Access);
     }
 }
