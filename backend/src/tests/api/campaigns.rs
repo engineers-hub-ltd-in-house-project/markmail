@@ -1,6 +1,5 @@
 use axum::{
     body::{self, Body},
-    extract::rejection::JsonRejection,
     http::{Method, Request, StatusCode},
 };
 use chrono::Utc;
@@ -10,13 +9,8 @@ use uuid::Uuid;
 
 use crate::{
     create_app,
-    models::{
-        campaign::{CampaignResponse, CreateCampaignRequest},
-        template::Template,
-        user::User,
-    },
+    models::campaign::{CampaignResponse, CreateCampaignRequest},
     tests::api::templates::{create_test_template, get_test_user_with_jwt},
-    AppState,
 };
 
 // テスト用のキャンペーン作成リクエスト
@@ -31,15 +25,14 @@ fn get_test_campaign_request(template_id: Uuid) -> CreateCampaignRequest {
 
 // テスト用のキャンペーンを作成
 pub async fn create_test_campaign(
-    app: &axum::Router,
-    user: &User,
+    app: axum::Router,
+    _user_id: Uuid,
     auth_token: &str,
     template_id: Uuid,
 ) -> Result<CampaignResponse, (StatusCode, Value)> {
     let request = get_test_campaign_request(template_id);
 
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -53,7 +46,9 @@ pub async fn create_test_campaign(
         .unwrap();
 
     let status = response.status();
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: Value = serde_json::from_slice(&body).unwrap();
 
     if status != StatusCode::OK {
@@ -67,20 +62,18 @@ pub async fn create_test_campaign(
 #[tokio::test]
 async fn test_create_campaign() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // テストテンプレートの作成
-    let template = create_test_template(&app, &user, &token).await.unwrap();
+    let template = create_test_template(&pool, user_id).await;
 
     // キャンペーン作成
     let campaign_request = get_test_campaign_request(template.id);
 
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -97,7 +90,9 @@ async fn test_create_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let campaign_response: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // レスポンスの検証
@@ -119,23 +114,21 @@ async fn test_create_campaign() {
 #[tokio::test]
 async fn test_get_campaign() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // テストテンプレートの作成
-    let template = create_test_template(&app, &user, &token).await.unwrap();
+    let template = create_test_template(&pool, user_id).await;
 
     // テストキャンペーンの作成
-    let campaign = create_test_campaign(&app, &user, &token, template.id)
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template.id)
         .await
         .unwrap();
 
     // キャンペーン取得
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -149,7 +142,9 @@ async fn test_get_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let campaign_response: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // レスポンスの検証
@@ -161,17 +156,16 @@ async fn test_get_campaign() {
 #[tokio::test]
 async fn test_update_campaign() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // テストテンプレートの作成
-    let template = create_test_template(&app, &user, &token).await.unwrap();
+    let template = create_test_template(&pool, user_id).await;
 
     // テストキャンペーンの作成
-    let campaign = create_test_campaign(&app, &user, &token, template.id)
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template.id)
         .await
         .unwrap();
 
@@ -183,7 +177,6 @@ async fn test_update_campaign() {
     });
 
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
@@ -198,7 +191,9 @@ async fn test_update_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let updated_campaign: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // 更新が反映されていることを確認
@@ -216,17 +211,16 @@ async fn test_update_campaign() {
 #[tokio::test]
 async fn test_schedule_campaign() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // テストテンプレートの作成
-    let template = create_test_template(&app, &user, &token).await.unwrap();
+    let template = create_test_template(&pool, user_id).await;
 
     // テストキャンペーンの作成
-    let campaign = create_test_campaign(&app, &user, &token, template.id)
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template.id)
         .await
         .unwrap();
 
@@ -237,7 +231,6 @@ async fn test_schedule_campaign() {
     });
 
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -254,7 +247,9 @@ async fn test_schedule_campaign() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let scheduled_campaign: CampaignResponse = serde_json::from_slice(&body).unwrap();
 
     // ステータスとスケジュール日時が更新されていることを確認
@@ -266,14 +261,13 @@ async fn test_schedule_campaign() {
 #[ignore] // 実際のDBが必要なのでignore
 async fn test_list_campaigns() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // テストテンプレートの作成
-    let template = create_test_template(&app, &user, &token).await.unwrap();
+    let template = create_test_template(&pool, user_id).await;
 
     // 複数のテストキャンペーンを作成
     for i in 1..=3 {
@@ -305,7 +299,6 @@ async fn test_list_campaigns() {
 
     // キャンペーン一覧を取得
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -319,7 +312,9 @@ async fn test_list_campaigns() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let campaigns_response: Value = serde_json::from_slice(&body).unwrap();
 
     // 少なくとも作成したキャンペーンの数だけあることを確認
@@ -336,11 +331,10 @@ async fn test_list_campaigns() {
 #[ignore] // 実際のDBが必要なのでignore
 async fn test_campaign_preview() {
     // テスト用のアプリとDBプールの準備
-    let app_state = AppState::new_for_test().await;
-    let app = create_app(app_state.clone());
+    let (app, pool, _redis, _config) = create_app().await;
 
     // テストユーザーとJWTの取得
-    let (user, token) = get_test_user_with_jwt(&app).await;
+    let (user_id, token) = get_test_user_with_jwt(&pool).await;
 
     // マークダウンを含むテストテンプレートの作成
     let template_request = json!({
@@ -373,18 +367,19 @@ async fn test_campaign_preview() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let template_response: Value = serde_json::from_slice(&body).unwrap();
     let template_id = Uuid::parse_str(template_response["id"].as_str().unwrap()).unwrap();
 
     // テストキャンペーンの作成
-    let campaign = create_test_campaign(&app, &user, &token, template_id)
+    let campaign = create_test_campaign(app.clone(), user_id, &token, template_id)
         .await
         .unwrap();
 
     // キャンペーンプレビューを取得
     let response = app
-        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -398,7 +393,9 @@ async fn test_campaign_preview() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = body::to_bytes(response.into_body()).await.unwrap();
+    let body = body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let preview_response: Value = serde_json::from_slice(&body).unwrap();
 
     // HTMLが生成されていることを確認

@@ -220,7 +220,5 @@ impl AuthService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     // テストは実際のデータベース接続が必要なため、統合テストで実装する
 }

@@ -1,4 +1,4 @@
-FROM rust:1.75-slim
+FROM rust:1.78-slim
 
 WORKDIR /app
 
@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# cargo-watch をインストール
-RUN cargo install cargo-watch
+# cargo-watch をインストール (--locked で依存関係を固定)
+RUN cargo install cargo-watch --locked
 
 # 依存関係をコピーしてビルド (キャッシュ最適化)
 COPY Cargo.toml Cargo.lock ./

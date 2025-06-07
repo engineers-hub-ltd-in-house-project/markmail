@@ -20,11 +20,7 @@ pub async fn create_test_app() -> (
     redis::Client,
     std::sync::Arc<utils::config::Config>,
 ) {
-    use axum::{
-        middleware::from_fn,
-        routing::{get, post},
-    };
-    use middleware::{auth::auth_middleware, cors::cors_layer, logging::logging_layer};
+    use middleware::{cors::cors_layer, logging::logging_layer};
 
     dotenvy::dotenv().ok();
 
@@ -35,18 +31,9 @@ pub async fn create_test_app() -> (
     let config = app_state.config.clone();
 
     // ルーターを構築
-    let router = axum::Router::new()
-        .route("/api/health", get(|| async { "OK" }))
-        .nest("/api/auth", api::auth::router())
-        .nest("/api/users", api::users::router())
-        .nest("/api/templates", api::templates::router())
-        .nest("/api/campaigns", api::campaigns::router())
-        .nest("/api/subscribers", api::subscribers::router())
-        .nest("/api/markdown", api::markdown::router())
-        .nest("/api/integrations", api::integrations::router())
+    let router = api::create_routes()
         .layer(logging_layer())
         .layer(cors_layer())
-        .layer(from_fn(auth_middleware))
         .with_state(app_state);
 
     (router, pool, redis, config)
@@ -67,8 +54,6 @@ pub struct AppState {
 impl AppState {
     #[cfg(test)]
     pub async fn new_for_test() -> Self {
-        use sqlx::postgres::PgPoolOptions;
-
         dotenvy::dotenv().ok();
 
         // テスト用の設定

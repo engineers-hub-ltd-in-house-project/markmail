@@ -52,9 +52,7 @@ pub fn create_routes() -> Router<AppState> {
             get(campaigns::preview_campaign),
         )
         // 購読者管理
-        .route("/api/subscribers", get(subscribers::list_subscribers))
-        .route("/api/subscribers", post(subscribers::add_subscriber))
-        .route("/api/subscribers/import", post(subscribers::import_csv))
+        .nest("/api/subscribers", subscribers::router())
         // マークダウン処理
         .route("/api/markdown/render", post(markdown::render_markdown))
         .route("/api/markdown/validate", post(markdown::validate_markdown))

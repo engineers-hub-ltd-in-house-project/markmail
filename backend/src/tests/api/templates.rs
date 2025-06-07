@@ -4,18 +4,15 @@ use crate::{
     models::template::{
         CreateTemplateRequest, PreviewTemplateRequest, Template, UpdateTemplateRequest,
     },
-    services::auth_service::AuthService,
     utils::jwt::{Claims, TokenType},
     AppState,
 };
 use axum::{
     extract::{Extension, Json as AxumJson, Path, Query},
     http::StatusCode,
-    response::Json,
 };
-use serde_json::{json, Value};
+use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::sync::Arc;
 use uuid::Uuid;
 
 // テスト用のヘルパー関数
@@ -87,8 +84,8 @@ pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
         Template,
         r#"
         SELECT 
-            id, user_id, name, subject_template, markdown_content, html_content,
-            variables, is_public, created_at, updated_at
+            id, user_id, name, subject_template, markdown_content, html_content as "html_content?",
+            variables, is_public as "is_public!", created_at as "created_at!", updated_at as "updated_at!"
         FROM templates
         WHERE id = $1
         "#,
@@ -280,14 +277,14 @@ async fn test_update_template() {
     assert!(update_result.is_ok(), "Template update should succeed");
 
     let updated_template = update_result.unwrap().0;
-    assert_eq!(updated_template.name, update_req.name.unwrap());
+    assert_eq!(updated_template.name, update_req.name.clone().unwrap());
     assert_eq!(
         updated_template.subject_template,
-        update_req.subject_template.unwrap()
+        update_req.subject_template.clone().unwrap()
     );
     assert_eq!(
         updated_template.markdown_content,
-        update_req.markdown_content.unwrap()
+        update_req.markdown_content.clone().unwrap()
     );
     assert_eq!(updated_template.is_public, update_req.is_public.unwrap());
 
@@ -475,7 +472,7 @@ async fn test_list_templates() {
             is_public: None,
         };
 
-        templates::create_template(
+        let _ = templates::create_template(
             Extension(auth_user.clone()),
             axum::extract::State(app_state.clone()),
             AxumJson(create_req),
