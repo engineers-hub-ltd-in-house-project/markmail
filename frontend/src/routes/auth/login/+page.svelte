@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { authStore, type User } from "$lib/stores/authStore";
+  import { get } from "svelte/store";
 
   let email = "";
   let password = "";
@@ -11,12 +12,21 @@
 
   // ログイン状態確認
   onMount(() => {
-    // 認証状態のチェック
-    authStore.subscribe((state) => {
+    // 現在の認証状態を即座にチェック
+    const currentState = get(authStore);
+    if (currentState.isAuthenticated) {
+      goto("/templates");
+      return;
+    }
+
+    // 認証状態の変更を監視
+    const unsubscribe = authStore.subscribe((state) => {
       if (state.isAuthenticated) {
         goto("/templates");
       }
     });
+
+    return unsubscribe;
   });
 
   async function handleLogin() {
@@ -96,7 +106,6 @@
             name="email"
             type="email"
             autocomplete="email"
-            required
             bind:value={email}
             class="appearance-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10"
             placeholder="メールアドレス"
@@ -109,7 +118,6 @@
             name="password"
             type="password"
             autocomplete="current-password"
-            required
             bind:value={password}
             class="appearance-none rounded-b-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10"
             placeholder="パスワード"

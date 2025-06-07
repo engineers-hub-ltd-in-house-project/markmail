@@ -1,21 +1,10 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { authStore } from "$lib/stores/authStore";
-
-  let isAuthenticated = false;
-
-  authStore.subscribe((state) => {
-    isAuthenticated = state.isAuthenticated;
-  });
 
   onMount(() => {
-    // 認証状態によって適切なページにリダイレクト
-    if (isAuthenticated) {
-      goto("/templates");
-    } else {
-      goto("/auth/login");
-    }
+    // ランディングページにリダイレクト
+    goto("/lp");
   });
 </script>
 
