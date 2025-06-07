@@ -315,16 +315,20 @@ npm run lint
   - [x] テンプレート詳細表示画面
   - [x] 認証画面の実装（ログイン・ユーザー登録）
   - [ ] エラーハンドリングの改善
-- [ ] **キャンペーン管理機能（フロントエンド）**
-  - [ ] キャンペーン一覧画面
-  - [ ] キャンペーン作成・編集画面
-  - [ ] キャンペーンスケジュール設定UI
-  - [ ] キャンペーン送信・プレビュー機能
+- [x] **キャンペーン管理機能（フロントエンド）**
+  - [x] キャンペーン一覧画面
+  - [x] キャンペーン作成・編集画面
+  - [x] キャンペーンスケジュール設定UI
+  - [x] キャンペーン送信・プレビュー機能
 
 ### 📋 今後の予定
 
 - [ ] メール送信機能（AWS SES/SendGrid 統合）
-- [ ] 購読者管理・インポート機能
+- [x] **購読者管理・インポート機能**
+  - [x] 購読者一覧画面
+  - [x] 購読者詳細・編集画面
+  - [x] CSV一括インポート機能
+  - [x] タグ管理機能
 - [ ] GitHub 連携（README 直接インポート）
 - [ ] **外部システム連携機能**
   - [ ] Salesforce インテグレーション
@@ -504,11 +508,29 @@ curl -X POST http://localhost:3000/api/markdown/render \
 - `GET /api/campaigns/:id/preview` - キャンペーンプレビュー
   - レスポンス: `{"html": "変換されたHTML"}`
 
-### 購読者（未実装）
+### 購読者 ✅（フロントエンド実装済み）
 
 - `GET /api/subscribers` - 購読者一覧
+  - パラメータ:
+    `?limit=50&offset=0&search=query&tag=tag&status=active&sort_by=created_at&sort_order=DESC`
+  - レスポンス: 購読者一覧、総数、ページング情報
 - `POST /api/subscribers` - 購読者追加
+  - リクエスト:
+    `{"email": "user@example.com", "name": "名前", "tags": ["タグ1", "タグ2"], "custom_fields": {"key": "value"}}`
+  - レスポンス: 作成された購読者情報
+- `GET /api/subscribers/:id` - 購読者詳細取得
+  - レスポンス: 購読者詳細情報
+- `PUT /api/subscribers/:id` - 購読者更新
+  - リクエスト: 更新したいフィールドのみ
+  - レスポンス: 更新された購読者情報
+- `DELETE /api/subscribers/:id` - 購読者削除
+  - レスポンス: 削除確認メッセージ
 - `POST /api/subscribers/import` - CSV 一括インポート
+  - リクエスト: マルチパートフォームデータ (file: CSVファイル, tag: 共通タグ)
+  - レスポンス:
+    `{"message": "インポート完了", "imported": 10, "failed": 0, "errors": []}`
+- `GET /api/subscribers/tags` - 利用可能なタグ一覧
+  - レスポンス: `{"tags": ["タグ1", "タグ2", "タグ3"]}`
 
 ## 🎨 コーディング規約
 
