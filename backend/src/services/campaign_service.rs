@@ -195,28 +195,9 @@ impl CampaignService {
 mod tests {
     use super::*;
     use chrono::Duration;
-    use mockall::predicate::*;
-    use mockall::*;
 
-    // テスト用のモックを作成
-    #[cfg(test)]
-    mockall::mock! {
-        pub TemplateRepo {}
-        impl TemplateRepo {
-            pub async fn find_template_by_id(&self, id: Uuid, user_id: Option<Uuid>) -> Result<Option<crate::models::template::Template>, sqlx::Error>;
-        }
-    }
-
-    #[cfg(test)]
-    mockall::mock! {
-        pub CampaignRepo {}
-        impl CampaignRepo {
-            pub async fn create_campaign(&self, user_id: Uuid, request: &CreateCampaignRequest) -> Result<Campaign, sqlx::Error>;
-            pub async fn update_campaign(&self, campaign_id: Uuid, user_id: Uuid, request: &UpdateCampaignRequest) -> Result<Option<Campaign>, sqlx::Error>;
-            pub async fn schedule_campaign(&self, campaign_id: Uuid, user_id: Uuid, scheduled_at: chrono::DateTime<chrono::Utc>) -> Result<Option<Campaign>, sqlx::Error>;
-            pub async fn start_campaign_sending(&self, campaign_id: Uuid, user_id: Uuid) -> Result<Option<Campaign>, sqlx::Error>;
-        }
-    }
+    // mockallの使用は現在のテストでは不要なので削除
+    // 必要になったら適切に実装する
 
     // キャンペーンスケジュールのテスト
     #[test]

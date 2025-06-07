@@ -10,6 +10,45 @@ pub mod utils;
 #[cfg(test)]
 pub mod tests;
 
+#[cfg(test)]
+pub use create_test_app as create_app;
+
+#[cfg(test)]
+pub async fn create_test_app() -> (
+    axum::Router,
+    sqlx::PgPool,
+    redis::Client,
+    std::sync::Arc<utils::config::Config>,
+) {
+    use axum::routing::{get, post};
+    use middleware::{auth::auth_middleware, cors::cors_layer, logging::logging_layer};
+
+    dotenvy::dotenv().ok();
+
+    // テスト用のAppStateを作成
+    let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let redis = app_state.redis.clone();
+    let config = app_state.config.clone();
+
+    // ルーターを構築
+    let router = axum::Router::new()
+        .route("/api/health", get(|| async { "OK" }))
+        .nest("/api/auth", api::auth::router())
+        .nest("/api/users", api::users::router())
+        .nest("/api/templates", api::templates::router())
+        .nest("/api/campaigns", api::campaigns::router())
+        .nest("/api/subscribers", api::subscribers::router())
+        .nest("/api/markdown", api::markdown::router())
+        .nest("/api/integrations", api::integrations::router())
+        .layer(logging_layer())
+        .layer(cors_layer())
+        .layer(auth_middleware())
+        .with_state(app_state);
+
+    (router, pool, redis, config)
+}
+
 use axum::extract::FromRef;
 use sqlx::PgPool;
 use std::sync::Arc;

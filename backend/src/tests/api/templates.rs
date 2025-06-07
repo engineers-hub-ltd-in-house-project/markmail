@@ -1,7 +1,9 @@
 use crate::{
     api::templates,
     middleware::auth::AuthUser,
-    models::template::{CreateTemplateRequest, PreviewTemplateRequest, UpdateTemplateRequest},
+    models::template::{CreateTemplateRequest, PreviewTemplateRequest, Template, UpdateTemplateRequest},
+    services::auth_service::AuthService,
+    utils::jwt::{Claims, TokenType},
     AppState,
 };
 use axum::{
@@ -26,7 +28,7 @@ async fn setup_test_db() -> PgPool {
         .expect("Failed to connect to database")
 }
 
-async fn create_test_user(pool: &PgPool) -> Uuid {
+pub async fn create_test_user(pool: &PgPool) -> Uuid {
     let user_id = Uuid::new_v4();
     let hashed_password = crate::utils::password::hash_password("password123").unwrap();
 
@@ -44,6 +46,73 @@ async fn create_test_user(pool: &PgPool) -> Uuid {
     user_id
 }
 
+// テスト用のテンプレートを作成するヘルパー関数
+pub async fn create_test_template(pool: &PgPool, user_id: Uuid) -> Template {
+    let template_request = CreateTemplateRequest {
+        name: "テストテンプレート".to_string(),
+        description: Some("これはテスト用のテンプレートです".to_string()),
+        markdown_content: "# テスト\n\nこれは**テスト**です。\n\n{{name}}さん、こんにちは！".to_string(),
+        html_content: None,
+        category: Some("テスト".to_string()),
+        variables: Some(vec!["name".to_string()]),
+    };
+
+    // データベースに直接挿入
+    let template_id = Uuid::new_v4();
+    sqlx::query!(
+        r#"
+        INSERT INTO templates (
+            id, user_id, name, description, markdown_content, html_content, 
+            category, variables, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        "#,
+        template_id,
+        user_id,
+        template_request.name,
+        template_request.description,
+        template_request.markdown_content,
+        template_request.html_content,
+        template_request.category,
+        &template_request.variables.unwrap_or_default() as &[String],
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create test template");
+
+    // 作成したテンプレートを取得
+    sqlx::query_as!(
+        Template,
+        r#"
+        SELECT 
+            id, user_id, name, description, markdown_content, html_content,
+            category, variables, created_at, updated_at
+        FROM templates
+        WHERE id = $1
+        "#,
+        template_id
+    )
+    .fetch_one(pool)
+    .await
+    .expect("Failed to fetch test template")
+}
+
+// テスト用のJWTトークンを取得するヘルパー関数
+pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
+    let user_id = create_test_user(pool).await;
+    
+    let claims = Claims {
+        sub: user_id.to_string(),
+        exp: chrono::Utc::now().timestamp() + 3600, // 1時間有効
+        email: format!("test-{}@example.com", user_id),
+        token_type: TokenType::Access,
+    };
+    
+    let token = crate::utils::jwt::generate_token(&claims).expect("Failed to generate JWT");
+    
+    (user_id, format!("Bearer {}", token))
+}
+
 // 各テストは独立した環境で実行する必要があるため、モジュール全体のセットアップではなく
 // 各テスト関数内でテスト環境をセットアップします。
 
@@ -52,11 +121,8 @@ async fn test_create_and_get_template() {
     let pool = setup_test_db().await;
     let user_id = create_test_user(&pool).await;
 
-    let app_state = AppState {
-        db: pool.clone(),
-        // 他のフィールドは必要に応じて設定
-        config: Arc::new(crate::utils::config::Config::default()),
-    };
+    // AppState::new_for_test()を使用してテスト用のAppStateを作成
+    let app_state = AppState::new_for_test().await;
 
     let auth_user = AuthUser {
         user_id,
@@ -87,7 +153,7 @@ async fn test_create_and_get_template() {
     assert!(create_result.is_ok(), "Template creation should succeed");
 
     let template_response = create_result.unwrap().0;
-    let template_id = Uuid::parse_str(&template_response.id).unwrap();
+    let template_id = template_response.id;
 
     assert_eq!(template_response.name, create_req.name);
     assert_eq!(
@@ -157,10 +223,7 @@ async fn test_update_template() {
     let pool = setup_test_db().await;
     let user_id = create_test_user(&pool).await;
 
-    let app_state = AppState {
-        db: pool.clone(),
-        config: Arc::new(crate::utils::config::Config::default()),
-    };
+    let app_state = AppState::new_for_test().await;
 
     let auth_user = AuthUser {
         user_id,
@@ -186,13 +249,14 @@ async fn test_update_template() {
     .unwrap()
     .0;
 
-    let template_id = Uuid::parse_str(&create_result.id).unwrap();
+    let template_id = create_result.id;
 
     // テンプレート更新リクエスト
     let update_req = UpdateTemplateRequest {
         name: Some("Updated Template".to_string()),
         subject_template: Some("Updated Subject".to_string()),
         markdown_content: Some("# Updated Content".to_string()),
+        html_content: None,
         variables: Some(json!({
             "new_var": "new value"
         })),
@@ -252,10 +316,7 @@ async fn test_delete_template() {
     let pool = setup_test_db().await;
     let user_id = create_test_user(&pool).await;
 
-    let app_state = AppState {
-        db: pool.clone(),
-        config: Arc::new(crate::utils::config::Config::default()),
-    };
+    let app_state = AppState::new_for_test().await;
 
     let auth_user = AuthUser {
         user_id,
@@ -281,7 +342,7 @@ async fn test_delete_template() {
     .unwrap()
     .0;
 
-    let template_id = Uuid::parse_str(&create_result.id).unwrap();
+    let template_id = create_result.id;
 
     // テンプレート削除API呼び出し
     let delete_result = templates::delete_template(
@@ -319,10 +380,7 @@ async fn test_template_preview() {
     let pool = setup_test_db().await;
     let user_id = create_test_user(&pool).await;
 
-    let app_state = AppState {
-        db: pool.clone(),
-        config: Arc::new(crate::utils::config::Config::default()),
-    };
+    let app_state = AppState::new_for_test().await;
 
     let auth_user = AuthUser {
         user_id,
@@ -351,7 +409,7 @@ async fn test_template_preview() {
     .unwrap()
     .0;
 
-    let template_id = Uuid::parse_str(&create_result.id).unwrap();
+    let template_id = create_result.id;
 
     // プレビューリクエスト作成
     let preview_req = PreviewTemplateRequest {
@@ -395,10 +453,7 @@ async fn test_list_templates() {
     let pool = setup_test_db().await;
     let user_id = create_test_user(&pool).await;
 
-    let app_state = AppState {
-        db: pool.clone(),
-        config: Arc::new(crate::utils::config::Config::default()),
-    };
+    let app_state = AppState::new_for_test().await;
 
     let auth_user = AuthUser {
         user_id,
