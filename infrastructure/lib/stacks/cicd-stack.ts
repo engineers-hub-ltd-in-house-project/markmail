@@ -146,6 +146,7 @@ export class CICDStack extends cdk.Stack {
               'echo Pushing the Docker images...',
               'docker push $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
               'docker push $ECR_REPOSITORY_URI:latest',
+              'cd ..',
               'printf \'[{"name":"frontend","imageUri":"%s"}]\' $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json',
             ],
           },
