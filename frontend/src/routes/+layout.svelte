@@ -71,6 +71,12 @@
               >
                 購読者
               </a>
+              <a
+                href="/forms"
+                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                フォーム
+              </a>
 
               <!-- ユーザーメニュー -->
               <div class="relative ml-3">

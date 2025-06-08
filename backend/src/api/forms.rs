@@ -19,9 +19,9 @@ use crate::{
 #[derive(Deserialize)]
 pub struct PaginationParams {
     #[serde(default = "default_limit")]
-    limit: i64,
+    pub limit: i64,
     #[serde(default)]
-    offset: i64,
+    pub offset: i64,
 }
 
 fn default_limit() -> i64 {
@@ -37,10 +37,11 @@ pub async fn create_form(
         Ok(form) => Ok((StatusCode::CREATED, Json(form))),
         Err(e) => {
             tracing::error!("フォーム作成エラー: {:?}", e);
+            eprintln!("Form creation error: {:?}", e);
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
-                    "error": "フォームの作成に失敗しました"
+                    "error": format!("フォームの作成に失敗しました: {:?}", e)
                 })),
             ))
         }
