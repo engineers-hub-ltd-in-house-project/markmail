@@ -1,12 +1,23 @@
 # MarkMail
 
-エンジニア向けマークダウンベースメールマーケティングツール
+マークダウンベースのマーケティングオートメーションツール
 
-👉 **開発者向け**: [開発規約](./DEVELOPMENT.md)を必ずお読みください。
+👉 **開発ロードマップ**: [ROADMAP.md](./ROADMAP.md)  
+👉 **開発規約**: [DEVELOPMENT.md](./DEVELOPMENT.md)
+
+## 🤖 AI開発者向けガイドライン
+
+このプロジェクトで作業する際は、以下の原則に従ってください：
+
+1. **既存コードの尊重**: 既に実装済みの機能やパターンを優先的に使用
+2. **テストファースト**: 新機能は必ずテストを先に作成
+3. **型安全性**: TypeScriptの型定義を必ず追加
+4. **エラーハンドリング**: 適切なエラーメッセージとステータスコードを返す
+5. **セキュリティ**: 認証が必要なエンドポイントには必ず認証ミドルウェアを適用
 
 ## 🎯 プロジェクト概要
 
-**MarkMail**は、エンジニアが慣れ親しんだマークダウン記法を使ってメールテンプレートを作成し、効率的なメールマーケティングを実現するツールです。
+MarkMailは、マーケティングオートメーション機能を持つメール配信プラットフォームです。現在は基本機能のみ実装済みで、今後段階的に機能を拡張していきます。
 
 ### 技術スタック
 
@@ -22,172 +33,55 @@
 - **自動整形**: lefthook + Prettier + rustfmt
 - **テスト**: Vitest + Jest + Cargo test
 
-## 🏗️ システムアーキテクチャ
-
-以下は MarkMail のシステム全体のアーキテクチャ図です：
-
-<div align="center">
-  <img src="docs/architecture-simple.svg" alt="MarkMail システムアーキテクチャ" width="100%">
-</div>
-
-<details>
-<summary>詳細なアーキテクチャ図</summary>
-
-![詳細アーキテクチャ](docs/architecture.svg)
-
-</details>
-
-<details>
-<summary>テキストベースのアーキテクチャ図</summary>
+## 🏗️ アーキテクチャ概要
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    MarkMail システムアーキテクチャ                    │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌───────────────┐    API Calls    ┌───────────────┐    API Calls    ┌───────────────┐
-│   Frontend    │ ──────────────► │   Backend     │ ──────────────► │ External      │
-│  (SvelteKit)  │                 │   (Rust)      │                 │ Services      │
-│               │                 │               │                 │               │
-│ • UI          │                 │ • Axum API    │                 │ • AWS SES     │
-│ • MD Editor   │                 │ • JWT Auth    │                 │ • SendGrid    │
-│ • Preview     │                 │ • Email Mgr   │                 │ • GitHub API  │
-│ • TypeScript  │                 │ • Template    │                 │ • S3 Storage  │
-│ • Tailwind    │                 │ • Campaign    │                 │               │
-│               │                 │ • User Mgr    │                 │               │
-│ Port: 5173    │                 │ Port: 3000    │                 │               │
-└───────────────┘                 └───────┬───────┘                 └───────────────┘
-                                          │
-                                      SQL/Cache
-                                          │
-                                          ▼
-                    ┌─────────────────────────────────────┐
-                    │            Data Layer               │
-                    │                                     │
-                    │  ┌─────────────┐  ┌─────────────┐  │
-                    │  │ PostgreSQL  │  │    Redis    │  │
-                    │  │    (DB)     │  │  (Cache)    │  │
-                    │  └─────────────┘  └─────────────┘  │
-                    └─────────────────────────────────────┘
-
-┌───────────────┐
-│ Development   │
-│ Tools         │
-│               │
-│ • Docker      │
-│ • MailHog     │
-│ • Railway     │
-│ • GitHub      │
-│   Actions     │
-└───────────────┘
+Frontend (SvelteKit) → Backend (Rust/Axum) → Database (PostgreSQL)
+                                           → Cache (Redis)
+                                           → Email (AWS SES/MailHog)
 ```
 
-</details>
-
-### アーキテクチャの特徴
-
-- **マイクロサービス指向**: フロントエンド、バックエンド、データ層が分離された設計
-- **高パフォーマンス**: Rust と SvelteKit による高速なレスポンス
-- **スケーラブル**: Redis キャッシュと PostgreSQL による高いスケーラビリティ
-- **セキュア**: JWT 認証と多層防御によるセキュリティ
-- **開発体験**: Docker と自動整形による快適な開発環境
+詳細は [docs/architecture.svg](docs/architecture.svg) を参照。
 
 ## 🚀 クイックスタート
 
-### 前提条件
-
-- Docker & Docker Compose
-- Rust (1.75+)
-- Node.js (18+)
-
-### ローカル開発環境のセットアップ
-
-1. **プロジェクトのクローン**
-
 ```bash
+# 1. セットアップ
 git clone https://github.com/engineers-hub-ltd-in-house-project/markmail.git
 cd markmail
-```
-
-2. **環境変数の設定**
-
-```bash
 cp env.example .env
-# .env ファイルを編集して必要な値を設定
-```
-
-3. **自動整形のセットアップ（重要！）**
-
-```bash
 ./scripts/setup-lefthook.sh
-```
 
-これで `git commit` 時に自動整形が実行されるようになります。
-
-4. **Docker Compose で開発環境起動**
-
-```bash
+# 2. 起動
 docker-compose up -d
-```
 
-5. **データベースマイグレーション**
-
-```bash
+# 3. マイグレーション
 cd backend
-cargo install sqlx-cli
-
-# DATABASE_URL環境変数を設定（重要！）
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/markmail"
-
-# マイグレーション実行
 sqlx migrate run
 ```
 
-**注意**:
-SQLx のコンパイル時には`DATABASE_URL`環境変数が必要です。VSCode を使用している場合は、ターミナルを再起動するか、`.env`ファイルから環境変数を読み込んでください。
+**アクセスURL**:
 
-### アクセス先
+- フロントエンド: http://localhost:5173
+- API: http://localhost:3000
+- メール確認: http://localhost:8025
 
-- **フロントエンド**: http://localhost:5173
-- **バックエンド API**: http://localhost:3000
-- **MailHog (開発用メール確認)**: http://localhost:8025
-
-## ✨ 自動整形機能
-
-### 🪝 Git Hooks による自動整形
-
-**lefthook**を使用して、コミット時に自動的にコードを整形します：
-
-- **git commit 時**:
-  - Rust コード → `cargo fmt` で整形
-  - フロントエンドコード → `prettier` で整形
-  - リンターチェック → `cargo clippy` & `eslint`
-- **git push 時**:
-  - テスト自動実行
-
-### 🎨 手動整形コマンド
+## 🛠️ 開発コマンド
 
 ```bash
-# 全体のフォーマット
-npm run format
+# フォーマット
+npm run format           # 全体
+npm run format:backend   # Rust
+npm run format:frontend  # Svelte/TS
 
-# バックエンドのみ（Rust）
-npm run format:backend
-
-# フロントエンドのみ（Svelte/TypeScript）
-npm run format:frontend
+# テスト
+cd backend && cargo test
+cd frontend && npm test
 
 # リンター
 npm run lint
 ```
-
-### 🔧 VS Code 自動整形
-
-VS Code を使用している場合、以下が自動で設定されます：
-
-- **保存時自動整形**: ファイル保存時に自動フォーマット
-- **ペースト時自動整形**: コードペースト時に自動フォーマット
-- **推奨拡張機能**: Rust Analyzer、Svelte、Prettier 等
 
 ## 📁 プロジェクト構造
 
