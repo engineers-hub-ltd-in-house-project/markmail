@@ -60,8 +60,12 @@ async fn test_batch_email_creation() {
 
 #[test]
 fn test_email_config_from_env() {
+    // 環境変数をクリア
+    std::env::remove_var("EMAIL_PROVIDER");
+    std::env::remove_var("AWS_SES_FROM_EMAIL");
+
     // 環境変数を設定
-    std::env::set_var("MAIL_PROVIDER", "mailhog");
+    std::env::set_var("EMAIL_PROVIDER", "mailhog");
     std::env::set_var("SMTP_FROM", "test@example.com");
     std::env::set_var("SMTP_HOST", "localhost");
     std::env::set_var("SMTP_PORT", "1025");
@@ -81,7 +85,7 @@ fn test_aws_ses_config_from_env() {
     std::env::remove_var("SMTP_FROM");
 
     // AWS SES用の環境変数を設定
-    std::env::set_var("MAIL_PROVIDER", "aws_ses");
+    std::env::set_var("EMAIL_PROVIDER", "aws_ses");
     std::env::set_var("AWS_SES_FROM_EMAIL", "noreply@example.com");
     std::env::set_var("AWS_REGION", "us-east-1");
 

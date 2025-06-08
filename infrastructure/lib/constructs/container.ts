@@ -153,7 +153,7 @@ export class ContainerConstruct extends Construct {
     this.alb = new ecsPatterns.ApplicationLoadBalancedFargateService(this, 'FargateService', {
       cluster: this.cluster,
       taskImageOptions: {
-        image: ecs.ContainerImage.fromRegistry('nginx:latest'), // Placeholder
+        image: ecs.ContainerImage.fromEcrRepository(this.backendRepo, 'latest'),
         containerPort: 8080,
         environment: {
           ENVIRONMENT: environmentName,

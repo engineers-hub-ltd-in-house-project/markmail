@@ -374,7 +374,7 @@ describe('MarkMailInfrastructureStack', () => {
         (sg: any) => sg.Properties.GroupDescription
       );
 
-      expect(sgDescriptions).toContain('Security group for ALB');
+      expect(sgDescriptions).toContain('Security group for Application Load Balancer');
       expect(sgDescriptions).toContain('Security group for ECS tasks');
       expect(sgDescriptions).toContain('Security group for RDS');
       expect(sgDescriptions).toContain('Security group for ElastiCache');

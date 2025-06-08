@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT user_id\n        FROM refresh_tokens\n        WHERE token = $1 AND expires_at > NOW()\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": ["Text"]
+    },
+    "nullable": [false]
+  },
+  "hash": "0447f274785515567010431aaeb84b8818edafc9ebc49cedbcbbb3b17635b8f4"
+}

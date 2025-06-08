@@ -1,5 +1,5 @@
 # ビルドステージ
-FROM rust:1.75-slim AS builder
+FROM rust:1.82-slim AS builder
 
 # 必要なシステムパッケージをインストール
 RUN apt-get update && apt-get install -y \
@@ -18,8 +18,13 @@ RUN mkdir src && \
     cargo build --release && \
     rm -rf src
 
-# ソースコードをコピーして実際のアプリケーションをビルド
+# ソースコードとマイグレーションをコピーして実際のアプリケーションをビルド
 COPY src ./src
+COPY migrations ./migrations
+# SQLXのオフラインモード用のクエリキャッシュをコピー
+COPY .sqlx ./.sqlx
+# オフラインモードでビルド
+ENV SQLX_OFFLINE=true
 RUN touch src/main.rs && \
     cargo build --release
 
@@ -30,6 +35,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 非rootユーザーを作成

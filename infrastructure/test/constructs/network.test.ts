@@ -100,18 +100,18 @@ describe('NetworkConstruct', () => {
       const template = Template.fromStack(stack);
 
       template.hasResourceProperties('AWS::EC2::SecurityGroup', {
-        GroupDescription: 'Security group for ALB',
+        GroupDescription: 'Security group for Application Load Balancer',
         SecurityGroupIngress: Match.arrayWith([
-          Match.objectLike({
-            IpProtocol: 'tcp',
-            FromPort: 443,
-            ToPort: 443,
-            CidrIp: '0.0.0.0/0',
-          }),
           Match.objectLike({
             IpProtocol: 'tcp',
             FromPort: 80,
             ToPort: 80,
+            CidrIp: '0.0.0.0/0',
+          }),
+          Match.objectLike({
+            IpProtocol: 'tcp',
+            FromPort: 443,
+            ToPort: 443,
             CidrIp: '0.0.0.0/0',
           }),
         ]),

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE templates SET html_content = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "96dd9d9d03fd0f9a5fd80fc3794feb2e0b40236e196e51e0a255d264126a8459"
+}

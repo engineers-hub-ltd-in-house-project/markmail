@@ -45,18 +45,18 @@ export class NetworkConstruct extends Construct {
     // ALB Security Group
     this.albSecurityGroup = new ec2.SecurityGroup(this, 'ALBSecurityGroup', {
       vpc: this.vpc,
-      description: 'Security group for ALB',
+      description: 'Security group for Application Load Balancer',
       allowAllOutbound: true,
     });
     this.albSecurityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(443),
-      'Allow HTTPS from anywhere'
+      ec2.Port.tcp(80),
+      'Allow HTTP traffic'
     );
     this.albSecurityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(80),
-      'Allow HTTP from anywhere'
+      ec2.Port.tcp(443),
+      'Allow HTTPS traffic'
     );
 
     // ECS Security Group

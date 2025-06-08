@@ -111,7 +111,7 @@ pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
 
     let token = crate::utils::jwt::generate_token(&claims).expect("Failed to generate JWT");
 
-    (user_id, format!("Bearer {}", token))
+    (user_id, token)
 }
 
 // 各テストは独立した環境で実行する必要があるため、モジュール全体のセットアップではなく
