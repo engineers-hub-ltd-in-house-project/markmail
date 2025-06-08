@@ -1,38 +1,117 @@
-# MarkMail Infrastructure (AWS CDK)
+# MarkMail Infrastructure (AWS CDK v2)
 
-このディレクトリには、MarkMailのAWSインフラストラクチャをCDKで管理するコードが含まれています。
+このディレクトリには、MarkMailのAWSインフラストラクチャをCDK v2で管理するコードが含まれています。
 
 ## 🎯 概要
 
-AWS CDKを使用して以下のリソースを作成・管理します：
+AWS CDK v2を使用して、本番環境対応の完全なインフラストラクチャを構築・管理します。
 
-- **AWS SES** - メール送信サービス
-  - Configuration Set（送信設定）
-  - Email Identity（ドメイン/メールアドレス検証）
-  - DKIM設定
-- **Amazon SNS** - 通知サービス
-  - バウンス通知トピック
-  - 苦情通知トピック
-- **Amazon S3** - ストレージ
-  - バウンスメールの保存（オプション）
-- **IAM** - アクセス管理
-  - SES送信用ユーザー
-  - 必要な権限ポリシー
+## 🏗️ アーキテクチャ
+
+```mermaid
+graph TB
+    subgraph Internet
+        User[ユーザー]
+        SES[AWS SES]
+    end
+
+    subgraph AWS Cloud
+        subgraph VPC
+            subgraph Public Subnet
+                ALB[Application Load Balancer]
+                NAT[NAT Gateway]
+            end
+
+            subgraph Private Subnet
+                subgraph ECS Cluster
+                    Frontend[Frontend Service<br/>SvelteKit/nginx]
+                    Backend[Backend Service<br/>Rust/Axum]
+                end
+            end
+
+            subgraph Isolated Subnet
+                RDS[(RDS Aurora<br/>PostgreSQL)]
+                Cache[(ElastiCache<br/>Redis)]
+            end
+        end
+
+        ECR[ECR Repository]
+        SM[Secrets Manager]
+        CW[CloudWatch]
+        S3[S3 Bucket]
+    end
+
+    subgraph CI/CD
+        GH[GitHub]
+        CP[CodePipeline]
+        CB[CodeBuild]
+    end
+```
+
+## 📦 作成されるリソース
+
+### ネットワーク層
+
+- **VPC**: 3つのサブネット層（Public、Private、Isolated）
+- **セキュリティグループ**: ALB、ECS、RDS、ElastiCache用
+- **NAT Gateway**: 高可用性構成（本番環境では2つ）
+
+### コンテナ基盤
+
+- **ECS Cluster**: Fargate起動タイプ
+- **ECR Repository**: フロントエンド/バックエンド用
+- **Task Definition**: CPU/メモリ設定済み
+- **Auto Scaling**: ターゲット追跡スケーリング
+
+### データベース層
+
+- **RDS Aurora PostgreSQL Serverless v2**
+  - 自動スケーリング（0.5〜1 ACU）
+  - 自動バックアップ（7日間保持）
+  - 暗号化有効
+- **ElastiCache Redis**: セッション/キャッシュ用
+
+### アプリケーション層
+
+- **Application Load Balancer**: HTTPS対応
+- **Target Groups**: パスベースルーティング
+- **Health Checks**: カスタマイズ済み
+
+### 監視・ロギング
+
+- **CloudWatch Logs**: コンテナログ
+- **Container Insights**: パフォーマンスメトリクス
+- **SNS Topics**: アラート通知
+
+### CI/CD
+
+- **CodePipeline**: GitHub連携
+- **CodeBuild**: Docker イメージビルド
+- **自動デプロイ**: Blue/Greenデプロイメント
+
+### セキュリティ
+
+- **Secrets Manager**: データベース認証情報
+- **IAM Roles**: 最小権限の原則
+- **KMS**: 暗号化キー管理
 
 ## 📋 前提条件
 
-1. **AWS CLI**がインストールされ、認証情報が設定されていること
+1. **AWS CLI** v2 がインストールされ、認証情報が設定されていること
 
    ```bash
    aws configure
    ```
 
-2. **Node.js** (v18以上) と **npm**がインストールされていること
+2. **Node.js** (v18以上) と **npm** がインストールされていること
 
-3. **AWS CDK**がグローバルにインストールされていること
+3. **AWS CDK v2** がインストールされていること
+
    ```bash
-   npm install -g aws-cdk
+   npm install -g aws-cdk@latest
    ```
+
+4. **Docker** がインストールされていること（ローカルビルド用）
 
 ## 🚀 デプロイ手順
 
@@ -43,16 +122,17 @@ cd infrastructure
 npm install
 ```
 
-### 2. 環境変数の設定（オプション）
+### 2. 環境変数の設定
 
 ```bash
-# カスタムドメインを使用する場合
-export SES_DOMAIN=mail.example.com
-
-# 通知メールアドレス
+# 必須設定
+export ENVIRONMENT_NAME=dev  # または prod
 export NOTIFICATION_EMAIL=admin@example.com
+export GITHUB_OWNER=your-github-username
+export GITHUB_REPO=markmail
+export GITHUB_BRANCH=main
 
-# AWSアカウントとリージョン
+# オプション（デフォルト値あり）
 export AWS_ACCOUNT_ID=123456789012
 export AWS_REGION=ap-northeast-1
 ```
@@ -66,127 +146,179 @@ npm run cdk bootstrap
 ### 4. スタックのデプロイ
 
 ```bash
-# 差分確認
-npm run diff
+# 全スタックを順番にデプロイ
+./deploy-sequential.sh
 
-# デプロイ
-npm run deploy
+# または個別にデプロイ
+npm run deploy:network
+npm run deploy:database
+npm run deploy:cluster
+# ... など
 ```
 
 ### 5. デプロイ後の設定
 
-デプロイが完了したら、以下の手順を実行してください：
-
-1. **ドメイン/メールアドレスの検証**
-
-   - AWS SESコンソールで送信元ドメインまたはメールアドレスを検証
-
-2. **本番環境アクセスのリクエスト**（必要な場合）
-
-   - SESサンドボックスから本番環境への移行申請
-
-3. **アプリケーション設定の更新**
+1. **GitHub Personal Access Token の設定**
 
    ```bash
-   # backend/.env に以下を追加
-   AWS_ACCESS_KEY_ID=<出力されたアクセスキーID>
-   AWS_SECRET_ACCESS_KEY=<出力されたシークレットアクセスキー>
-   AWS_REGION=ap-northeast-1
-   AWS_SES_FROM_EMAIL=noreply@example.com
-   AWS_SES_CONFIGURATION_SET=markmail-configuration-set
+   # AWS Secrets Manager に保存
+   aws secretsmanager create-secret \
+     --name /markmail/github/token \
+     --secret-string "your-github-personal-access-token"
    ```
 
-4. **DNS設定**（カスタムドメインの場合）
-   - 出力されたDKIMレコードをDNSに追加
+2. **ドメイン設定**（本番環境の場合）
 
-## 📊 作成されるリソース
+   - Route 53 でドメインを設定
+   - ACM で SSL 証明書を取得
+   - ALB にドメインを関連付け
 
-### Configuration Set
+3. **SES 設定**
+   - ドメイン検証
+   - DKIM 設定
+   - SPF レコード追加
 
-- 名前: `markmail-configuration-set`
-- イベント追跡: 送信、バウンス、苦情、配信、拒否など
-- CloudWatchメトリクス: 有効
+## 🧪 テスト
 
-### SNSトピック
+インフラストラクチャのテストを実行：
 
-- バウンス通知: `markmail-bounce-notifications`
-- 苦情通知: `markmail-complaint-notifications`
+```bash
+npm test
+```
 
-### S3バケット
+現在のテストカバレッジ: **76/76 テスト成功** ✅
 
-- 名前: `markmail-emails-{account}-{region}`
-- 用途: バウンスメールの保存
-- ライフサイクル: 90日後に自動削除
+## 📊 コスト見積もり
 
-### IAMユーザー
+### 開発環境（月額）
 
-- 名前: `markmail-ses-user`
-- 権限:
-  - SES送信権限
-  - Configuration Set管理権限
-  - SNSトピック読み取り権限
+- ECS Fargate: ~$30
+- RDS Aurora Serverless v2: ~$50
+- ALB: ~$20
+- その他: ~$10
+- **合計: 約$110/月**
+
+### 本番環境（月額）
+
+- ECS Fargate (HA構成): ~$120
+- RDS Aurora Serverless v2: ~$100
+- ALB: ~$20
+- ElastiCache: ~$30
+- その他: ~$30
+- **合計: 約$300/月**
 
 ## 🔧 カスタマイズ
 
-`lib/infrastructure-stack.ts`を編集して、以下をカスタマイズできます：
+### スケーリング設定の変更
 
-- リソース名
-- S3バケットの保存期間
-- SNS通知の設定
-- IAM権限の範囲
+`lib/stacks/ecs-service-stack.ts`:
+
+```typescript
+const scalingPolicy = service.autoScaleTaskCount({
+  minCapacity: 2,
+  maxCapacity: 10,
+});
+```
+
+### データベースサイズの変更
+
+`lib/stacks/database-stack.ts`:
+
+```typescript
+minCapacity: rds.AuroraCapacityUnit.ACU_1,
+maxCapacity: rds.AuroraCapacityUnit.ACU_4,
+```
 
 ## 🗑️ リソースの削除
 
 ```bash
-npm run destroy
+# 全リソースを削除
+./destroy-stack.sh
+
+# または個別に削除（逆順で実行）
+npm run destroy:app
+npm run destroy:service
+# ... など
 ```
 
 ⚠️ **注意**:
-S3バケットは`RETAIN`ポリシーが設定されているため、手動で削除する必要があります。
+
+- S3バケットとRDSスナップショットは手動削除が必要です
+- 本番環境では削除保護が有効になっています
 
 ## 📝 コマンド一覧
 
 ```bash
-# TypeScriptのビルド
+# ビルド
 npm run build
 
-# CDKスタックの合成（CloudFormationテンプレート生成）
-npm run synth
+# テスト
+npm test
+npm run test:watch
 
-# 差分確認
-npm run diff
+# CDK操作
+npm run synth          # CloudFormationテンプレート生成
+npm run diff           # 差分確認
+npm run deploy         # 全スタックデプロイ
+npm run destroy        # 全スタック削除
 
-# デプロイ
-npm run deploy
-
-# 削除
-npm run destroy
-
-# CDKコマンドの直接実行
-npm run cdk -- <command>
+# 個別スタック操作
+npm run deploy:network
+npm run deploy:ecr
+npm run deploy:database
+npm run deploy:cluster
+npm run deploy:alb
+npm run deploy:service
+npm run deploy:monitoring
+npm run deploy:cicd
 ```
 
 ## 🔍 トラブルシューティング
 
-### "Stack is in DELETE_FAILED state"
+### デプロイが失敗する場合
+
+1. **IAM権限の確認**
+
+   ```bash
+   aws sts get-caller-identity
+   ```
+
+2. **Docker daemon の確認**
+
+   ```bash
+   docker info
+   ```
+
+3. **スタック状態の確認**
+   ```bash
+   aws cloudformation describe-stacks --stack-name MarkMail-dev-*
+   ```
+
+### ログの確認
 
 ```bash
-# CloudFormationコンソールで手動削除するか
-aws cloudformation delete-stack --stack-name MarkMailInfrastructureStack
+# ECSタスクログ
+aws logs tail /ecs/markmail-backend --follow
+
+# CodeBuildログ
+aws logs tail /aws/codebuild/markmail-build --follow
 ```
 
-### "Bootstrap stack required"
+### 一般的なエラーと対処法
 
-```bash
-npm run cdk bootstrap aws://<account-id>/<region>
-```
+| エラー                                | 原因               | 対処法                       |
+| ------------------------------------- | ------------------ | ---------------------------- |
+| `Stack is in ROLLBACK_COMPLETE state` | 前回のデプロイ失敗 | スタックを削除して再作成     |
+| `Resource limit exceeded`             | リソース制限       | Service Quotasで上限緩和申請 |
+| `Access Denied`                       | IAM権限不足        | 必要な権限を追加             |
 
-### アクセスキーが表示されない
+## 📚 参考資料
 
-CloudFormationのOutputsタブまたは以下のコマンドで確認：
+- [AWS CDK v2 Documentation](https://docs.aws.amazon.com/cdk/v2/guide/)
+- [ECS Best Practices Guide](https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/)
+- [Aurora Serverless v2 Guide](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html)
 
-```bash
-aws cloudformation describe-stacks \
-  --stack-name MarkMailInfrastructureStack \
-  --query "Stacks[0].Outputs"
-```
+## 🤝 貢献
+
+インフラストラクチャの改善提案は歓迎します！
+[Issues](https://github.com/engineers-hub-ltd-in-house-project/markmail/issues) から提案してください。

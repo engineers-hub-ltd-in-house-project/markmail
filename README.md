@@ -14,10 +14,13 @@
 - **フロントエンド**: Svelte + SvelteKit + TypeScript
 - **データベース**: PostgreSQL
 - **キャッシュ**: Redis
-- **メール送信**: AWS SES / SendGrid
-- **認証**: JWT + OAuth2
+- **メール送信**: AWS SES / MailHog（開発環境）
+- **認証**: JWT + リフレッシュトークン
+- **インフラストラクチャ**: AWS CDK v2 (TypeScript)
+- **コンテナ**: Docker (ECS Fargate)
+- **CI/CD**: GitHub Actions + AWS CodePipeline
 - **自動整形**: lefthook + Prettier + rustfmt
-- **デプロイ**: Docker + Railway/Fly.io
+- **テスト**: Vitest + Jest + Cargo test
 
 ## 🏗️ システムアーキテクチャ
 
@@ -102,7 +105,7 @@
 1. **プロジェクトのクローン**
 
 ```bash
-git clone https://github.com/your-org/markmail.git
+git clone https://github.com/engineers-hub-ltd-in-house-project/markmail.git
 cd markmail
 ```
 
@@ -348,15 +351,35 @@ npm run lint
   - [x] 送信進捗表示
   - [x] エラーハンドリング
   - [x] 送信成功/失敗の状態表示
-- [x] **AWS インフラストラクチャ（CDK）**
-  - [x] AWS SES設定（Configuration Set、SNSトピック）
-  - [x] IAMユーザーとポリシー設定
-  - [x] S3バケット（バウンスメール保存）
-  - [x] ドメイン検証とDKIM設定
-  - [x] SPFレコード設定
+- [x] **AWS インフラストラクチャ（CDK v2）**
+  - [x] ネットワーク層（VPC、サブネット、セキュリティグループ）
+  - [x] コンテナ基盤（ECS Cluster、ECR、Fargate）
+  - [x] データベース層（RDS Aurora PostgreSQL Serverless v2）
+  - [x] アプリケーションロードバランサー（ALB）
+  - [x] 監視とロギング（CloudWatch、Container Insights）
+  - [x] CI/CDパイプライン（CodePipeline、CodeBuild）
+  - [x] AWS SES設定（ドメイン検証、DKIM、送信権限）
+  - [x] シークレット管理（Secrets Manager）
+  - [x] インフラストラクチャテスト（Jest）
+
+### 🎉 最近の更新
+
+- [x] **テストスイートの修正と改善**
+  - [x] バックエンドテスト: 34/34 成功 (5つはignored)
+  - [x] インフラテスト: 76/76 成功
+  - [x] フロントエンドテスト: 35/35 成功 (10つはskipped)
+  - [x] CORS設定の修正（具体的なヘッダー指定）
+  - [x] SQLx offline modeのサポート追加
+  - [x] nginxのnon-rootユーザー実行対応
+  - [x] CDKスタックのモジュール化
 
 ### 📋 今後の予定
 
+- [ ] **本番環境デプロイ**
+  - [ ] AWS環境へのCDKデプロイ
+  - [ ] ドメイン設定とSSL証明書
+  - [ ] 本番用環境変数の設定
+  - [ ] SESサンドボックスモードからの移行申請
 - [ ] **メール送信機能（追加機能）**
   - [ ] 送信ログの保存と表示
   - [ ] 配信停止処理
@@ -387,6 +410,15 @@ npm run lint
 4. テストカバレッジは定期的に確認し、向上させること
 
 詳細は [DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
+
+### テスト実行結果
+
+現在のテストカバレッジ:
+
+- **バックエンド**:
+  34個のテストが成功（認証、テンプレート、キャンペーン、購読者、メール送信）
+- **インフラストラクチャ**: 76個のテストが成功（CDKスタック、コンストラクト）
+- **フロントエンド**: 35個のテストが成功（API、ストア、ユーティリティ）
 
 ### バックエンドテスト
 
@@ -623,7 +655,7 @@ curl -X POST http://localhost:3000/api/markdown/render \
 
 ## 🙋‍♂️ サポート
 
-質問や問題がある場合は、[Issues](https://github.com/your-org/markmail/issues)
+質問や問題がある場合は、[Issues](https://github.com/engineers-hub-ltd-in-house-project/markmail/issues)
 を作成してください。
 
 ---
