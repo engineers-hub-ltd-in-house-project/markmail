@@ -1,0 +1,73 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE forms\n        SET name = COALESCE($2, name),\n            description = COALESCE($3, description),\n            markdown_content = COALESCE($4, markdown_content),\n            form_fields = COALESCE($5, form_fields),\n            settings = COALESCE($6, settings),\n            status = COALESCE($7, status),\n            updated_at = NOW()\n        WHERE id = $1\n        RETURNING id, user_id, name, description, slug, markdown_content, form_fields, settings, status, submission_count, created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "markdown_content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "form_fields",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "submission_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Text", "Text", "Jsonb", "Jsonb", "Varchar"]
+    },
+    "nullable": [false, false, false, true, false, false, false, false, false, false, false, false]
+  },
+  "hash": "3998995cdfa5b06e2997f648aaff8a5e9820d3bb93a8549db5ac1888f1d17e54"
+}

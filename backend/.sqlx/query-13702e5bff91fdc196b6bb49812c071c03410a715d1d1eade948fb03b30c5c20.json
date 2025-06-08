@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, sequence_id, name, step_order, step_type, delay_value, delay_unit, template_id, subject, conditions, action_config, created_at, updated_at\n        FROM sequence_steps\n        WHERE sequence_id = $1\n        ORDER BY step_order ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "sequence_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "step_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "step_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "delay_value",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "delay_unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "template_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "subject",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "conditions",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "action_config",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid"]
+    },
+    "nullable": [false, false, false, false, false, false, false, true, true, false, false, false, false]
+  },
+  "hash": "13702e5bff91fdc196b6bb49812c071c03410a715d1d1eade948fb03b30c5c20"
+}
