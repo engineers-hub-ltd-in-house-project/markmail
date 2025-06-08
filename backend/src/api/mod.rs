@@ -9,8 +9,10 @@ use crate::{middleware::auth::auth_middleware, AppState};
 pub mod auth;
 pub mod campaigns;
 pub mod email;
+pub mod forms;
 pub mod integrations;
 pub mod markdown;
+// pub mod sequences; // TODO: 実装を修正後に有効化
 pub mod subscribers;
 pub mod templates;
 pub mod users;
@@ -20,7 +22,10 @@ pub fn create_routes() -> Router<AppState> {
     let public_routes = Router::new()
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/register", post(auth::register))
-        .route("/api/auth/refresh", post(auth::refresh_token));
+        .route("/api/auth/refresh", post(auth::refresh_token))
+        // フォームの公開エンドポイント
+        .route("/api/forms/:id/public", get(forms::get_public_form))
+        .route("/api/forms/:id/submit", post(forms::submit_form));
 
     // 保護されたルート（認証必要）
     let protected_routes = Router::new()
@@ -72,6 +77,38 @@ pub fn create_routes() -> Router<AppState> {
             "/api/integrations/github/import",
             post(integrations::import_from_github),
         )
+        // フォーム管理
+        .route("/api/forms", get(forms::get_forms))
+        .route("/api/forms", post(forms::create_form))
+        .route("/api/forms/:id", get(forms::get_form))
+        .route("/api/forms/:id", put(forms::update_form))
+        .route("/api/forms/:id", delete(forms::delete_form))
+        .route(
+            "/api/forms/:id/submissions",
+            get(forms::get_form_submissions),
+        )
+        // シーケンス管理 - TODO: 実装を修正後に有効化
+        // .route("/api/sequences", get(sequences::get_sequences))
+        // .route("/api/sequences", post(sequences::create_sequence))
+        // .route("/api/sequences/:id", get(sequences::get_sequence))
+        // .route("/api/sequences/:id", put(sequences::update_sequence))
+        // .route("/api/sequences/:id", delete(sequences::delete_sequence))
+        // .route(
+        //     "/api/sequences/:id/full",
+        //     get(sequences::get_sequence_with_steps),
+        // )
+        // .route(
+        //     "/api/sequences/:id/steps",
+        //     post(sequences::create_sequence_step),
+        // )
+        // .route(
+        //     "/api/sequences/:sequence_id/steps/:step_id",
+        //     put(sequences::update_sequence_step),
+        // )
+        // .route(
+        //     "/api/sequences/:sequence_id/steps/:step_id",
+        //     delete(sequences::delete_sequence_step),
+        // )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 
