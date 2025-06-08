@@ -5,6 +5,7 @@ import { NetworkStack } from '../lib/stacks/network-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
 import { ECRStack } from '../lib/stacks/ecr-stack';
 import { ECSClusterStack } from '../lib/stacks/ecs-cluster-stack';
+import { Route53Stack } from '../lib/stacks/route53-stack';
 import { ALBStack } from '../lib/stacks/alb-stack';
 import { ECSServiceStack } from '../lib/stacks/ecs-service-stack';
 import { CICDStack } from '../lib/stacks/cicd-stack';
@@ -22,11 +23,11 @@ const region =
 const config = {
   dev: {
     environmentName: 'dev',
-    domainName: undefined, // 開発環境ではドメインなし
+    domainName: process.env.DEV_DOMAIN || process.env.PROD_DOMAIN,
     notificationEmail: process.env.NOTIFICATION_EMAIL || 'admin@example.com',
     githubOwner: process.env.GITHUB_OWNER || 'engineers-hub-ltd-in-house-project',
     githubRepo: process.env.GITHUB_REPO || 'markmail',
-    githubBranch: 'develop',
+    githubBranch: process.env.GITHUB_BRANCH || 'develop',
     desiredCount: 1,
     cpu: 512,
     memoryLimitMiB: 1024,
@@ -99,16 +100,31 @@ const ecsClusterStack = new ECSClusterStack(app, `MarkMail-${environmentName}-EC
 ecsClusterStack.addDependency(networkStack);
 ecsClusterStack.addDependency(databaseStack);
 
-// Stack 5: Application Load Balancer (depends on Network)
+// Stack 4.5: Route 53 (optional, only if domain is configured)
+let route53Stack: Route53Stack | undefined;
+if (config.domainName) {
+  route53Stack = new Route53Stack(app, `MarkMail-${environmentName}-Route53Stack`, {
+    env: { account, region },
+    environmentName: config.environmentName,
+    domainName: config.domainName,
+    description: `MarkMail Route 53 Stack for ${environmentName} environment`,
+  });
+}
+
+// Stack 5: Application Load Balancer (depends on Network and optionally Route53)
 const albStack = new ALBStack(app, `MarkMail-${environmentName}-ALBStack`, {
   env: { account, region },
   environmentName: config.environmentName,
   vpc: networkStack.vpc,
   albSecurityGroup: networkStack.albSecurityGroup,
   domainName: config.domainName,
+  hostedZone: route53Stack?.hostedZone,
   description: `MarkMail Application Load Balancer Stack for ${environmentName} environment`,
 });
 albStack.addDependency(networkStack);
+if (route53Stack) {
+  albStack.addDependency(route53Stack);
+}
 
 // Stack 6: ECS Service (depends on all previous stacks)
 const ecsServiceStack = new ECSServiceStack(app, `MarkMail-${environmentName}-ECSServiceStack`, {
@@ -174,7 +190,16 @@ console.log(`1. ${networkStack.stackName} - Network infrastructure (VPC, Securit
 console.log(`2. ${databaseStack.stackName} - Database infrastructure (RDS, ElastiCache)`);
 console.log(`3. ${ecrStack.stackName} - ECR repositories`);
 console.log(`4. ${ecsClusterStack.stackName} - ECS Cluster and IAM roles`);
-console.log(`5. ${albStack.stackName} - Application Load Balancer`);
-console.log(`6. ${ecsServiceStack.stackName} - ECS Service and Task Definition`);
-console.log(`7. ${cicdStack.stackName} - CI/CD Pipeline`);
-console.log(`8. ${monitoringStack.stackName} - CloudWatch and SES monitoring\n`);
+if (route53Stack) {
+  console.log(`5. ${route53Stack.stackName} - Route 53 Hosted Zone`);
+  console.log(`6. ${albStack.stackName} - Application Load Balancer with SSL`);
+} else {
+  console.log(`5. ${albStack.stackName} - Application Load Balancer`);
+}
+console.log(
+  `${route53Stack ? '7' : '6'}. ${ecsServiceStack.stackName} - ECS Service and Task Definition`
+);
+console.log(`${route53Stack ? '8' : '7'}. ${cicdStack.stackName} - CI/CD Pipeline`);
+console.log(
+  `${route53Stack ? '9' : '8'}. ${monitoringStack.stackName} - CloudWatch and SES monitoring\n`
+);

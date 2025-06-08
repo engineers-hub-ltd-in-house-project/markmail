@@ -11,6 +11,7 @@ export interface ALBStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   albSecurityGroup: ec2.SecurityGroup;
   domainName?: string;
+  hostedZone?: route53.IHostedZone;
 }
 
 export class ALBStack extends cdk.Stack {
@@ -22,7 +23,13 @@ export class ALBStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ALBStackProps) {
     super(scope, id, props);
 
-    const { environmentName, vpc, albSecurityGroup, domainName } = props;
+    const {
+      environmentName,
+      vpc,
+      albSecurityGroup,
+      domainName,
+      hostedZone: providedHostedZone,
+    } = props;
 
     // Use the security group from NetworkStack
     this.albSecurityGroup = albSecurityGroup;
@@ -40,9 +47,12 @@ export class ALBStack extends cdk.Stack {
     let hostedZone: route53.IHostedZone | undefined;
 
     if (domainName) {
-      hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-        domainName: domainName.split('.').slice(-2).join('.'), // Get base domain
-      });
+      // Use provided hosted zone or lookup existing one
+      hostedZone =
+        providedHostedZone ||
+        route53.HostedZone.fromLookup(this, 'HostedZone', {
+          domainName: domainName.split('.').slice(-2).join('.'), // Get base domain
+        });
 
       certificate = new certificatemanager.Certificate(this, 'Certificate', {
         domainName: domainName,
