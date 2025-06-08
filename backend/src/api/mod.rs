@@ -12,7 +12,7 @@ pub mod email;
 pub mod forms;
 pub mod integrations;
 pub mod markdown;
-// pub mod sequences; // TODO: 実装を修正後に有効化
+pub mod sequences;
 pub mod subscribers;
 pub mod templates;
 pub mod users;
@@ -87,28 +87,28 @@ pub fn create_routes() -> Router<AppState> {
             "/api/forms/:id/submissions",
             get(forms::get_form_submissions),
         )
-        // シーケンス管理 - TODO: 実装を修正後に有効化
-        // .route("/api/sequences", get(sequences::get_sequences))
-        // .route("/api/sequences", post(sequences::create_sequence))
-        // .route("/api/sequences/:id", get(sequences::get_sequence))
-        // .route("/api/sequences/:id", put(sequences::update_sequence))
-        // .route("/api/sequences/:id", delete(sequences::delete_sequence))
-        // .route(
-        //     "/api/sequences/:id/full",
-        //     get(sequences::get_sequence_with_steps),
-        // )
-        // .route(
-        //     "/api/sequences/:id/steps",
-        //     post(sequences::create_sequence_step),
-        // )
-        // .route(
-        //     "/api/sequences/:sequence_id/steps/:step_id",
-        //     put(sequences::update_sequence_step),
-        // )
-        // .route(
-        //     "/api/sequences/:sequence_id/steps/:step_id",
-        //     delete(sequences::delete_sequence_step),
-        // )
+        // シーケンス管理
+        .route("/api/sequences", get(sequences::get_sequences))
+        .route("/api/sequences", post(sequences::create_sequence))
+        .route("/api/sequences/:id", get(sequences::get_sequence))
+        .route("/api/sequences/:id", put(sequences::update_sequence))
+        .route("/api/sequences/:id", delete(sequences::delete_sequence))
+        .route(
+            "/api/sequences/:id/full",
+            get(sequences::get_sequence_with_steps),
+        )
+        .route(
+            "/api/sequences/:id/steps",
+            post(sequences::create_sequence_step),
+        )
+        .route(
+            "/api/sequences/:sequence_id/steps/:step_id",
+            put(sequences::update_sequence_step),
+        )
+        .route(
+            "/api/sequences/:sequence_id/steps/:step_id",
+            delete(sequences::delete_sequence_step),
+        )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 

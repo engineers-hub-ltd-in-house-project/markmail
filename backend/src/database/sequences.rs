@@ -80,7 +80,7 @@ pub async fn update_sequence(
             status = COALESCE($6, status),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING id, user_id, name, description, trigger_type, trigger_config, is_active, created_at, updated_at
+        RETURNING id, user_id, name, description, trigger_type, trigger_config, status, active_subscribers, completed_subscribers, created_at, updated_at
         "#,
         sequence_id,
         request.name,
@@ -175,7 +175,7 @@ pub async fn update_sequence_step(
             action_config = COALESCE($10, action_config),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING id, sequence_id, step_order, step_type, delay_minutes, email_template_id, condition_config, created_at, updated_at
+        RETURNING id, sequence_id, name, step_order, step_type, delay_value, delay_unit, template_id, subject, conditions, action_config, created_at, updated_at
         "#,
         step_id,
         request.name,
