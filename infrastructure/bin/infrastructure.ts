@@ -27,7 +27,7 @@ const config = {
     notificationEmail: process.env.NOTIFICATION_EMAIL || 'admin@example.com',
     githubOwner: process.env.GITHUB_OWNER || 'engineers-hub-ltd-in-house-project',
     githubRepo: process.env.GITHUB_REPO || 'markmail',
-    githubBranch: process.env.GITHUB_BRANCH || 'develop',
+    githubBranch: process.env.GITHUB_BRANCH || 'dev',
     desiredCount: 1,
     cpu: 512,
     memoryLimitMiB: 1024,
