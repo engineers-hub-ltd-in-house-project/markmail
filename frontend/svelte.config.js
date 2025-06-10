@@ -12,17 +12,8 @@ const config = {
       precompress: false,
       strict: false,
     }),
-    prerender: {
-      entries: [
-        "/",
-        "/auth/login",
-        "/auth/register",
-        "/campaigns",
-        "/subscribers",
-        "/templates",
-        "/lp",
-      ],
-    },
+    // SPAモードのため、プリレンダリングの設定は不要
+    // fallback: "index.html" でSPAとして動作
   },
 };
 
