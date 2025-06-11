@@ -11,7 +11,7 @@ import type {
   SequenceEnrollment,
 } from "$lib/types/sequence";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = "/api";
 
 class SequenceService {
   private async request<T>(
@@ -23,7 +23,7 @@ class SequenceService {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(`${API_BASE}/api${path}`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",

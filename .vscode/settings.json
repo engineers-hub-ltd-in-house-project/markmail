@@ -56,5 +56,11 @@
   "editor.insertSpaces": true,
   "[rust]": {
     "editor.tabSize": 4
-  }
+  },
+  "cSpell.words": [
+    "Apalis",
+    "Faktory",
+    "Fargate",
+    "Sidekiq"
+  ]
 } 

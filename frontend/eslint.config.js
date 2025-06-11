@@ -32,6 +32,7 @@ export default [
         Headers: "readonly",
         Request: "readonly",
         Response: "readonly",
+        RequestInit: "readonly",
         localStorage: "readonly",
         window: "readonly",
         document: "readonly",
