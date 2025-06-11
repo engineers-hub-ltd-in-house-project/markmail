@@ -77,6 +77,12 @@
               >
                 フォーム
               </a>
+              <a
+                href="/sequences"
+                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                シーケンス
+              </a>
 
               <!-- ユーザーメニュー -->
               <div class="relative ml-3">

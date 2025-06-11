@@ -258,6 +258,111 @@ frontend/src/
 - `test`: テストの追加・修正
 - `chore`: ビルドプロセスやツールの変更
 
+## 🔧 新機能実装の推奨手順
+
+### 1. データベース制約の事前確認
+
+新機能を実装する前に、必ずデータベースの制約を確認する：
+
+```bash
+# テーブル構造と制約の確認
+docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "\d テーブル名"
+
+# 特に以下を確認
+# - CHECK制約（許可される値）
+# - UNIQUE制約（重複を許さないカラム）
+# - 外部キー制約
+# - データ型（特にUUID vs INTEGER）
+```
+
+### 2. バックエンドとフロントエンドの型整合性
+
+実装前に以下を確認：
+
+1. **バックエンドのモデル定義** (`backend/src/models/`)
+
+   - フィールド名（snake_case）
+   - データ型（UUID、String、i32等）
+   - 必須/オプショナルフィールド
+
+2. **データベーススキーマ** (`backend/migrations/`)
+
+   - カラム名と型
+   - 制約（CHECK、UNIQUE等）
+   - デフォルト値
+
+3. **フロントエンドの型定義** (`frontend/src/lib/types/`)
+   - バックエンドと一致する型定義
+   - IDは通常`string`（UUID）
+   - ステータスやタイプのenum値が一致
+
+### 3. API実装時の確認事項
+
+1. **エンドポイントの確認**
+
+   ```bash
+   # backend/src/api/mod.rs でルーティングを確認
+   grep -n "route.*api" backend/src/api/mod.rs
+   ```
+
+2. **特殊なエンドポイントの把握**
+
+   - 詳細取得: `/api/resources/:id` vs `/api/resources/:id/full`
+   - ネストしたリソース: `/api/resources/:id/sub-resources`
+
+3. **レスポンス形式の確認**
+   - 単一オブジェクト vs ラッパーオブジェクト
+   - ページネーション形式
+
+### 4. よくある実装ミスと対策
+
+#### ❌ 型の不一致
+
+```typescript
+// 悪い例
+type Status = 'active' | 'inactive'; // DBは 'draft' も含む
+
+// 良い例 - DBの制約を先に確認
+type Status = 'draft' | 'active' | 'inactive';
+```
+
+#### ❌ フィールド名の不一致
+
+```typescript
+// 悪い例
+trigger_conditions?: Record<string, any>;  // DBは trigger_config
+
+// 良い例 - バックエンドのモデルと一致
+trigger_config?: Record<string, any>;
+```
+
+#### ❌ 重複エラーの未考慮
+
+```typescript
+// 悪い例
+step_order: steps.length + 1; // 削除後に重複する可能性
+
+// 良い例
+step_order: Math.max(...steps.map(s => s.step_order)) + 1;
+```
+
+### 5. デバッグ手順
+
+1. **エラー発生時はまずログを確認**
+
+   - ブラウザのコンソール
+   - バックエンドのターミナル出力
+
+2. **データベースの実データ確認**
+
+   ```bash
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT * FROM table_name;"
+   ```
+
+3. **API通信の確認**
+   - ブラウザの開発者ツール > Network タブ
+   - リクエスト/レスポンスのペイロード確認
+
 ## 🔧 トラブルシューティング
 
 ### データベース接続エラー
