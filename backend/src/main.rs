@@ -14,6 +14,7 @@ mod middleware;
 mod models;
 mod services;
 mod utils;
+mod workers;
 
 #[tokio::main]
 async fn main() {
@@ -43,10 +44,13 @@ async fn main() {
 
     // アプリケーション状態
     let app_state = AppState {
-        db: pool,
+        db: pool.clone(),
         redis: redis_client,
         config,
     };
+
+    // シーケンスワーカーを起動
+    workers::sequence_worker::spawn_sequence_worker(std::sync::Arc::new(pool));
 
     // ルーター作成
     let app = create_app(app_state);

@@ -2,6 +2,167 @@
 
 このドキュメントは、各開発セッションの作業内容、修正内容、発生した問題と解決方法を記録するためのものです。
 
+## 2025-06-12: シーケンス機能のバックエンド実装（自動化システム）
+
+### 作業概要
+
+シーケンス機能のバックエンド自動化システムを実装。メール自動配信のためのビジネスロジック層、バックグラウンドワーカー、トリガーハンドラーを構築し、メール配信の動作確認まで完了。
+
+### 実装した機能
+
+#### 1. シーケンスサービス層 (`backend/src/services/sequence_service.rs`)
+
+- ✅ トリガーエンロールメント処理
+- ✅ トリガー条件評価ロジック
+- ✅ ステップ実行エンジン（メール送信、待機、条件分岐、タグ付け）
+- ✅ 変数置換システム
+- ✅ エラーハンドリングとログ記録
+
+#### 2. データベース層の拡張 (`backend/src/database/sequences.rs`)
+
+- ✅ `find_active_sequences_by_trigger` - トリガー別のアクティブシーケンス取得
+- ✅ `find_pending_sequence_enrollments` - 実行待ちエンロールメント取得
+- ✅ `complete_sequence_enrollment` - エンロールメント完了処理
+- ✅ `update_enrollment_progress` - 進捗更新
+- ✅ `schedule_next_enrollment_step` - 次ステップのスケジューリング
+- ✅ `create_sequence_step_log` - ステップ実行ログ記録
+
+#### 3. バックグラウンドワーカー (`backend/src/workers/sequence_worker.rs`)
+
+- ✅ 定期実行ワーカー（デフォルト60秒間隔）
+- ✅ 非同期タスクとしてメインプロセスから独立実行
+- ✅ エラーハンドリングとログ出力
+
+#### 4. トリガーハンドラーの統合
+
+- ✅ 購読者作成時のトリガー（`api/subscribers.rs`）
+- ✅ フォーム送信時のトリガー（`api/forms.rs`）
+- ✅ フォーム送信から購読者作成・シーケンス登録の連携
+- ✅ エラーが発生してもメイン処理は継続
+
+#### 5. フォーム送信時の購読者作成機能
+
+- ✅ フォームデータからメールアドレスを自動抽出
+- ✅ 既存購読者のチェックと新規作成
+- ✅ フォーム送信と購読者の紐付け
+- ✅ カスタムフィールドとタグの自動設定
+
+### 遭遇した問題と解決方法
+
+#### 問題1: Enum型とString型の不一致
+
+**症状**: `TriggerType`と`String`の比較でコンパイルエラー
+
+**解決方法**:
+
+```rust
+// 変更前
+if sequence.trigger_type == TriggerType::FormSubmission {
+
+// 変更後
+if sequence.trigger_type == TriggerType::FormSubmission.as_str() {
+```
+
+#### 問題2: current_step_orderフィールドの不在
+
+**症状**: `SequenceEnrollment`に`current_step_order`が存在しない
+
+**解決方法**: `current_step_id`から動的に計算する方式に変更
+
+```rust
+let current_step_order = if let Some(current_step_id) = enrollment.current_step_id {
+    steps.iter()
+        .find(|s| s.id == current_step_id)
+        .map(|s| s.step_order)
+        .unwrap_or(0)
+} else {
+    0
+};
+```
+
+#### 問題3: EmailServiceのメソッド名不一致
+
+**症状**: `send`メソッドが存在しない
+
+**解決方法**: 正しいメソッド名`send_email`を使用
+
+#### 問題4: フォーム送信時に購読者が作成されない
+
+**症状**: フォーム送信しても`subscriber_id`が常にNULL
+
+**解決方法**: `submit_form`ハンドラーに購読者作成ロジックを追加
+
+```rust
+// フォームデータからメールアドレスを抽出
+let email = extract_email_from_form_data(&request.data, &form.form_fields);
+
+// 購読者を検索または作成
+if let Some(email) = email {
+    match subscribers::find_subscriber_by_email(&state.db, &email, form.user_id).await {
+        Ok(Some(subscriber)) => Some(subscriber.id),
+        Ok(None) => {
+            // 新規購読者を作成
+            let create_req = CreateSubscriberRequest {
+                email,
+                name: extract_name_from_form_data(&request.data, &form.form_fields),
+                status: Some(SubscriberStatus::Active),
+                tags: Some(vec![format!("form:{}", form.slug)]),
+                custom_fields: Some(request.data.clone()),
+            };
+            // ...
+        }
+    }
+}
+```
+
+#### 問題5: AWS SESメール配信の確認
+
+**症状**: メールが送信されているがユーザーに届かない
+
+**原因**: 一時的な配信遅延
+
+**結果**: 数分後に正常に配信されたことを確認
+
+### アーキテクチャの特徴
+
+1. **サービス層の分離**: ビジネスロジックをサービス層に集約
+2. **非同期処理**: Tokioを使用した効率的な非同期処理
+3. **エラー耐性**: 個別のエンロールメント処理のエラーが全体に影響しない設計
+4. **拡張性**: 新しいステップタイプやトリガータイプの追加が容易
+5. **自動化**: フォーム送信から購読者登録、メール配信まで完全自動化
+
+### 動作確認済みのフロー
+
+1. フォーム作成（フィールドにemailタイプを含む）
+2. フォーム公開
+3. フォーム送信（メールアドレス入力）
+4. 購読者自動作成
+5. FormSubmissionトリガーでシーケンス登録
+6. バックグラウンドワーカーがステップを処理
+7. AWS SES経由でメール送信
+8. ユーザーがメール受信
+
+### 次のステップ
+
+1. **統合テストの作成**
+
+   - [ ] シーケンスエンロールメントのE2Eテスト
+   - [ ] ワーカーの動作確認テスト
+   - [ ] トリガー発火のテスト
+
+2. **運用機能の追加**
+
+   - [ ] シーケンス実行の一時停止・再開機能
+   - [ ] 実行ログの可視化
+   - [ ] パフォーマンスメトリクスの収集
+
+3. **高度な機能**
+   - [ ] 条件分岐の詳細実装
+   - [ ] A/Bテスト機能
+   - [ ] 動的なコンテンツ生成
+
+---
+
 ## 2025-06-11: シーケンス機能のフロントエンド実装
 
 ### 作業概要

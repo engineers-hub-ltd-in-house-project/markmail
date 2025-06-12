@@ -1,10 +1,12 @@
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::sequence::{
-    CreateSequenceRequest, CreateSequenceStepRequest, Sequence, SequenceEnrollment, SequenceStep,
-    SequenceWithSteps, UpdateSequenceRequest, UpdateSequenceStepRequest,
+    CreateSequenceEnrollmentRequest, CreateSequenceRequest, CreateSequenceStepRequest, Sequence,
+    SequenceEnrollment, SequenceStep, SequenceStepLog, SequenceWithSteps, TriggerType,
+    UpdateSequenceRequest, UpdateSequenceStepRequest,
 };
 
 pub async fn create_sequence(
@@ -223,27 +225,6 @@ pub async fn get_sequence_with_steps(
     }
 }
 
-pub async fn create_sequence_enrollment(
-    pool: &PgPool,
-    sequence_id: Uuid,
-    subscriber_id: Uuid,
-) -> Result<SequenceEnrollment> {
-    let enrollment = sqlx::query_as!(
-        SequenceEnrollment,
-        r#"
-        INSERT INTO sequence_enrollments (sequence_id, subscriber_id, status, metadata)
-        VALUES ($1, $2, 'active', '{}')
-        RETURNING id, sequence_id, subscriber_id, current_step_id, status, enrolled_at, completed_at, cancelled_at, next_step_at, metadata, created_at, updated_at
-        "#,
-        sequence_id,
-        subscriber_id
-    )
-    .fetch_one(pool)
-    .await?;
-
-    Ok(enrollment)
-}
-
 pub async fn get_active_sequences_by_trigger(
     pool: &PgPool,
     trigger_type: &str,
@@ -340,4 +321,202 @@ pub async fn update_sequence_enrollment_status(
     }
 
     Ok(())
+}
+
+// 新しく追加する関数
+
+pub async fn find_active_sequences_by_trigger(
+    pool: &PgPool,
+    user_id: Uuid,
+    trigger_type: TriggerType,
+) -> Result<Vec<Sequence>> {
+    let sequences = sqlx::query_as!(
+        Sequence,
+        r#"
+        SELECT id, user_id, name, description, trigger_type, trigger_config, status, active_subscribers, completed_subscribers, created_at, updated_at
+        FROM sequences
+        WHERE user_id = $1 AND trigger_type = $2 AND status = 'active'
+        "#,
+        user_id,
+        trigger_type.as_str()
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(sequences)
+}
+
+pub async fn find_sequence_by_id(
+    pool: &PgPool,
+    sequence_id: Uuid,
+    _user_id: Option<Uuid>,
+) -> Result<Option<Sequence>> {
+    let sequence = sqlx::query_as!(
+        Sequence,
+        r#"
+        SELECT id, user_id, name, description, trigger_type, trigger_config, status, active_subscribers, completed_subscribers, created_at, updated_at
+        FROM sequences
+        WHERE id = $1
+        "#,
+        sequence_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(sequence)
+}
+
+pub async fn find_sequence_steps(pool: &PgPool, sequence_id: Uuid) -> Result<Vec<SequenceStep>> {
+    get_sequence_steps(pool, sequence_id).await
+}
+
+pub async fn find_pending_sequence_enrollments(pool: &PgPool) -> Result<Vec<SequenceEnrollment>> {
+    let enrollments = sqlx::query_as!(
+        SequenceEnrollment,
+        r#"
+        SELECT id, sequence_id, subscriber_id, current_step_id, status, enrolled_at, completed_at, cancelled_at, next_step_at, metadata, created_at, updated_at
+        FROM sequence_enrollments
+        WHERE status = 'active' 
+        AND (next_step_at IS NULL OR next_step_at <= NOW())
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(enrollments)
+}
+
+pub async fn complete_sequence_enrollment(pool: &PgPool, enrollment_id: Uuid) -> Result<()> {
+    update_sequence_enrollment_status(pool, enrollment_id, "completed", None).await
+}
+
+pub async fn update_enrollment_progress(
+    pool: &PgPool,
+    enrollment_id: Uuid,
+    current_step_order: i32,
+) -> Result<()> {
+    // 現在のステップIDを取得
+    let step = sqlx::query!(
+        r#"
+        SELECT s.id
+        FROM sequence_steps s
+        JOIN sequence_enrollments e ON e.sequence_id = s.sequence_id
+        WHERE e.id = $1 AND s.step_order = $2
+        "#,
+        enrollment_id,
+        current_step_order
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let current_step_id = step.map(|s| s.id);
+
+    sqlx::query!(
+        r#"
+        UPDATE sequence_enrollments
+        SET current_step_id = $2,
+            next_step_at = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+        enrollment_id,
+        current_step_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn schedule_next_enrollment_step(
+    pool: &PgPool,
+    enrollment_id: Uuid,
+    next_step_order: i32,
+    next_execution_at: DateTime<Utc>,
+) -> Result<()> {
+    // 次のステップIDを取得
+    let step = sqlx::query!(
+        r#"
+        SELECT s.id
+        FROM sequence_steps s
+        JOIN sequence_enrollments e ON e.sequence_id = s.sequence_id
+        WHERE e.id = $1 AND s.step_order = $2
+        "#,
+        enrollment_id,
+        next_step_order
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let next_step_id = step.map(|s| s.id);
+
+    sqlx::query!(
+        r#"
+        UPDATE sequence_enrollments
+        SET current_step_id = $2,
+            next_step_at = $3,
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+        enrollment_id,
+        next_step_id,
+        next_execution_at
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn create_sequence_step_log(
+    pool: &PgPool,
+    enrollment_id: Uuid,
+    step_id: Uuid,
+    status: &str,
+    error_message: Option<String>,
+) -> Result<SequenceStepLog> {
+    let log = sqlx::query_as!(
+        SequenceStepLog,
+        r#"
+        INSERT INTO sequence_step_logs (enrollment_id, step_id, status, error_message)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, enrollment_id, step_id, status, error_message, executed_at
+        "#,
+        enrollment_id,
+        step_id,
+        status,
+        error_message
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(log)
+}
+
+// create_sequence_enrollment関数を更新
+pub async fn create_sequence_enrollment(
+    pool: &PgPool,
+    sequence_id: Uuid,
+    request: &CreateSequenceEnrollmentRequest,
+) -> Result<SequenceEnrollment> {
+    let metadata = request
+        .trigger_data
+        .clone()
+        .unwrap_or(serde_json::json!({}));
+
+    let enrollment = sqlx::query_as!(
+        SequenceEnrollment,
+        r#"
+        INSERT INTO sequence_enrollments (sequence_id, subscriber_id, status, metadata)
+        VALUES ($1, $2, 'active', $3)
+        RETURNING id, sequence_id, subscriber_id, current_step_id, status, enrolled_at, completed_at, cancelled_at, next_step_at, metadata, created_at, updated_at
+        "#,
+        sequence_id,
+        request.subscriber_id,
+        metadata
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(enrollment)
 }

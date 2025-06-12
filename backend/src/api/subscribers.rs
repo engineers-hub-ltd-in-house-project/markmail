@@ -11,10 +11,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::middleware::auth::AuthUser;
+use crate::models::sequence::TriggerType;
 use crate::models::subscriber::{
     CreateSubscriberRequest, ImportSubscribersRequest, SubscriberStatus, UpdateSubscriberRequest,
 };
-use crate::services::subscriber_service;
+use crate::services::{sequence_service::SequenceService, subscriber_service};
 use crate::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +112,22 @@ pub async fn add_subscriber(
             eprintln!("購読者追加エラー: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    // シーケンスへの自動エンロールメントをトリガー
+    let sequence_service = SequenceService::new();
+    if let Err(e) = sequence_service
+        .process_trigger_enrollment(
+            &state.db,
+            auth_user.user_id,
+            TriggerType::SubscriberCreated,
+            subscriber.id,
+            None,
+        )
+        .await
+    {
+        eprintln!("シーケンスエンロールメントエラー: {}", e);
+        // エラーが発生してもレスポンスは返す（購読者作成は成功しているため）
+    }
 
     Ok(Json(json!({
         "message": "購読者が追加されました",

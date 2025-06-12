@@ -101,3 +101,115 @@ pub struct SequenceWithSteps {
     pub sequence: Sequence,
     pub steps: Vec<SequenceStep>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct SequenceStepLog {
+    pub id: Uuid,
+    pub enrollment_id: Uuid,
+    pub step_id: Uuid,
+    pub status: String,
+    pub error_message: Option<String>,
+    pub executed_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateSequenceEnrollmentRequest {
+    pub subscriber_id: Uuid,
+    pub trigger_data: Option<JsonValue>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TriggerType {
+    Manual,
+    SubscriberCreated,
+    FormSubmission,
+    TagAdded,
+}
+
+impl TriggerType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TriggerType::Manual => "manual",
+            TriggerType::SubscriberCreated => "subscriber_created",
+            TriggerType::FormSubmission => "form_submission",
+            TriggerType::TagAdded => "tag_added",
+        }
+    }
+}
+
+impl From<String> for TriggerType {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "manual" => TriggerType::Manual,
+            "subscriber_created" => TriggerType::SubscriberCreated,
+            "form_submission" => TriggerType::FormSubmission,
+            "tag_added" => TriggerType::TagAdded,
+            _ => TriggerType::Manual,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StepType {
+    Email,
+    Wait,
+    Condition,
+    Tag,
+}
+
+impl StepType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            StepType::Email => "email",
+            StepType::Wait => "wait",
+            StepType::Condition => "condition",
+            StepType::Tag => "tag",
+        }
+    }
+}
+
+impl From<String> for StepType {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "email" => StepType::Email,
+            "wait" => StepType::Wait,
+            "condition" => StepType::Condition,
+            "tag" => StepType::Tag,
+            _ => StepType::Email,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SequenceStatus {
+    Draft,
+    Active,
+    Paused,
+    Archived,
+}
+
+impl SequenceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SequenceStatus::Draft => "draft",
+            SequenceStatus::Active => "active",
+            SequenceStatus::Paused => "paused",
+            SequenceStatus::Archived => "archived",
+        }
+    }
+}
+
+impl From<String> for SequenceStatus {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "draft" => SequenceStatus::Draft,
+            "active" => SequenceStatus::Active,
+            "paused" => SequenceStatus::Paused,
+            "archived" => SequenceStatus::Archived,
+            _ => SequenceStatus::Draft,
+        }
+    }
+}
