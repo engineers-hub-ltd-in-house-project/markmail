@@ -75,8 +75,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_worker_creation() {
-        // ダミーのプールを作成（実際のテストでは適切なテストDBを使用）
-        let pool = Arc::new(PgPool::new(""));
+        // テスト用の遅延接続プールを作成
+        let pool = Arc::new(PgPool::connect_lazy("postgresql://test").unwrap());
         let worker = SequenceWorker::new(pool);
 
         assert_eq!(worker.interval_seconds, 60);
@@ -84,7 +84,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_worker_with_custom_interval() {
-        let pool = Arc::new(PgPool::new(""));
+        // テスト用の遅延接続プールを作成
+        let pool = Arc::new(PgPool::connect_lazy("postgresql://test").unwrap());
         let worker = SequenceWorker::new(pool).with_interval(30);
 
         assert_eq!(worker.interval_seconds, 30);
