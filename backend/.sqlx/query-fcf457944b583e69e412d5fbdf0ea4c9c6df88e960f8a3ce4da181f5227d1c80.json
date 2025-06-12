@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO sequence_enrollments (sequence_id, subscriber_id, status, metadata)\n        VALUES ($1, $2, 'active', '{}')\n        RETURNING id, sequence_id, subscriber_id, current_step_id, status, enrolled_at, completed_at, cancelled_at, next_step_at, metadata, created_at, updated_at\n        ",
+  "query": "\n        INSERT INTO sequence_enrollments (sequence_id, subscriber_id, status, metadata)\n        VALUES ($1, $2, 'active', $3)\n        RETURNING id, sequence_id, subscriber_id, current_step_id, status, enrolled_at, completed_at, cancelled_at, next_step_at, metadata, created_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
@@ -65,9 +65,9 @@
       }
     ],
     "parameters": {
-      "Left": ["Uuid", "Uuid"]
+      "Left": ["Uuid", "Uuid", "Jsonb"]
     },
     "nullable": [false, false, false, true, false, false, true, true, true, false, false, false]
   },
-  "hash": "7dbcd070d76e31f85775f884cac59cbb75f9f765c96bd34eb8fe1234ab982b1b"
+  "hash": "fcf457944b583e69e412d5fbdf0ea4c9c6df88e960f8a3ce4da181f5227d1c80"
 }
