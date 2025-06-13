@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS sequence_step_logs (
     enrollment_id UUID NOT NULL REFERENCES sequence_enrollments(id) ON DELETE CASCADE,
     step_id UUID NOT NULL REFERENCES sequence_steps(id) ON DELETE CASCADE,
     status VARCHAR(50) NOT NULL,
-    executed_at TIMESTAMPTZ,
+    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     error_message TEXT,
     metadata JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
