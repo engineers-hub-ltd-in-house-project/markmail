@@ -532,6 +532,173 @@ tokio::spawn(async move {
    - ブラウザの開発者ツール > Network タブ
    - リクエスト/レスポンスのペイロード確認
 
+## 🔧 AWS RDS操作方法 / How to Operate AWS RDS
+
+### RDSへの接続方法 / How to Connect to RDS
+
+AWS環境のRDSはセキュリティ要件により直接接続できません。以下の方法で接続します：
+
+#### 1. 踏み台ホスト（Bastion Host）経由での接続 / Connection via Bastion Host
+
+```bash
+# 踏み台ホストの作成 / Create bastion host
+cd infrastructure
+CREATE_BASTION=true npm run cdk -- deploy MarkMail-dev-BastionStack --profile your-profile
+
+# 踏み台ホストのインスタンスIDを取得 / Get bastion host instance ID
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=markmail-dev-bastion" \
+  --query 'Reservations[*].Instances[*].[InstanceId]' \
+  --output text \
+  --profile your-profile
+
+# SSM Session Manager経由で接続 / Connect via SSM Session Manager
+aws ssm start-session \
+  --target i-xxxxxxxxxxxxx \
+  --profile your-profile
+
+# 踏み台ホスト内からRDSに接続 / Connect to RDS from bastion host
+PGPASSWORD=your-password psql \
+  -h your-rds-endpoint.rds.amazonaws.com \
+  -U markmail \
+  -d markmail
+```
+
+#### 2. SSM Send Commandでのリモート実行 / Remote Execution via SSM Send Command
+
+```bash
+# コマンドを実行 / Execute command
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["your-command-here"]' \
+  --profile your-profile \
+  --query 'Command.CommandId' \
+  --output text
+
+# 実行結果を確認 / Check execution result
+aws ssm get-command-invocation \
+  --command-id command-id-here \
+  --instance-id i-xxxxxxxxxxxxx \
+  --profile your-profile
+```
+
+### データベースマイグレーション / Database Migration
+
+#### ECS経由での自動マイグレーション / Automatic Migration via ECS
+
+アプリケーション起動時に自動的にマイグレーションが実行されます：
+
+```bash
+# ECSサービスを強制的に再デプロイ / Force redeploy ECS service
+aws ecs update-service \
+  --cluster markmail-dev \
+  --service markmail-dev-backend \
+  --force-new-deployment \
+  --profile your-profile
+```
+
+#### 手動マイグレーション / Manual Migration
+
+踏み台ホスト経由で手動実行する場合：
+
+```bash
+# 踏み台ホストでマイグレーションを実行 / Run migration on bastion host
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "git clone https://github.com/your-repo/markmail.git",
+    "cd markmail/backend",
+    "export DATABASE_URL=\"postgresql://user:pass@endpoint:5432/dbname\"",
+    "sqlx migrate run"
+  ]' \
+  --profile your-profile
+```
+
+### データベースのリセット / Database Reset
+
+⚠️ **警告 / WARNING**: 本番環境では絶対に実行しないでください / NEVER execute in
+production
+
+```bash
+# 接続を強制終了してデータベースを再作成 / Terminate connections and recreate database
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "export PGPASSWORD=\"your-password\"",
+    "psql -h endpoint -U markmail -d postgres -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '"'"'markmail'"'"' AND pid <> pg_backend_pid();\"",
+    "psql -h endpoint -U markmail -d postgres -c \"DROP DATABASE IF EXISTS markmail;\"",
+    "psql -h endpoint -U markmail -d postgres -c \"CREATE DATABASE markmail;\""
+  ]' \
+  --profile your-profile
+```
+
+### マイグレーションバージョンの不一致を解決 / Resolve Migration Version Mismatch
+
+ローカルとAWS環境でマイグレーションのチェックサムが異なる場合：
+
+1. **マイグレーション履歴を確認 / Check migration history**
+
+   ```sql
+   SELECT version, checksum FROM _sqlx_migrations ORDER BY version;
+   ```
+
+2. **チェックサムを更新 / Update checksum**
+
+   ```sql
+   UPDATE _sqlx_migrations
+   SET checksum = 'new-checksum-here'
+   WHERE version = 'version-number';
+   ```
+
+3. **特定のマイグレーションを削除して再実行 / Delete and rerun specific
+   migration**
+   ```sql
+   DELETE FROM _sqlx_migrations WHERE version = 'version-number';
+   ```
+
+### トラブルシューティング / Troubleshooting
+
+#### 踏み台ホストが見つからない / Bastion host not found
+
+```bash
+# インスタンスの状態を確認 / Check instance status
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=markmail-dev-bastion" \
+  "Name=instance-state-name,Values=running,stopped" \
+  --query 'Reservations[*].Instances[*].[InstanceId,State.Name]' \
+  --output table \
+  --profile your-profile
+```
+
+#### RDSエンドポイントの確認 / Check RDS endpoint
+
+```bash
+aws rds describe-db-instances \
+  --query 'DBInstances[*].[DBInstanceIdentifier,Endpoint.Address]' \
+  --output table \
+  --profile your-profile
+```
+
+#### データベースパスワードの取得 / Get database password
+
+```bash
+aws secretsmanager get-secret-value \
+  --secret-id markmail-dev-db-secret \
+  --query 'SecretString' \
+  --output text \
+  --profile your-profile | jq -r '.password'
+```
+
+### 重要な注意事項 / Important Notes
+
+- **踏み台ホストは一時的なリソース** / Bastion host is a temporary resource
+- **使用後は削除を検討** / Consider deletion after use
+- **本番環境では特に慎重に操作** / Be extra careful in production
+- **データベースのバックアップを確認** / Verify database backups exist
+
 ## 🔧 トラブルシューティング
 
 ### データベース接続エラー
