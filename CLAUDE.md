@@ -1,40 +1,87 @@
 # CLAUDE.md
 
 このファイルはClaude Code
-(claude.ai/code)がこのリポジトリで作業する際のガイダンスを提供します。
+(claude.ai/code)がこのリポジトリで作業する際のガイダンスを提供します。This file
+provides guidance for Claude Code when working with this repository.
 
-## ⚡ 最重要事項 - 絶対に行ってはいけないこと
+## 🔴 エラー発生時は必ずこのセクションを確認すること / ALWAYS CHECK THIS SECTION WHEN ERRORS OCCUR
 
-### 1. 既存のマイグレーションファイルの削除・変更
+### テストが失敗した場合の対処法 / How to Handle Test Failures
 
-- データベースマイグレーションファイル（`backend/migrations/*.sql`）は絶対に削除・変更しない
-- 新しいマイグレーションが必要な場合は、新しいタイムスタンプで追加ファイルを作成する
-- 既に適用されたマイグレーションは変更不可能
+1. **絶対にやってはいけないこと / NEVER DO THESE**
 
-### 2. テストの無効化
+   - ❌ `git push --no-verify` でテストをスキップ / Skip tests with
+     `git push --no-verify`
+   - ❌ `#[ignore]` でテストを無効化 / Disable tests with `#[ignore]`
+   - ❌ テストに合わせてビジネスロジックを変更 / Change business logic to pass
+     tests
 
-- テストが失敗する場合は、テストを削除・無効化せず、コードを修正する
-- `#[ignore]`や`skip`の使用は禁止
-- **テストを通すためにロジックを変更する愚行は絶対に禁止**
-- テストは既存のロジックを検証するものであり、テストに合わせてロジックを変更してはならない
-- **既存の正常に動いているテストを消すな！**
+2. **必ず行うこと / ALWAYS DO THESE**
+   - ✅ エラーメッセージを読んで原因を特定 / Read error messages and identify
+     the cause
+   - ✅ テストDBの問題なら / If it's a test DB issue: `DROP DATABASE` →
+     `CREATE DATABASE` → `sqlx migrate run`
+   - ✅ コードの問題なら: バグを修正 / If it's a code issue: Fix the bug
+   - ✅ 全てのテストが通ることを確認してからプッシュ / Ensure all tests pass
+     before pushing
 
-### 3. 直接的なデータベース操作
+### プッシュ時にエラーが発生した場合 / When Push Errors Occur
 
-- `DROP TABLE`、`DROP DATABASE`などの破壊的操作は絶対に実行しない
-- データベーススキーマの変更は必ずマイグレーションファイル経由で行う
+1. **pre-pushフックでテストが失敗 / pre-push hook test failures**
 
-### 4. 環境変数・シークレットの露出
+   - ❌ 絶対に `--no-verify` を使わない / NEVER use `--no-verify`
+   - ✅ 上記の「テストが失敗した場合の対処法」を実行 / Follow the test failure
+     handling above
 
-- `.env`ファイルの内容をコミット・表示しない
-- APIキーやパスワードをハードコーディングしない
+2. **権限エラー / Permission errors**
+   - ✅ `gh auth login` で認証を更新 / Update authentication with
+     `gh auth login`
 
-### 5. 過信を招く表現の使用禁止
+## ⚡ 最重要事項 - 絶対に行ってはいけないこと / CRITICAL - NEVER DO THESE
 
-- **「完璧」という言葉を絶対に使わない** - 実装後に必ず問題が発生する
-- 「問題ありません」「大丈夫です」などの断定的な表現を避ける
-- 常に「～と思われます」「～はずです」のような慎重な表現を使う
-- 実装完了後も潜在的な問題の可能性を常に意識する
+### 1. 既存のマイグレーションファイルの削除・変更 / Never Delete or Modify Existing Migration Files
+
+- データベースマイグレーションファイル（`backend/migrations/*.sql`）は絶対に削除・変更しない /
+  NEVER delete or modify database migration files
+- 新しいマイグレーションが必要な場合は、新しいタイムスタンプで追加ファイルを作成する /
+  Create new migration files with new timestamps
+- 既に適用されたマイグレーションは変更不可能 / Applied migrations are immutable
+
+### 2. テストの無効化 / Never Disable Tests
+
+- テストが失敗する場合は、テストを削除・無効化せず、コードを修正する / Fix code
+  instead of disabling tests
+- `#[ignore]`や`skip`の使用は禁止 / Using `#[ignore]` or `skip` is forbidden
+- **テストを通すためにロジックを変更する愚行は絶対に禁止** / **NEVER change
+  business logic to make tests pass**
+- テストは既存のロジックを検証するものであり、テストに合わせてロジックを変更してはならない /
+  Tests verify existing logic, don't change logic to fit tests
+- **既存の正常に動いているテストを消すな！** / **NEVER delete working tests!**
+
+### 3. 直接的なデータベース操作 / Never Manipulate Database Directly
+
+- `DROP TABLE`、`DROP DATABASE`などの破壊的操作は絶対に実行しない（テストDB除く） /
+  NEVER execute destructive operations (except test DB)
+- データベーススキーマの変更は必ずマイグレーションファイル経由で行う / Always
+  use migration files for schema changes
+
+### 4. 環境変数・シークレットの露出 / Never Expose Secrets
+
+- `.env`ファイルの内容をコミット・表示しない / Never commit or display `.env`
+  contents
+- APIキーやパスワードをハードコーディングしない / Never hardcode API keys or
+  passwords
+
+### 5. 過信を招く表現の使用禁止 / Never Use Overconfident Language
+
+- **「完璧」という言葉を絶対に使わない** - 実装後に必ず問題が発生する / **NEVER
+  use the word "perfect"** - issues always arise after implementation
+- 「問題ありません」「大丈夫です」などの断定的な表現を避ける / Avoid definitive
+  expressions like "no problem"
+- 常に「～と思われます」「～はずです」のような慎重な表現を使う / Always use
+  cautious expressions
+- 実装完了後も潜在的な問題の可能性を常に意識する / Always be aware of potential
+  issues
 
 ## 🛠️ 必須開発コマンド
 
@@ -238,27 +285,49 @@ frontend/src/
 - `EMAIL_PROVIDER`: mailhogまたはaws_ses
 - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: SES用
 
-## 🚫 よくある愚行と防止策
+## 🚫 よくある愚行と防止策 / Common Mistakes and Prevention
 
-### 1. テストを通すためにロジックを変更する
+### 1. テストを通すためにロジックを変更する / Changing Logic to Pass Tests
 
-- ❌ 悪い例: テストが失敗したので、テストに合わせてビジネスロジックを変更
-- ✅ 良い例: ロジックが正しい場合はテストを修正、バグがある場合はロジックを修正
+- ❌ 悪い例 /
+  Bad: テストが失敗したので、テストに合わせてビジネスロジックを変更 / Change
+  business logic to match tests
+- ✅ 良い例 /
+  Good: ロジックが正しい場合はテストを修正、バグがある場合はロジックを修正 / Fix
+  tests if logic is correct, fix logic if it has bugs
 
-### 2. マイグレーションファイルの削除・変更
+### 2. テストをスキップしてプッシュ / Skipping Tests to Push
 
-- ❌ 悪い例: エラーが出たので既存のマイグレーションファイルを削除
-- ✅ 良い例: 新しいタイムスタンプで修正用のマイグレーションを追加
+- ❌ **最悪の例 / WORST**: `git push --no-verify` でテストをスキップ / Skip
+  tests with `git push --no-verify`
+- ❌ 悪い例 / Bad: テストが失敗したので `#[ignore]` を追加 / Add `#[ignore]`
+  when tests fail
+- ✅ 良い例 / Good: テストが失敗した原因を調査し、問題を解決してからプッシュ /
+  Investigate failure cause and fix before pushing
 
-### 3. エラーを握りつぶす
+### 3. マイグレーションファイルの削除・変更 / Deleting or Modifying Migration Files
 
-- ❌ 悪い例: `unwrap()`でエラーが出たので`.unwrap_or_default()`に変更
-- ✅ 良い例: エラーの原因を調査し、適切なエラーハンドリングを実装
+- ❌ 悪い例 / Bad: エラーが出たので既存のマイグレーションファイルを削除 / Delete
+  existing migration files when errors occur
+- ❌ 悪い例 / Bad: 既存のマイグレーションファイルを直接編集 / Edit existing
+  migration files directly
+- ✅ 良い例 / Good: 新しいタイムスタンプで修正用のマイグレーションを追加 / Add
+  new migration with new timestamp
 
-### 4. 作業ディレクトリの混乱
+### 4. エラーを握りつぶす / Suppressing Errors
 
-- ❌ 悪い例: 現在のディレクトリを確認せずにコマンド実行
-- ✅ 良い例: `pwd`で常に現在位置を確認、適切なディレクトリに移動してから作業
+- ❌ 悪い例 / Bad: `unwrap()`でエラーが出たので`.unwrap_or_default()`に変更 /
+  Change to `.unwrap_or_default()` when `unwrap()` fails
+- ✅ 良い例 / Good: エラーの原因を調査し、適切なエラーハンドリングを実装 /
+  Investigate error cause and implement proper handling
+
+### 5. 作業ディレクトリの混乱 / Working Directory Confusion
+
+- ❌ 悪い例 / Bad: 現在のディレクトリを確認せずにコマンド実行 / Execute commands
+  without checking current directory
+- ✅ 良い例 / Good:
+  `pwd`で常に現在位置を確認、適切なディレクトリに移動してから作業 / Always check
+  with `pwd` and navigate to correct directory
 
 ## 🚨 新規サービス実装時の必須チェックリスト
 
