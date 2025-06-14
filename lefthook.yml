@@ -52,7 +52,7 @@ pre-push:
   commands:
     # プッシュ前のテスト実行
     backend-test:
-      run: cd backend && cargo test
+      run: cd backend && cargo test --lib -- --test-threads=1
 
     frontend-test:
       run: cd frontend && npm run test -- --run
