@@ -51,7 +51,7 @@ export interface UpdateSubscriberRequest {
  * 購読者CSV一括インポートリクエスト
  */
 export interface ImportSubscribersRequest {
-  file: unknown; // File type from DOM API
+  file: File; // File type from DOM API
   tag?: string;
 }
 

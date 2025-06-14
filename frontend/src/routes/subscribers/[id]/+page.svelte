@@ -243,7 +243,7 @@
       <!-- タグ -->
       <div class="px-6 py-5 border-b border-gray-200">
         <h2 class="text-lg font-medium text-gray-900 mb-4">タグ</h2>
-        {#if subscriber.tags.length === 0}
+        {#if !subscriber.tags || subscriber.tags.length === 0}
           <p class="text-sm text-gray-500">タグはありません</p>
         {:else}
           <div class="flex flex-wrap gap-2">
@@ -263,7 +263,7 @@
         <h2 class="text-lg font-medium text-gray-900 mb-4">
           カスタムフィールド
         </h2>
-        {#if Object.keys(subscriber.custom_fields).length === 0}
+        {#if !subscriber.custom_fields || Object.keys(subscriber.custom_fields).length === 0}
           <p class="text-sm text-gray-500">カスタムフィールドはありません</p>
         {:else}
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">

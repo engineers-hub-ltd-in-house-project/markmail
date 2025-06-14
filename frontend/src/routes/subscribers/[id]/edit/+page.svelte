@@ -118,14 +118,14 @@
       formData = {
         name: subscriber.name || "",
         status: subscriber.status,
-        tags: subscriber.tags,
-        custom_fields: subscriber.custom_fields,
+        tags: subscriber.tags || [],
+        custom_fields: subscriber.custom_fields || {},
       };
 
-      tags = [...subscriber.tags];
+      tags = [...(subscriber.tags || [])];
 
       // カスタムフィールドを設定
-      customFields = Object.entries(subscriber.custom_fields).map(
+      customFields = Object.entries(subscriber.custom_fields || {}).map(
         ([key, value]) => ({
           key,
           value: String(value), // 値を文字列に変換
