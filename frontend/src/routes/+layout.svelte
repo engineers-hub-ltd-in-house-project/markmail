@@ -32,9 +32,10 @@
 
   // 特定のルートでは非表示にする
   $: isAuthPage = $page.url.pathname.startsWith("/auth");
+  $: isLpPage = $page.url.pathname === "/lp";
 </script>
 
-{#if !isAuthPage}
+{#if !isAuthPage && !isLpPage}
   <div class="min-h-screen bg-white">
     <nav
       class="fixed w-full px-6 lg:px-12 py-6 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100"
@@ -141,7 +142,7 @@
     </main>
   </div>
 {:else}
-  <!-- 認証画面ではヘッダーを表示しない -->
+  <!-- 認証画面やLPページではヘッダーを表示しない -->
   <main>
     <slot />
   </main>
