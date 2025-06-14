@@ -22,7 +22,7 @@ pre-commit:
     frontend-lint:
       glob: 'frontend/**/*.{js,ts,svelte}'
       exclude: 'frontend/.svelte-kit/**/*'
-      run: npx eslint --config frontend/eslint.config.js --max-warnings 100 {staged_files} || true
+      run: npx --yes eslint --config frontend/eslint.config.js --max-warnings 100 {staged_files} || true
 
     # ルートレベルファイル フォーマット
     root-format:

@@ -151,9 +151,11 @@ impl CampaignService {
 
         // テストデータでHTMLを生成
         let test_data = serde_json::json!({
+            "user_name": "テストユーザー",
             "name": "テストユーザー",
             "email": "test@example.com",
             "company": "サンプル株式会社",
+            "company_name": "サンプル株式会社",
             "service_name": "MarkMail",
             "login_url": "https://markmail.example.com/login",
             "unsubscribe_url": "https://markmail.example.com/unsubscribe?id=12345"

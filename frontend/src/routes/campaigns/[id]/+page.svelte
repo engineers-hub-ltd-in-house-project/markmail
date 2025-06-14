@@ -472,15 +472,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">送信数</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.sent_count || 0}
+                    {campaign.stats.sent_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封率</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.sent_count > 0
-                      ? `${Math.round((campaign.opened_count / campaign.sent_count) * 100)}%`
+                    {campaign.stats.sent_count > 0
+                      ? `${Math.round(campaign.stats.open_rate * 100)}%`
                       : "0%"}
                   </dd>
                 </div>
@@ -488,15 +488,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封数</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.opened_count || 0}
+                    {campaign.stats.opened_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">クリック率</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.sent_count > 0
-                      ? `${Math.round((campaign.clicked_count / campaign.sent_count) * 100)}%`
+                    {campaign.stats.sent_count > 0
+                      ? `${Math.round(campaign.stats.click_rate * 100)}%`
                       : "0%"}
                   </dd>
                 </div>

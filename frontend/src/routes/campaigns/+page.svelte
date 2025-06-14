@@ -282,11 +282,11 @@
                   {formatDate(campaign.scheduled_at)}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {campaign.total_recipients}
+                  {campaign.stats.recipient_count}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {campaign.total_recipients > 0
-                    ? `${Math.round((campaign.opened_count / campaign.total_recipients) * 100)}%`
+                  {campaign.stats.sent_count > 0
+                    ? `${Math.round(campaign.stats.open_rate * 100)}%`
                     : "0%"}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
