@@ -368,3 +368,99 @@ pub async fn delete_sequence_step(
         }
     }
 }
+
+pub async fn activate_sequence(
+    State(state): State<AppState>,
+    Extension(user): Extension<AuthUser>,
+    Path(sequence_id): Path<Uuid>,
+) -> Result<StatusCode, (StatusCode, Json<Value>)> {
+    // Check sequence ownership
+    match db::get_sequence_by_id(&state.db, sequence_id).await {
+        Ok(Some(sequence)) => {
+            if sequence.user_id == user.user_id {
+                match db::update_sequence_status(&state.db, sequence_id, "active").await {
+                    Ok(_) => Ok(StatusCode::NO_CONTENT),
+                    Err(e) => {
+                        tracing::error!("シーケンスアクティベートエラー: {:?}", e);
+                        Err((
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({
+                                "error": "シーケンスのアクティベートに失敗しました"
+                            })),
+                        ))
+                    }
+                }
+            } else {
+                Err((
+                    StatusCode::FORBIDDEN,
+                    Json(json!({
+                        "error": "このシーケンスへのアクセス権限がありません"
+                    })),
+                ))
+            }
+        }
+        Ok(None) => Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "シーケンスが見つかりません"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("シーケンス取得エラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "シーケンスの取得に失敗しました"
+                })),
+            ))
+        }
+    }
+}
+
+pub async fn pause_sequence(
+    State(state): State<AppState>,
+    Extension(user): Extension<AuthUser>,
+    Path(sequence_id): Path<Uuid>,
+) -> Result<StatusCode, (StatusCode, Json<Value>)> {
+    // Check sequence ownership
+    match db::get_sequence_by_id(&state.db, sequence_id).await {
+        Ok(Some(sequence)) => {
+            if sequence.user_id == user.user_id {
+                match db::update_sequence_status(&state.db, sequence_id, "paused").await {
+                    Ok(_) => Ok(StatusCode::NO_CONTENT),
+                    Err(e) => {
+                        tracing::error!("シーケンス一時停止エラー: {:?}", e);
+                        Err((
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({
+                                "error": "シーケンスの一時停止に失敗しました"
+                            })),
+                        ))
+                    }
+                }
+            } else {
+                Err((
+                    StatusCode::FORBIDDEN,
+                    Json(json!({
+                        "error": "このシーケンスへのアクセス権限がありません"
+                    })),
+                ))
+            }
+        }
+        Ok(None) => Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "シーケンスが見つかりません"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("シーケンス取得エラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "シーケンスの取得に失敗しました"
+                })),
+            ))
+        }
+    }
+}

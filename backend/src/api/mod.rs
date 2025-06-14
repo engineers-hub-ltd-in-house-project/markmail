@@ -109,6 +109,11 @@ pub fn create_routes() -> Router<AppState> {
             "/api/sequences/:sequence_id/steps/:step_id",
             delete(sequences::delete_sequence_step),
         )
+        .route(
+            "/api/sequences/:id/activate",
+            post(sequences::activate_sequence),
+        )
+        .route("/api/sequences/:id/pause", post(sequences::pause_sequence))
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 

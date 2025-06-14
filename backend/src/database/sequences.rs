@@ -111,6 +111,23 @@ pub async fn delete_sequence(pool: &PgPool, sequence_id: Uuid) -> Result<()> {
     Ok(())
 }
 
+pub async fn update_sequence_status(pool: &PgPool, sequence_id: Uuid, status: &str) -> Result<()> {
+    sqlx::query!(
+        r#"
+        UPDATE sequences
+        SET status = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+        sequence_id,
+        status
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn create_sequence_step(
     pool: &PgPool,
     sequence_id: Uuid,

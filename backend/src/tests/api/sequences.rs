@@ -7,6 +7,7 @@ use crate::{
 use axum::{
     extract::{Extension, Json as AxumJson, Path},
     http::StatusCode,
+    Json,
 };
 use serde_json::json;
 use sqlx::PgPool;
@@ -462,4 +463,160 @@ async fn test_sequence_with_steps() {
         .execute(&pool)
         .await
         .expect("Failed to clean up test user");
+}
+
+#[tokio::test]
+async fn test_activate_sequence() {
+    let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
+
+    let auth_user = AuthUser {
+        user_id,
+        email: "test@example.com".to_string(),
+        name: "Test User".to_string(),
+    };
+
+    // シーケンス作成
+    let create_req = CreateSequenceRequest {
+        name: "テストシーケンス".to_string(),
+        description: Some("アクティベーションテスト".to_string()),
+        trigger_type: "form_submission".to_string(),
+        trigger_config: None,
+    };
+
+    let result = sequences::create_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user.clone()),
+        AxumJson(create_req),
+    )
+    .await;
+
+    let (status, Json(sequence)) = result.unwrap();
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(sequence.status, "draft");
+
+    // シーケンスをアクティベート
+    let result = sequences::activate_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user.clone()),
+        Path(sequence.id),
+    )
+    .await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), StatusCode::NO_CONTENT);
+
+    // ステータスが変更されたことを確認
+    let updated_sequence = crate::database::sequences::get_sequence_by_id(&pool, sequence.id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(updated_sequence.status, "active");
+}
+
+#[tokio::test]
+async fn test_pause_sequence() {
+    let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
+
+    let auth_user = AuthUser {
+        user_id,
+        email: "test@example.com".to_string(),
+        name: "Test User".to_string(),
+    };
+
+    // シーケンス作成
+    let create_req = CreateSequenceRequest {
+        name: "テストシーケンス".to_string(),
+        description: Some("一時停止テスト".to_string()),
+        trigger_type: "form_submission".to_string(),
+        trigger_config: None,
+    };
+
+    let result = sequences::create_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user.clone()),
+        AxumJson(create_req),
+    )
+    .await;
+
+    let (status, Json(sequence)) = result.unwrap();
+    assert_eq!(status, StatusCode::CREATED);
+
+    // まずアクティベート
+    crate::database::sequences::update_sequence_status(&pool, sequence.id, "active")
+        .await
+        .unwrap();
+
+    // シーケンスを一時停止
+    let result = sequences::pause_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user.clone()),
+        Path(sequence.id),
+    )
+    .await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), StatusCode::NO_CONTENT);
+
+    // ステータスが変更されたことを確認
+    let updated_sequence = crate::database::sequences::get_sequence_by_id(&pool, sequence.id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(updated_sequence.status, "paused");
+}
+
+#[tokio::test]
+async fn test_activate_sequence_unauthorized() {
+    let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id1 = create_test_user(&pool).await;
+    let user_id2 = create_test_user(&pool).await;
+
+    let auth_user1 = AuthUser {
+        user_id: user_id1,
+        email: "test1@example.com".to_string(),
+        name: "Test User 1".to_string(),
+    };
+
+    let auth_user2 = AuthUser {
+        user_id: user_id2,
+        email: "test2@example.com".to_string(),
+        name: "Test User 2".to_string(),
+    };
+
+    // user1のシーケンスを作成
+    let create_req = CreateSequenceRequest {
+        name: "テストシーケンス".to_string(),
+        description: Some("権限テスト".to_string()),
+        trigger_type: "form_submission".to_string(),
+        trigger_config: None,
+    };
+
+    let result = sequences::create_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user1.clone()),
+        AxumJson(create_req),
+    )
+    .await;
+
+    let (status, Json(sequence)) = result.unwrap();
+    assert_eq!(status, StatusCode::CREATED);
+
+    // user2でアクティベートを試みる
+    let result = sequences::activate_sequence(
+        axum::extract::State(app_state.clone()),
+        Extension(auth_user2),
+        Path(sequence.id),
+    )
+    .await;
+
+    assert!(result.is_err());
+    let (status, _) = result.unwrap_err();
+    assert_eq!(status, StatusCode::FORBIDDEN);
 }
