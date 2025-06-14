@@ -108,6 +108,20 @@
                     <a href="/settings" class="dropdown-item" role="menuitem">
                       設定
                     </a>
+                    <a
+                      href="/subscription"
+                      class="dropdown-item"
+                      role="menuitem"
+                    >
+                      サブスクリプション
+                    </a>
+                    <a
+                      href="/subscription/payment-history"
+                      class="dropdown-item"
+                      role="menuitem"
+                    >
+                      支払い履歴
+                    </a>
                     <div class="border-t border-gray-100 mt-2 pt-2">
                       <button
                         on:click={handleLogout}
