@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE usage_alerts\n        SET last_alerted_at = $2, updated_at = CURRENT_TIMESTAMP\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Timestamptz"]
+    },
+    "nullable": []
+  },
+  "hash": "edce459c6b75d58154be32a43f17ab1551844a760ba0020f5d8fec32ab9de122"
+}

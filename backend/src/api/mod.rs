@@ -14,6 +14,7 @@ pub mod integrations;
 pub mod markdown;
 pub mod sequences;
 pub mod subscribers;
+pub mod subscriptions;
 pub mod templates;
 pub mod users;
 
@@ -116,6 +117,25 @@ pub fn create_routes() -> Router<AppState> {
             post(sequences::activate_sequence),
         )
         .route("/api/sequences/:id/pause", post(sequences::pause_sequence))
+        // サブスクリプション管理
+        .route("/api/subscriptions/plans", get(subscriptions::get_plans))
+        .route(
+            "/api/subscriptions/current",
+            get(subscriptions::get_subscription),
+        )
+        .route(
+            "/api/subscriptions/upgrade",
+            post(subscriptions::upgrade_plan),
+        )
+        .route(
+            "/api/subscriptions/cancel",
+            post(subscriptions::cancel_subscription),
+        )
+        .route(
+            "/api/subscriptions/payment-history",
+            get(subscriptions::get_payment_history),
+        )
+        .route("/api/subscriptions/usage", get(subscriptions::get_usage))
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 

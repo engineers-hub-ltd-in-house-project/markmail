@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE usage_records \n            SET \n                usage_count = usage_count + $5,\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = $1 AND user_id = $2 AND metric_type = $3 AND period_start = $4 AND period_end = $6\n            RETURNING \n                id, user_id, metric_type, usage_count, \n                period_start, period_end, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "metric_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "usage_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "period_start",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 5,
+        "name": "period_end",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Uuid", "Text", "Date", "Int4", "Date"]
+    },
+    "nullable": [false, false, false, false, false, false, false, false]
+  },
+  "hash": "635a762fba5bb3186ea5b3aa604a3fcc37bdae39bbf0eaf4dbfa958b7bec5b9f"
+}

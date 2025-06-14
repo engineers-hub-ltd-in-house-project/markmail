@@ -103,6 +103,7 @@ pub struct AwsSesConfig {
 pub struct EmailService {
     provider: Arc<Box<dyn EmailProvider>>,
     config: EmailConfig,
+    #[allow(dead_code)]
     pool: PgPool,
 }
 
