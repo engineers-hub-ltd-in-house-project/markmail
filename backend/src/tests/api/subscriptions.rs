@@ -307,8 +307,7 @@ mod tests {
 
         let payment_data = response.0;
         let payments = payment_data.get("payments").unwrap().as_array().unwrap();
-        // 支払い履歴が作成されていることを確認（0件の場合もありうる）
-        assert!(payments.len() >= 0);
+        // 支払い履歴が作成されていることを確認
 
         if !payments.is_empty() {
             let payment = &payments[0];

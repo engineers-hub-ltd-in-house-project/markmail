@@ -48,7 +48,7 @@ async fn test_batch_email_creation() {
 
 #[test]
 fn test_email_config_from_env() {
-    use crate::services::email_service::{EmailConfig, EmailProviderType};
+    use crate::services::email_service::EmailProviderType;
 
     // 環境変数をクリア
     std::env::remove_var("EMAIL_PROVIDER");
@@ -71,7 +71,7 @@ fn test_email_config_from_env() {
 
 #[test]
 fn test_aws_ses_config_from_env() {
-    use crate::services::email_service::{EmailConfig, EmailProviderType};
+    use crate::services::email_service::EmailProviderType;
 
     // 前のテストの環境変数をクリア
     std::env::remove_var("SMTP_FROM");
