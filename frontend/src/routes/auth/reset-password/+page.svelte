@@ -162,16 +162,29 @@
         <div class="mb-6">
           <label for="new-password" class="label">新しいパスワード</label>
           <div class="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              id="new-password"
-              bind:value={newPassword}
-              placeholder="••••••••"
-              class="input-field pr-12"
-              required
-              disabled={loading}
-              minlength="8"
-            />
+            {#if showPassword}
+              <input
+                type="text"
+                id="new-password"
+                bind:value={newPassword}
+                placeholder="••••••••"
+                class="input-field pr-12"
+                required
+                disabled={loading}
+                minlength="8"
+              />
+            {:else}
+              <input
+                type="password"
+                id="new-password"
+                bind:value={newPassword}
+                placeholder="••••••••"
+                class="input-field pr-12"
+                required
+                disabled={loading}
+                minlength="8"
+              />
+            {/if}
             <button
               type="button"
               on:click={togglePasswordVisibility}
@@ -221,15 +234,27 @@
 
         <div class="mb-8">
           <label for="confirm-password" class="label">パスワード（確認）</label>
-          <input
-            type={showPassword ? "text" : "password"}
-            id="confirm-password"
-            bind:value={confirmPassword}
-            placeholder="••••••••"
-            class="input-field"
-            required
-            disabled={loading}
-          />
+          {#if showPassword}
+            <input
+              type="text"
+              id="confirm-password"
+              bind:value={confirmPassword}
+              placeholder="••••••••"
+              class="input-field"
+              required
+              disabled={loading}
+            />
+          {:else}
+            <input
+              type="password"
+              id="confirm-password"
+              bind:value={confirmPassword}
+              placeholder="••••••••"
+              class="input-field"
+              required
+              disabled={loading}
+            />
+          {/if}
         </div>
 
         <button
