@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import type * as ecr from 'aws-cdk-lib/aws-ecr';
 import type * as ecs from 'aws-cdk-lib/aws-ecs';
 import type { Construct } from 'constructs';
@@ -50,6 +51,13 @@ export class CICDStack extends cdk.Stack {
     // Source Output
     const sourceOutput = new codepipeline.Artifact();
 
+    // Docker Hub credentials from Secrets Manager
+    const dockerHubSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'DockerHubCredentials',
+      `markmail-${environmentName}-dockerhub`
+    );
+
     // CodeBuild projects
     const backendBuildProject = new codebuild.PipelineProject(this, 'BackendBuild', {
       projectName: `markmail-${environmentName}-backend-build`,
@@ -68,12 +76,20 @@ export class CICDStack extends cdk.Stack {
         AWS_ACCOUNT_ID: {
           value: cdk.Stack.of(this).account,
         },
+        DOCKERHUB_SECRET_NAME: {
+          value: dockerHubSecret.secretName,
+        },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
         phases: {
           pre_build: {
             commands: [
+              'echo Logging in to Docker Hub...',
+              'export DOCKERHUB_CREDS=$(aws secretsmanager get-secret-value --secret-id $DOCKERHUB_SECRET_NAME --query SecretString --output text)',
+              'export DOCKERHUB_USERNAME=$(echo $DOCKERHUB_CREDS | jq -r .username)',
+              'export DOCKERHUB_PASSWORD=$(echo $DOCKERHUB_CREDS | jq -r .password)',
+              'echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin',
               'echo Logging in to Amazon ECR...',
               'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com',
             ],
@@ -123,12 +139,20 @@ export class CICDStack extends cdk.Stack {
         VITE_API_URL: {
           value: domainName ? `https://${domainName}/api` : '/api',
         },
+        DOCKERHUB_SECRET_NAME: {
+          value: dockerHubSecret.secretName,
+        },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
         phases: {
           pre_build: {
             commands: [
+              'echo Logging in to Docker Hub...',
+              'export DOCKERHUB_CREDS=$(aws secretsmanager get-secret-value --secret-id $DOCKERHUB_SECRET_NAME --query SecretString --output text)',
+              'export DOCKERHUB_USERNAME=$(echo $DOCKERHUB_CREDS | jq -r .username)',
+              'export DOCKERHUB_PASSWORD=$(echo $DOCKERHUB_CREDS | jq -r .password)',
+              'echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin',
               'echo Logging in to Amazon ECR...',
               'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com',
             ],
@@ -161,6 +185,10 @@ export class CICDStack extends cdk.Stack {
     // Grant permissions to push to ECR
     backendRepo.grantPullPush(backendBuildProject);
     frontendRepo.grantPullPush(frontendBuildProject);
+
+    // Grant permissions to read Docker Hub secret
+    dockerHubSecret.grantRead(backendBuildProject);
+    dockerHubSecret.grantRead(frontendBuildProject);
 
     // Pipeline
     this.pipeline = new codepipeline.Pipeline(this, 'Pipeline', {

@@ -167,13 +167,26 @@ npm run deploy:cluster
      --secret-string "your-github-personal-access-token"
    ```
 
-2. **ドメイン設定**（本番環境の場合）
+2. **Docker Hub 認証情報の設定**（CodeBuildでのrate limit回避）
+
+   ```bash
+   # 環境変数を設定
+   export DOCKERHUB_USERNAME="your-dockerhub-username"
+   export DOCKERHUB_TOKEN="your-dockerhub-access-token"
+
+   # スクリプトを実行
+   ./scripts/setup-dockerhub-secret.sh
+   ```
+
+   Docker Hub Pro契約がある場合は、[Docker Hub](https://hub.docker.com/) でアクセストークンを生成してください。
+
+3. **ドメイン設定**（本番環境の場合）
 
    - Route 53 でドメインを設定
    - ACM で SSL 証明書を取得
    - ALB にドメインを関連付け
 
-3. **SES 設定**
+4. **SES 設定**
    - ドメイン検証
    - DKIM 設定
    - SPF レコード追加
