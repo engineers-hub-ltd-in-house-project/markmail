@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO payment_history (\n            user_id, subscription_id, amount, currency, status,\n            stripe_payment_intent_id\n        )\n        VALUES ($1, $2, $3, 'JPY', $4, $5)\n        RETURNING \n            id, user_id, subscription_id, amount, currency,\n            status, description, stripe_payment_intent_id,\n            stripe_invoice_id, metadata as \"metadata: serde_json::Value\",\n            paid_at, created_at\n        ",
+  "query": "\n        INSERT INTO payment_history (\n            user_id, subscription_id, amount, currency, status,\n            stripe_payment_intent_id, metadata\n        )\n        VALUES ($1, $2, $3, 'JPY', $4, $5, '{}')\n        RETURNING \n            id, user_id, subscription_id, amount, currency,\n            status, description, stripe_payment_intent_id,\n            stripe_invoice_id, metadata as \"metadata: serde_json::Value\",\n            paid_at, created_at\n        ",
   "describe": {
     "columns": [
       {
@@ -69,5 +69,5 @@
     },
     "nullable": [false, false, true, false, false, false, true, true, true, false, true, false]
   },
-  "hash": "028cbd2ed2899d08b70be3b8e8be4ef7e0cc10e1a2fa992d3a0dd3d704625259"
+  "hash": "fc900c2dae9c5d2f1e8d2355ab5525e174315ef1fddb974fb51effc750e272f0"
 }
