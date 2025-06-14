@@ -35,144 +35,108 @@
 </script>
 
 {#if !isAuthPage}
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <a href="/" class="flex items-center space-x-2">
-              <div
-                class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"
-              >
-                <span class="text-white font-bold text-sm">M</span>
-              </div>
-              <span class="text-xl font-bold text-gray-900">MarkMail</span>
-            </a>
-          </div>
+  <div class="min-h-screen bg-white">
+    <nav
+      class="fixed w-full px-6 lg:px-12 py-6 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100"
+    >
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center">
+          <a href="/" class="text-2xl tracking-tight font-light text-black"
+            >MARKMAIL</a
+          >
+        </div>
 
-          <div class="flex items-center space-x-4">
-            {#if isAuthenticated}
-              <!-- 認証済みの場合のナビゲーション -->
-              <a
-                href="/templates"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                テンプレート
-              </a>
-              <a
-                href="/campaigns"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                キャンペーン
-              </a>
-              <a
-                href="/subscribers"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                購読者
-              </a>
-              <a
-                href="/forms"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                フォーム
-              </a>
-              <a
-                href="/sequences"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                シーケンス
-              </a>
+        <div class="flex items-center space-x-8">
+          {#if isAuthenticated}
+            <!-- 認証済みの場合のナビゲーション -->
+            <a href="/templates" class="nav-link text-sm"> テンプレート </a>
+            <a href="/campaigns" class="nav-link text-sm"> キャンペーン </a>
+            <a href="/subscribers" class="nav-link text-sm"> 購読者 </a>
+            <a href="/forms" class="nav-link text-sm"> フォーム </a>
+            <a href="/sequences" class="nav-link text-sm"> シーケンス </a>
 
-              <!-- ユーザーメニュー -->
-              <div class="relative ml-3">
-                <div>
-                  <button
-                    type="button"
-                    class="flex items-center max-w-xs text-sm rounded-full focus:outline-none"
-                    id="user-menu"
-                    aria-expanded={showDropdown}
-                    aria-haspopup="true"
-                    on:click={() => (showDropdown = !showDropdown)}
-                  >
-                    <span class="sr-only">メニューを開く</span>
-                    <div
-                      class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600"
-                    >
-                      {#if user?.avatar_url}
-                        <img
-                          src={user.avatar_url}
-                          alt={user.name}
-                          class="h-8 w-8 rounded-full"
-                        />
-                      {:else}
-                        <span class="text-sm font-medium"
-                          >{user?.name?.charAt(0) || "U"}</span
-                        >
-                      {/if}
-                    </div>
-                  </button>
-                </div>
-
-                {#if showDropdown}
+            <!-- ユーザーメニュー -->
+            <div class="relative ml-4">
+              <div>
+                <button
+                  type="button"
+                  class="flex items-center p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  id="user-menu"
+                  aria-expanded={showDropdown}
+                  aria-haspopup="true"
+                  on:click={() => (showDropdown = !showDropdown)}
+                >
+                  <span class="sr-only">メニューを開く</span>
                   <div
-                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu"
+                    class="h-10 w-10 rounded-full bg-gray-900 flex items-center justify-center text-white"
                   >
-                    <div class="py-1">
-                      <span
-                        class="block px-4 py-2 text-sm text-gray-700 border-b"
+                    {#if user?.avatar_url}
+                      <img
+                        src={user.avatar_url}
+                        alt={user.name}
+                        class="h-10 w-10 rounded-full"
+                      />
+                    {:else}
+                      <span class="text-sm font-light"
+                        >{user?.name?.charAt(0) || "U"}</span
                       >
+                    {/if}
+                  </div>
+                </button>
+              </div>
+
+              {#if showDropdown}
+                <div
+                  class="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-xl bg-white border border-gray-100 overflow-hidden"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu"
+                >
+                  <div class="py-2">
+                    <div class="px-6 py-3 border-b border-gray-100">
+                      <p class="text-sm font-light text-gray-900">
                         {user?.name || "ユーザー"}
-                      </span>
-                      <a
-                        href="/profile"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        role="menuitem"
-                      >
-                        プロフィール
-                      </a>
-                      <a
-                        href="/settings"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        role="menuitem"
-                      >
-                        設定
-                      </a>
+                      </p>
+                      <p class="text-xs font-light text-gray-500 mt-1">
+                        {user?.email || ""}
+                      </p>
+                    </div>
+                    <a href="/profile" class="dropdown-item" role="menuitem">
+                      プロフィール
+                    </a>
+                    <a href="/settings" class="dropdown-item" role="menuitem">
+                      設定
+                    </a>
+                    <div class="border-t border-gray-100 mt-2 pt-2">
                       <button
                         on:click={handleLogout}
-                        class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        class="dropdown-item w-full text-left text-red-600 hover:bg-red-50"
                         role="menuitem"
                       >
                         ログアウト
                       </button>
                     </div>
                   </div>
-                {/if}
-              </div>
-            {:else}
-              <!-- 未認証の場合のナビゲーション -->
-              <a
-                href="/auth/login"
-                class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                ログイン
-              </a>
-              <a
-                href="/auth/register"
-                class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
-              >
-                新規登録
-              </a>
-            {/if}
-          </div>
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <!-- 未認証の場合のナビゲーション -->
+            <a
+              href="/auth/login"
+              class="text-sm text-gray-800 hover:text-black transition-colors font-light"
+            >
+              ログイン
+            </a>
+            <a href="/auth/register" class="btn-primary btn-sm">
+              無料で始める
+            </a>
+          {/if}
         </div>
       </div>
     </nav>
 
-    <main>
+    <main class="pt-20">
       <slot />
     </main>
   </div>

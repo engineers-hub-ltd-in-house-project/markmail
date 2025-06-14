@@ -32,12 +32,10 @@
 <svelte:window bind:scrollY bind:innerHeight />
 
 <svelte:head>
-  <title
-    >MarkMail - エンジニア向けマークダウンベースメールマーケティングツール</title
-  >
+  <title>MarkMail - AI時代のマーケティングオートメーション</title>
   <meta
     name="description"
-    content="MarkMailは、エンジニアのためのシンプルで強力なメールマーケティングツールです。Markdownでメールを作成し、効率的にキャンペーンを管理できます。"
+    content="MarkMailは、AIと相性抜群のマーケティングオートメーションツール。Markdown形式でAIが理解しやすいメールを作成し、次世代のマーケティングを実現します。"
   />
 </svelte:head>
 
@@ -81,7 +79,7 @@
         <h2
           class="text-5xl md:text-7xl font-light leading-tight text-black mb-8 tracking-tight"
         >
-          エンジニアのための<br />
+          AIと相性抜群の<br />
           <span
             class="text-gradient bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent"
             >メールマーケティング</span
@@ -90,8 +88,8 @@
         <p
           class="text-xl md:text-2xl text-gray-600 mb-6 font-light leading-relaxed max-w-3xl"
         >
-          Markdownでメールを作成し、効率的にキャンペーンを管理。
-          技術者にとって使いやすいインターフェースで始められます。
+          AIが理解しやすいMarkdown形式でメールを作成。
+          従来のツールとは異なる、次世代のマーケティングオートメーション。
         </p>
         <p class="text-lg text-gray-500 mb-12 max-w-3xl font-light">
           フォームビルダー、メールシーケンス、CRM連携など、

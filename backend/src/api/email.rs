@@ -1,18 +1,23 @@
+use axum::Router;
+use serde::Deserialize;
+
+use crate::AppState;
+
+// 開発環境用のインポート
+#[cfg(debug_assertions)]
+use crate::{
+    middleware::auth::AuthUser,
+    services::email_service::{EmailMessage, EmailService},
+};
+#[cfg(debug_assertions)]
 use axum::{
     extract::{Extension, State},
     http::StatusCode,
     response::Json,
     routing::post,
-    Router,
 };
-use serde::Deserialize;
+#[cfg(debug_assertions)]
 use serde_json::{json, Value};
-
-use crate::{
-    middleware::auth::AuthUser,
-    services::email_service::{EmailMessage, EmailService},
-    AppState,
-};
 
 /// テストメール送信リクエスト
 #[derive(Debug, Deserialize)]
