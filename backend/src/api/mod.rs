@@ -23,6 +23,8 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/register", post(auth::register))
         .route("/api/auth/refresh", post(auth::refresh_token))
+        .route("/api/auth/forgot-password", post(auth::forgot_password))
+        .route("/api/auth/reset-password", post(auth::reset_password))
         // フォームの公開エンドポイント
         .route("/api/forms/:id/public", get(forms::get_public_form))
         .route("/api/forms/:id/submit", post(forms::submit_form));

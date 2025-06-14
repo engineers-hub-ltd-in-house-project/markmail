@@ -102,3 +102,21 @@ pub async fn email_exists(pool: &PgPool, email: &str) -> Result<bool> {
 
     Ok(exists)
 }
+
+/// ユーザーのパスワードを更新
+pub async fn update_password(pool: &PgPool, user_id: Uuid, password_hash: &str) -> Result<()> {
+    sqlx::query!(
+        r#"
+        UPDATE users
+        SET password_hash = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+        user_id,
+        password_hash
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}

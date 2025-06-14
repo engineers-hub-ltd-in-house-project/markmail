@@ -224,9 +224,7 @@ impl CampaignService {
         }
 
         // メールサービスを初期化
-        let email_config = EmailService::from_env()
-            .map_err(|e| format!("メール設定の読み込みに失敗しました: {}", e))?;
-        let email_service = EmailService::new(email_config)
+        let email_service = EmailService::new(pool.clone())
             .await
             .map_err(|e| format!("メールサービスの初期化に失敗しました: {}", e))?;
 

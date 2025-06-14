@@ -1,6 +1,7 @@
 pub mod campaigns;
 pub mod connection;
 pub mod forms;
+pub mod password_reset;
 pub mod refresh_tokens;
 pub mod sequences;
 pub mod subscribers;

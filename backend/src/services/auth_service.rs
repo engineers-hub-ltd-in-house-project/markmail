@@ -6,8 +6,11 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    database::{refresh_tokens, users},
-    models::user::{AuthResponse, LoginRequest, RegisterRequest, UserResponse},
+    database::{password_reset, refresh_tokens, users},
+    models::user::{
+        AuthResponse, ForgotPasswordRequest, LoginRequest, MessageResponse, RegisterRequest,
+        ResetPasswordRequest, UserResponse,
+    },
     utils::{
         jwt::{generate_refresh_token, generate_token, verify_token, Claims, TokenType},
         password::{hash_password, verify_password},
@@ -36,6 +39,17 @@ pub enum AuthError {
 
     #[error("無効なリフレッシュトークン")]
     InvalidRefreshToken,
+
+    #[error("無効またはパスワードリセットトークンの有効期限が切れています")]
+    InvalidOrExpiredResetToken,
+
+    #[error(
+        "最近パスワードリセットをリクエストしました。しばらくしてからもう一度お試しください。"
+    )]
+    TooManyResetRequests,
+
+    #[error("メール送信エラー: {0}")]
+    EmailError(String),
 }
 
 pub struct AuthService {
@@ -214,6 +228,127 @@ impl AuthService {
     #[allow(dead_code)]
     pub async fn logout(&self, refresh_token: &str) -> Result<(), AuthError> {
         refresh_tokens::delete_refresh_token(&self.pool, refresh_token).await?;
+        Ok(())
+    }
+
+    /// パスワードリセットリクエスト
+    pub async fn request_password_reset(
+        &self,
+        request: ForgotPasswordRequest,
+    ) -> Result<MessageResponse, AuthError> {
+        use chrono::{Duration, Utc};
+        use rand::{distributions::Alphanumeric, Rng};
+
+        // ユーザーを検索（存在しない場合も成功レスポンスを返す - セキュリティのため）
+        let user = match users::find_user_by_email(&self.pool, &request.email).await? {
+            Some(user) => user,
+            None => {
+                return Ok(MessageResponse {
+                    message: "パスワードリセットのメールを送信しました（メールアドレスが登録されている場合）".to_string(),
+                });
+            }
+        };
+
+        // レート制限チェック（5分以内に再リクエストは不可）
+        if password_reset::has_recent_reset_request(&self.pool, user.id, 5).await? {
+            return Err(AuthError::TooManyResetRequests);
+        }
+
+        // ランダムなトークンを生成
+        let token: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
+
+        // トークンの有効期限を設定（1時間）
+        let expires_at = Utc::now() + Duration::hours(1);
+
+        // トークンをデータベースに保存
+        password_reset::create_password_reset_token(&self.pool, user.id, &token, expires_at)
+            .await?;
+
+        // パスワードリセットメールを送信
+        if let Err(e) = self
+            .send_password_reset_email(&user.email, &user.name, &token)
+            .await
+        {
+            tracing::error!("パスワードリセットメール送信エラー: {:?}", e);
+            return Err(AuthError::EmailError(e.to_string()));
+        }
+
+        Ok(MessageResponse {
+            message:
+                "パスワードリセットのメールを送信しました（メールアドレスが登録されている場合）"
+                    .to_string(),
+        })
+    }
+
+    /// パスワードリセット実行
+    pub async fn reset_password(
+        &self,
+        request: ResetPasswordRequest,
+    ) -> Result<MessageResponse, AuthError> {
+        use chrono::Utc;
+
+        // トークンを検証
+        let token_data = password_reset::get_password_reset_token(&self.pool, &request.token)
+            .await?
+            .ok_or(AuthError::InvalidOrExpiredResetToken)?;
+
+        // トークンが使用済みか確認
+        if token_data.used {
+            return Err(AuthError::InvalidOrExpiredResetToken);
+        }
+
+        // トークンの有効期限を確認
+        if token_data.expires_at < Utc::now() {
+            return Err(AuthError::InvalidOrExpiredResetToken);
+        }
+
+        // 新しいパスワードをハッシュ化
+        let password_hash = hash_password(&request.new_password)?;
+
+        // パスワードを更新
+        users::update_password(&self.pool, token_data.user_id, &password_hash).await?;
+
+        // トークンを使用済みにする
+        password_reset::mark_token_as_used(&self.pool, token_data.id).await?;
+
+        Ok(MessageResponse {
+            message: "パスワードが正常にリセットされました".to_string(),
+        })
+    }
+
+    /// パスワードリセットメール送信（プライベートメソッド）
+    async fn send_password_reset_email(
+        &self,
+        email: &str,
+        name: &str,
+        token: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::services::email_service::EmailService;
+        use std::collections::HashMap;
+
+        // フロントエンドのリセットURLを構築
+        let reset_url = format!(
+            "{}/auth/reset-password?token={}",
+            std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:5173".to_string()),
+            token
+        );
+
+        // メールテンプレート変数
+        let mut variables = HashMap::new();
+        variables.insert("name".to_string(), name.to_string());
+        variables.insert("reset_url".to_string(), reset_url);
+        variables.insert("valid_hours".to_string(), "1".to_string());
+
+        // メールサービスを使用して送信
+        let email_service = EmailService::new(self.pool.clone()).await?;
+        email_service
+            .send_password_reset_email(email, name, variables)
+            .await?;
+
         Ok(())
     }
 }

@@ -4,6 +4,7 @@ use lettre::{
     message::Message, transport::smtp::AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
 };
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -102,11 +103,13 @@ pub struct AwsSesConfig {
 pub struct EmailService {
     provider: Arc<Box<dyn EmailProvider>>,
     config: EmailConfig,
+    pool: PgPool,
 }
 
 impl EmailService {
     /// 新しいEmailServiceインスタンスを作成
-    pub async fn new(config: EmailConfig) -> Result<Self, EmailError> {
+    pub async fn new(pool: PgPool) -> Result<Self, EmailError> {
+        let config = Self::from_env()?;
         let provider: Box<dyn EmailProvider> = match &config.provider {
             EmailProviderType::MailHog => {
                 let smtp_config = config
@@ -130,6 +133,7 @@ impl EmailService {
         Ok(Self {
             provider: Arc::new(provider),
             config,
+            pool,
         })
     }
 
@@ -221,6 +225,146 @@ impl EmailService {
             rate_limit,
             batch_size,
         })
+    }
+
+    /// パスワードリセットメール送信
+    pub async fn send_password_reset_email(
+        &self,
+        email: &str,
+        name: &str,
+        variables: std::collections::HashMap<String, String>,
+    ) -> Result<(), EmailError> {
+        let reset_url = variables.get("reset_url").cloned().unwrap_or_default();
+        let valid_hours = variables
+            .get("valid_hours")
+            .cloned()
+            .unwrap_or_else(|| "1".to_string());
+
+        let html_body = format!(
+            r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パスワードリセット</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }}
+        .header {{
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }}
+        .header h1 {{
+            margin: 0;
+            color: #000;
+            font-size: 28px;
+            font-weight: 300;
+        }}
+        .content {{
+            padding: 40px 20px;
+        }}
+        .button {{
+            display: inline-block;
+            padding: 16px 40px;
+            background-color: #000;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 300;
+            margin: 20px 0;
+        }}
+        .footer {{
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 14px;
+        }}
+        .warning {{
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MARKMAIL</h1>
+        </div>
+        <div class="content">
+            <h2>パスワードのリセット</h2>
+            <p>こんにちは、{} 様</p>
+            <p>パスワードリセットのリクエストを受け取りました。以下のボタンをクリックして、新しいパスワードを設定してください。</p>
+            <div style="text-align: center;">
+                <a href="{}" class="button">パスワードをリセット</a>
+            </div>
+            <div class="warning">
+                <strong>注意:</strong> このリンクは{}時間後に有効期限が切れます。パスワードリセットをリクエストしていない場合は、このメールを無視してください。
+            </div>
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                リンクが機能しない場合は、以下のURLをブラウザにコピー＆ペーストしてください：<br>
+                <span style="word-break: break-all;">{}</span>
+            </p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 MarkMail. All rights reserved.</p>
+            <p style="font-size: 12px; color: #999;">
+                このメールは自動送信されています。返信しないでください。
+            </p>
+        </div>
+    </div>
+</body>
+</html>"#,
+            name, reset_url, valid_hours, reset_url
+        );
+
+        let text_body = format!(
+            r#"パスワードのリセット
+
+こんにちは、{} 様
+
+パスワードリセットのリクエストを受け取りました。
+以下のリンクをクリックして、新しいパスワードを設定してください。
+
+{}
+
+注意: このリンクは{}時間後に有効期限が切れます。
+パスワードリセットをリクエストしていない場合は、このメールを無視してください。
+
+---
+MarkMail
+このメールは自動送信されています。返信しないでください。"#,
+            name, reset_url, valid_hours
+        );
+
+        let message = EmailMessage {
+            to: vec![email.to_string()],
+            subject: "【MarkMail】パスワードリセットのご案内".to_string(),
+            html_body,
+            text_body: Some(text_body),
+            reply_to: None,
+            headers: None,
+        };
+
+        self.send_email(&message).await?;
+        Ok(())
     }
 }
 

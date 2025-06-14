@@ -102,3 +102,22 @@ pub struct Claims {
     pub exp: usize,
     pub iat: usize,
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct ForgotPasswordRequest {
+    #[validate(email(message = "有効なメールアドレスを入力してください"))]
+    pub email: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct ResetPasswordRequest {
+    pub token: String,
+
+    #[validate(length(min = 8, message = "パスワードは8文字以上である必要があります"))]
+    pub new_password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MessageResponse {
+    pub message: String,
+}
