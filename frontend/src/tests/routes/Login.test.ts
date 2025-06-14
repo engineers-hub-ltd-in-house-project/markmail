@@ -67,8 +67,8 @@ describe("Login Component", async () => {
     render(LoginComponent);
 
     // Check form elements
-    expect(screen.getByPlaceholderText("メールアドレス")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("パスワード")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("your@email.com")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
     expect(screen.getByText("ログイン")).toBeInTheDocument();
     expect(screen.getByText("ログイン状態を保存")).toBeInTheDocument();
   });
@@ -114,8 +114,8 @@ describe("Login Component", async () => {
     render(LoginComponent);
 
     // Fill in form
-    const emailInput = screen.getByPlaceholderText("メールアドレス");
-    const passwordInput = screen.getByPlaceholderText("パスワード");
+    const emailInput = screen.getByPlaceholderText("your@email.com");
+    const passwordInput = screen.getByPlaceholderText("••••••••");
     await fireEvent.input(emailInput, {
       target: { value: "test@example.com" },
     });
@@ -166,8 +166,8 @@ describe("Login Component", async () => {
     render(LoginComponent);
 
     // Fill in form
-    const emailInput = screen.getByPlaceholderText("メールアドレス");
-    const passwordInput = screen.getByPlaceholderText("パスワード");
+    const emailInput = screen.getByPlaceholderText("your@email.com");
+    const passwordInput = screen.getByPlaceholderText("••••••••");
     await fireEvent.input(emailInput, {
       target: { value: "wrong@example.com" },
     });
