@@ -22,6 +22,7 @@ export interface ECSServiceStackProps extends cdk.StackProps {
   frontendRepo: ecr.Repository;
   database: rds.DatabaseInstance;
   dbSecret: secretsmanager.Secret;
+  aiSecret?: secretsmanager.Secret;
   cacheCluster: elasticache.CfnCacheCluster;
   loadBalancer: elbv2.ApplicationLoadBalancer;
   httpsListener?: elbv2.ApplicationListener;
@@ -56,6 +57,7 @@ export class ECSServiceStack extends cdk.Stack {
       frontendRepo,
       database,
       dbSecret,
+      aiSecret,
       cacheCluster,
       httpsListener,
       httpListener,
@@ -90,6 +92,13 @@ export class ECSServiceStack extends cdk.Stack {
       },
       secrets: {
         JWT_SECRET: ecs.Secret.fromSecretsManager(dbSecret, 'password'),
+        ...(aiSecret && {
+          OPENAI_API_KEY: ecs.Secret.fromSecretsManager(aiSecret, 'OPENAI_API_KEY'),
+          ANTHROPIC_API_KEY: ecs.Secret.fromSecretsManager(aiSecret, 'ANTHROPIC_API_KEY'),
+          AI_PROVIDER: ecs.Secret.fromSecretsManager(aiSecret, 'AI_PROVIDER'),
+          OPENAI_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'OPENAI_MODEL'),
+          ANTHROPIC_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'ANTHROPIC_MODEL'),
+        }),
       },
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'backend',

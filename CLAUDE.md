@@ -557,6 +557,39 @@ tokio::spawn(async move {
    - ブラウザの開発者ツール > Network タブ
    - リクエスト/レスポンスのペイロード確認
 
+## ⚠️ AWS CDKデプロイ時の必須事項 / Critical Requirements for AWS CDK Deployment
+
+### ドメイン環境変数の設定が必須 / Domain Environment Variables are REQUIRED
+
+**問題**: ドメイン環境変数が設定されていない場合、以下の深刻な問題が発生します：
+
+1. ALBStackがHTTPSリスナーを作成しない
+2. ECSServiceStackがHTTPSリスナーを参照しようとして失敗
+3. 両スタックが相互依存でUPDATE_ROLLBACK_COMPLETE状態になる
+4. MonitoringStackなど依存スタックもデプロイできなくなる
+
+**解決策**: CDKデプロイ前に必ず環境変数を設定
+
+```bash
+# 開発環境の場合
+export DEV_DOMAIN=dev.markmail.engineers-hub.ltd
+
+# ステージング環境の場合
+export STAGING_DOMAIN=staging.markmail.engineers-hub.ltd
+
+# 本番環境の場合
+export PROD_DOMAIN=markmail.engineers-hub.ltd
+
+# デプロイコマンド実行
+npm run cdk -- deploy StackName --profile your-profile
+```
+
+**絶対にやってはいけないこと**:
+
+- ❌ 環境変数なしでCDKデプロイを実行
+- ❌ AWS CLIで手動でリソースを作成・修正
+- ❌ スタック間の依存関係を無視した操作
+
 ## 🔧 AWS RDS操作方法 / How to Operate AWS RDS
 
 ### RDSへの接続方法 / How to Connect to RDS
@@ -723,6 +756,82 @@ aws secretsmanager get-secret-value \
 - **使用後は削除を検討** / Consider deletion after use
 - **本番環境では特に慎重に操作** / Be extra careful in production
 - **データベースのバックアップを確認** / Verify database backups exist
+
+## 🔐 AWS Secrets Manager でのAI API キー管理 / Managing AI API Keys with AWS Secrets Manager
+
+### AI用シークレットの初期設定 / Initial Setup for AI Secrets
+
+AWS環境では、AI関連のAPIキー（OPENAI_API_KEY、ANTHROPIC_API_KEY等）はSecrets
+Managerで管理されます。
+
+#### 1. シークレットの更新 / Update Secrets
+
+```bash
+# シークレットの内容を更新 / Update secret values
+aws secretsmanager update-secret \
+  --secret-id markmail-dev-ai-secret \
+  --secret-string '{
+    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "ANTHROPIC_API_KEY": "sk-ant-xxxxxxxxxxxxxxxx",
+    "AI_PROVIDER": "openai",
+    "OPENAI_MODEL": "gpt-4",
+    "ANTHROPIC_MODEL": "claude-3-opus-20240229"
+  }' \
+  --profile your-profile
+```
+
+#### 2. シークレットの確認 / Verify Secrets
+
+```bash
+# 現在の値を確認（注意：実際のAPIキーが表示されます） / Verify current values (WARNING: displays actual API keys)
+aws secretsmanager get-secret-value \
+  --secret-id markmail-dev-ai-secret \
+  --query 'SecretString' \
+  --output text \
+  --profile your-profile | jq '.'
+```
+
+#### 3. ECSサービスの再デプロイ / Redeploy ECS Service
+
+シークレットを更新した後は、ECSサービスを再デプロイして新しい値を反映させます：
+
+```bash
+# バックエンドサービスを強制的に再デプロイ / Force redeploy backend service
+aws ecs update-service \
+  --cluster markmail-dev \
+  --service markmail-dev-backend \
+  --force-new-deployment \
+  --profile your-profile
+```
+
+#### 4. シークレットのローテーション / Secret Rotation
+
+定期的にAPIキーをローテーションすることを推奨します：
+
+```bash
+# 新しいAPIキーでシークレットを更新 / Update secret with new API key
+aws secretsmanager update-secret \
+  --secret-id markmail-dev-ai-secret \
+  --secret-string '{
+    "OPENAI_API_KEY": "sk-new-key-xxxxxxxxxxxxxxxx",
+    "ANTHROPIC_API_KEY": "sk-ant-new-key-xxxxxxxxx",
+    "AI_PROVIDER": "openai",
+    "OPENAI_MODEL": "gpt-4",
+    "ANTHROPIC_MODEL": "claude-3-opus-20240229"
+  }' \
+  --profile your-profile
+```
+
+### 注意事項 / Important Notes
+
+- **環境ごとにシークレットは分離** / Secrets are separated by environment (dev,
+  staging, prod)
+- **シークレット名の規則** / Secret naming convention:
+  `markmail-{environment}-ai-secret`
+- **ECSタスクは自動的に最新のシークレットを取得** / ECS tasks automatically
+  fetch the latest secrets
+- **ローカル開発では`.env`ファイルを使用** / Use `.env` file for local
+  development
 
 ## 🔧 トラブルシューティング
 

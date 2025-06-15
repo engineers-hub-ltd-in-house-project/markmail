@@ -16,7 +16,7 @@ export interface ALBStackProps extends cdk.StackProps {
 
 export class ALBStack extends cdk.Stack {
   public readonly loadBalancer: elbv2.ApplicationLoadBalancer;
-  public readonly httpsListener: elbv2.ApplicationListener;
+  public readonly httpsListener?: elbv2.ApplicationListener;
   public readonly httpListener: elbv2.ApplicationListener;
   public readonly albSecurityGroup: ec2.SecurityGroup;
 
