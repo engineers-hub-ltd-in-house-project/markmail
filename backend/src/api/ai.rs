@@ -31,8 +31,16 @@ async fn get_ai_provider(
     // 環境変数から設定を読み込み
     let provider_type = std::env::var("AI_PROVIDER").unwrap_or_else(|_| "openai".to_string());
 
+    // デバッグ: 環境変数の確認
+    tracing::debug!("AI_PROVIDER: {}", provider_type);
+    tracing::debug!(
+        "OPENAI_API_KEY exists: {}",
+        std::env::var("OPENAI_API_KEY").is_ok()
+    );
+
     let api_key = match provider_type.as_str() {
-        "anthropic" => std::env::var("ANTHROPIC_API_KEY").map_err(|_| {
+        "anthropic" => std::env::var("ANTHROPIC_API_KEY").map_err(|e| {
+            tracing::error!("ANTHROPIC_API_KEY not found: {:?}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -40,7 +48,12 @@ async fn get_ai_provider(
                 })),
             )
         })?,
-        _ => std::env::var("OPENAI_API_KEY").map_err(|_| {
+        _ => std::env::var("OPENAI_API_KEY").map_err(|e| {
+            tracing::error!("OPENAI_API_KEY not found: {:?}", e);
+            tracing::error!(
+                "Available env vars: {:?}",
+                std::env::vars().collect::<Vec<_>>()
+            );
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -83,6 +96,7 @@ pub async fn generate_scenario(
     State(state): State<AppState>,
     Json(request): Json<GenerateScenarioRequest>,
 ) -> Result<Json<GenerateScenarioResponse>, (StatusCode, Json<Value>)> {
+    tracing::info!("generate_scenario called with request: {:?}", request);
     let provider = get_ai_provider(&state).await?;
     let service = ScenarioBuilderService::new(provider);
 

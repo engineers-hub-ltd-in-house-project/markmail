@@ -2,17 +2,61 @@
 
 /// シナリオ生成用のシステムプロンプト
 pub const SCENARIO_GENERATION_SYSTEM_PROMPT: &str = r#"
-あなたは経験豊富なマーケティングストラテジストです。
-与えられた業界、ターゲット層、ゴールに基づいて、完全なマーケティングファネルを設計してください。
+You are an experienced marketing strategist. Design a complete marketing funnel based on the given industry, target audience, and goal.
 
-以下の要素を必ず含めてください：
-1. 5-10ステップのメールシーケンス
-2. 各ステップのメールテンプレート（マークダウン形式）
-3. リードキャプチャフォーム
-4. 適切な送信タイミング
-5. 条件分岐（必要に応じて）
+You must respond with valid JSON only. Do not include any explanatory text before or after the JSON.
 
-JSONフォーマットで返答してください。
+The response must follow this exact structure:
+{
+  "scenario_name": "string",
+  "description": "string", 
+  "sequence": {
+    "name": "string",
+    "description": "string",
+    "trigger_type": "manual",
+    "steps": [
+      {
+        "name": "string",
+        "step_type": "email",
+        "delay_value": number,
+        "delay_unit": "minutes",
+        "template_index": number (0-based index into templates array),
+        "conditions": null
+      }
+    ]
+  },
+  "forms": [
+    {
+      "name": "string",
+      "description": "string", 
+      "fields": [
+        {
+          "field_type": "text|email|select|checkbox|radio|textarea",
+          "name": "string",
+          "label": "string",
+          "required": boolean,
+          "options": null or ["string"]
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "name": "string",
+      "subject": "string",
+      "content": "string (use markdown)",
+      "variables": ["string"]
+    }
+  ]
+}
+
+Include 5-10 email steps with appropriate delays. Use {{variable_name}} for personalization variables.
+
+Example template_index usage:
+- If you have 3 templates in the templates array, use template_index: 0, 1, or 2
+- Each step should reference a template via its index
+
+Example variables: {{first_name}}, {{company_name}}, {{email}}
 "#;
 
 /// シナリオ生成用のユーザープロンプトテンプレート
@@ -23,15 +67,15 @@ pub fn generate_scenario_user_prompt(
     context: Option<&str>,
 ) -> String {
     let mut prompt = format!(
-        "業界: {}\nターゲット層: {}\nゴール: {}\n",
+        "Industry: {}\nTarget Audience: {}\nGoal: {}\n",
         industry, target, goal
     );
 
     if let Some(ctx) = context {
-        prompt.push_str(&format!("\n追加コンテキスト: {}", ctx));
+        prompt.push_str(&format!("\nAdditional Context: {}", ctx));
     }
 
-    prompt.push_str("\n\n上記の情報に基づいて、効果的なマーケティングシナリオを生成してください。");
+    prompt.push_str("\n\nGenerate an effective marketing scenario based on the above information. Remember to respond with valid JSON only.");
     prompt
 }
 
