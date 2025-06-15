@@ -305,21 +305,186 @@ MarkMailは、マークダウンベースのメールマーケティング自動
    - 無料プランの制限（将来実装）
    - GDPR/個人情報保護法準拠
 
-## 11. 将来の拡張性
+## 11. AI機能要件
 
-1. **機能拡張**
+### 11.1 AIマーケティングシナリオ自動生成
 
-   - A/Bテスト機能
+**概要**: プロンプト入力から完全なマーケティングファネルを自動構築
+
+**機能要件**:
+
+- ターゲット層とゴールをプロンプトで指定
+- 業界別テンプレート選択（SaaS、EC、教育、不動産等）
+- AIが以下を自動生成:
+  - マルチステップシーケンス（5-10ステップ）
+  - 各ステップのメールテンプレート
+  - リードキャプチャフォーム
+  - 条件分岐ロジック
+  - 最適な送信タイミング
+- 生成後の編集・カスタマイズ機能
+
+**技術要件**:
+
+- LLM API統合（OpenAI GPT-4/Anthropic Claude）
+- プロンプトテンプレートシステム
+- JSONスキーマベースの生成結果検証
+
+### 11.2 AIコンテンツアシスタント
+
+**機能要件**:
+
+- メールテンプレートの自動生成・改善
+- 件名最適化（開封率向上）
+- パーソナライゼーション変数の自動提案
+- トーン調整（フォーマル/カジュアル）
+- 多言語対応（日本語/英語）
+
+**技術要件**:
+
+- リアルタイムコンテンツ生成API
+- マークダウンパーサー統合
+- A/Bテストバリエーション自動生成
+
+### 11.3 インテリジェントセグメンテーション
+
+**機能要件**:
+
+- 購読者行動の機械学習分析
+- 自動セグメント作成・更新
+- エンゲージメントスコアリング（0-100）
+- チャーン予測アラート
+- セグメント別の最適配信時間予測
+
+**技術要件**:
+
+- 機械学習モデル統合（scikit-learn/TensorFlow）
+- バッチ処理パイプライン
+- リアルタイムスコアリング
+
+### 11.4 スマートオートメーション最適化
+
+**機能要件**:
+
+- シーケンスパフォーマンスのAI分析
+- ステップ順序の自動最適化提案
+- 条件分岐の動的生成
+- 送信タイミングの機械学習最適化
+- 異常検知とアラート
+
+### 11.5 技術アーキテクチャ
+
+**バックエンド拡張**:
+
+```
+backend/src/
+├── ai/
+│   ├── mod.rs
+│   ├── services/
+│   │   ├── content_generator.rs    # コンテンツ生成
+│   │   ├── scenario_builder.rs     # シナリオ構築
+│   │   ├── segmentation.rs         # セグメンテーション
+│   │   └── analytics.rs            # 分析・予測
+│   ├── models/
+│   │   ├── prompts.rs              # プロンプト管理
+│   │   ├── ai_responses.rs         # レスポンス型
+│   │   └── ml_models.rs            # MLモデル定義
+│   └── providers/
+│       ├── openai.rs               # OpenAI統合
+│       ├── anthropic.rs            # Anthropic統合
+│       └── ml_runtime.rs           # ML実行環境
+```
+
+**データベース拡張**:
+
+```sql
+-- AI生成コンテンツ管理
+CREATE TABLE ai_generated_content (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    content_type VARCHAR(50) NOT NULL,
+    prompt TEXT NOT NULL,
+    generated_content TEXT NOT NULL,
+    model_used VARCHAR(50),
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AIシナリオテンプレート
+CREATE TABLE ai_scenario_templates (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    industry VARCHAR(100) NOT NULL,
+    goal VARCHAR(255) NOT NULL,
+    template_data JSONB NOT NULL,
+    success_metrics JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MLモデルメタデータ
+CREATE TABLE ml_models (
+    id UUID PRIMARY KEY,
+    model_name VARCHAR(255) NOT NULL,
+    model_type VARCHAR(50) NOT NULL,
+    version VARCHAR(20) NOT NULL,
+    parameters JSONB,
+    performance_metrics JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**API エンドポイント**:
+
+- `POST /api/ai/scenarios/generate` - シナリオ自動生成
+- `POST /api/ai/content/generate` - コンテンツ生成
+- `POST /api/ai/content/improve` - 既存コンテンツ改善
+- `POST /api/ai/segments/analyze` - セグメント分析
+- `GET /api/ai/segments/suggestions` - セグメント提案
+- `POST /api/ai/sequences/optimize` - シーケンス最適化
+- `GET /api/ai/analytics/insights` - AIインサイト取得
+
+### 11.6 AI倫理・セキュリティ要件
+
+**プライバシー保護**:
+
+- 個人情報のマスキング
+- AI学習データからの除外オプション
+- GDPR/個人情報保護法準拠
+
+**コンテンツ安全性**:
+
+- 生成コンテンツのフィルタリング
+- ブランドガイドライン準拠チェック
+- 人間によるレビューオプション
+
+**透明性**:
+
+- AI生成コンテンツの明示
+- 意思決定プロセスの説明機能
+- パフォーマンスメトリクスの可視化
+
+## 12. 将来の拡張性
+
+1. **追加AI機能**
+
+   - 音声アシスタント統合
+   - 画像生成（DALL-E/Stable Diffusion）
+   - チャットボット自動生成
+   - 予測分析ダッシュボード
+
+2. **既存機能の拡張**
+
+   - A/Bテスト機能（AI駆動）
    - 詳細な分析・レポート
    - Webhook連携
    - 他サービスとの統合（Zapier等）
 
-2. **技術的拡張**
+3. **技術的拡張**
    - マルチテナント対応
    - 国際化（i18n）
    - モバイルアプリ
+   - リアルタイムコラボレーション
 
-## 12. 用語定義
+## 13. 用語定義
 
 - **キャンペーン**: 一度に複数の購読者に送信するメール配信
 - **シーケンス**: トリガーに基づいて自動的に送信される一連のメール
