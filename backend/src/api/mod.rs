@@ -6,6 +6,7 @@ use axum::{
 
 use crate::{middleware::auth::auth_middleware, AppState};
 
+pub mod ai;
 pub mod auth;
 pub mod campaigns;
 pub mod email;
@@ -136,6 +137,13 @@ pub fn create_routes() -> Router<AppState> {
             get(subscriptions::get_payment_history),
         )
         .route("/api/subscriptions/usage", get(subscriptions::get_usage))
+        // AI機能
+        .route("/api/ai/scenarios/generate", post(ai::generate_scenario))
+        .route("/api/ai/content/generate", post(ai::generate_content))
+        .route(
+            "/api/ai/content/optimize-subject",
+            post(ai::optimize_subject),
+        )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 
