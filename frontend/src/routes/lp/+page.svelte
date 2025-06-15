@@ -32,10 +32,10 @@
 <svelte:window bind:scrollY bind:innerHeight />
 
 <svelte:head>
-  <title>MarkMail - AI時代のマーケティングオートメーション</title>
+  <title>MarkMail - AI駆動のマーケティングオートメーション</title>
   <meta
     name="description"
-    content="MarkMailは、AIと相性抜群のマーケティングオートメーションツール。Markdown形式でAIが理解しやすいメールを作成し、次世代のマーケティングを実現します。"
+    content="MarkMailは、AIが完全なマーケティングファネルを自動生成する次世代ツール。プロンプト一つでシナリオ、テンプレート、フォームまで全て作成。件名最適化やコンテンツ改善もAIがサポート。"
   />
 </svelte:head>
 
@@ -79,21 +79,21 @@
         <h2
           class="text-5xl md:text-7xl font-light leading-tight text-black mb-8 tracking-tight"
         >
-          AIと相性抜群の<br />
+          AI駆動の<br />
           <span
-            class="text-gradient bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent"
-            >メールマーケティング</span
+            class="text-gradient bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent"
+            >次世代メールマーケティング</span
           >
         </h2>
         <p
           class="text-xl md:text-2xl text-gray-600 mb-6 font-light leading-relaxed max-w-3xl"
         >
-          AIが理解しやすいMarkdown形式でメールを作成。
-          従来のツールとは異なる、次世代のマーケティングオートメーション。
+          プロンプト一つで完全なマーケティングファネルを自動構築。
+          AIがシナリオ、テンプレート、フォームまで全て生成します。
         </p>
         <p class="text-lg text-gray-500 mb-12 max-w-3xl font-light">
-          フォームビルダー、メールシーケンス、CRM連携など、
-          マーケティングオートメーションに必要な全ての機能を提供。
+          業界・ターゲット・ゴールを指定するだけで、最適化されたキャンペーンが完成。
+          AIアシスタントが件名の最適化やコンテンツ改善も提案します。
         </p>
         <div class="flex flex-col sm:flex-row gap-4">
           <button
@@ -141,6 +141,287 @@
             d="M19 14l-7 7m0 0l-7-7m7 7V3"
           />
         </svg>
+      </div>
+    </section>
+
+    <!-- AI Features Section -->
+    <section
+      class="px-6 lg:px-12 py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-white"
+    >
+      <div class="max-w-7xl mx-auto">
+        <div
+          class="text-center mb-16 observe-section opacity-0 translate-y-10 transition-all duration-1000"
+        >
+          <div
+            class="inline-flex items-center justify-center p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4"
+          >
+            <span class="text-white text-sm font-light px-4 py-1"
+              >✨ NEW AI機能</span
+            >
+          </div>
+          <h2 class="text-4xl md:text-5xl font-light text-black mb-4">
+            AIアシスタントが全て自動化
+          </h2>
+          <p class="text-xl text-gray-600 font-light">
+            もう手作業は不要。AIがマーケティング業務を劇的に効率化します
+          </p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8 mb-12">
+          <!-- AI Feature 1 -->
+          <div
+            class="observe-section opacity-0 translate-y-10 transition-all duration-1000 delay-100"
+          >
+            <div
+              class="bg-white p-10 rounded-2xl hover:shadow-xl transition-all duration-300 border border-gray-100 group"
+            >
+              <div
+                class="mb-6 w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+              >
+                <svg
+                  class="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-2xl font-light mb-4 text-black">
+                マーケティングシナリオ生成
+              </h3>
+              <p class="text-gray-600 font-light leading-relaxed mb-6">
+                業界とゴールを指定するだけで、AIが完全なマーケティングファネルを設計。シーケンス、テンプレート、フォームを一括生成します。
+              </p>
+              <ul class="space-y-2 text-sm text-gray-500">
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  5-10ステップの自動シーケンス
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  業界特化のテンプレート
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  最適なリードキャプチャフォーム
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- AI Feature 2 -->
+          <div
+            class="observe-section opacity-0 translate-y-10 transition-all duration-1000 delay-200"
+          >
+            <div
+              class="bg-white p-10 rounded-2xl hover:shadow-xl transition-all duration-300 border border-gray-100 group"
+            >
+              <div
+                class="mb-6 w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+              >
+                <svg
+                  class="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-2xl font-light mb-4 text-black">
+                コンテンツ自動生成
+              </h3>
+              <p class="text-gray-600 font-light leading-relaxed mb-6">
+                ターゲットに合わせたメールコンテンツをAIが作成。トーンやスタイルもカスタマイズ可能で、パーソナライズ変数も自動提案します。
+              </p>
+              <ul class="space-y-2 text-sm text-gray-500">
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  ブランドボイスの維持
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  複数バリエーション生成
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  読みやすさスコア表示
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- AI Feature 3 -->
+          <div
+            class="observe-section opacity-0 translate-y-10 transition-all duration-1000 delay-300"
+          >
+            <div
+              class="bg-white p-10 rounded-2xl hover:shadow-xl transition-all duration-300 border border-gray-100 group"
+            >
+              <div
+                class="mb-6 w-14 h-14 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+              >
+                <svg
+                  class="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-2xl font-light mb-4 text-black">件名最適化</h3>
+              <p class="text-gray-600 font-light leading-relaxed mb-6">
+                開封率を最大化する件名をAIが提案。既存の件名を分析し、ターゲットに響く複数のバリエーションを生成します。
+              </p>
+              <ul class="space-y-2 text-sm text-gray-500">
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  予測開封率の表示
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  A/Bテスト用バリエーション
+                </li>
+                <li class="flex items-center">
+                  <svg
+                    class="w-4 h-4 mr-2 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  改善理由の詳細説明
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Demo CTA -->
+        <div
+          class="text-center observe-section opacity-0 translate-y-10 transition-all duration-1000 delay-400"
+        >
+          <button
+            on:click={() => goto("/auth/register")}
+            class="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-light text-lg rounded-full shadow-lg hover:shadow-xl"
+          >
+            AI機能を無料で試す
+            <svg
+              class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -489,13 +770,15 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </div>
-              <h4 class="text-xl font-light mb-2 text-gray-900">AI機能</h4>
+              <h4 class="text-xl font-light mb-2 text-gray-900">
+                リアルタイム分析
+              </h4>
               <p class="text-gray-600 font-light text-sm leading-relaxed">
-                コンテンツ生成と最適化提案
+                開封率・クリック率のリアルタイム追跡
               </p>
             </div>
           </div>
@@ -629,9 +912,11 @@
       <div
         class="max-w-4xl mx-auto text-center observe-section opacity-0 translate-y-10 transition-all duration-1000"
       >
-        <h2 class="text-4xl md:text-5xl font-light mb-6">今すぐ始めましょう</h2>
+        <h2 class="text-4xl md:text-5xl font-light mb-6">
+          AIの力でマーケティングを変革
+        </h2>
         <p class="text-xl mb-12 text-gray-300 font-light">
-          無料アカウントを作成して、MarkMailの全機能をお試しください。
+          無料アカウントを作成して、AI駆動のマーケティング自動化を体験してください。
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <button

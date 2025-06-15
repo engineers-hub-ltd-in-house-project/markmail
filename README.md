@@ -26,6 +26,28 @@ MarkMailは、AI駆動のマーケティングオートメーションツール�
 - **インテリジェントセグメンテーション**: 購読者の行動を機械学習で分析し、最適なタイミングで配信
 - **スマートオートメーション**: AIがシーケンスの最適化を継続的に提案
 
+#### 🤖 AI機能のセットアップ
+
+AI機能を使用するには、`.env`ファイルに以下の設定を追加してください：
+
+```env
+# AI Provider Configuration
+AI_PROVIDER=openai  # または 'anthropic'
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+OPENAI_MODEL=gpt-4  # オプション（デフォルト: gpt-4）
+
+# Anthropic Configuration
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+ANTHROPIC_MODEL=claude-3-opus-20240229  # オプション
+```
+
+**APIキーの取得方法：**
+
+- OpenAI: https://platform.openai.com/api-keys
+- Anthropic: https://console.anthropic.com/account/keys
+
 ### 技術スタック
 
 - **バックエンド**: Rust (Axum + SQLx + Tokio)
@@ -132,6 +154,11 @@ cd backend
 # 開発サーバー起動
 cargo run
 
+# 開発サーバー起動（自動リロード付き）⭐ NEW
+cargo watch -c -w src -w .env -x run
+# または
+./watch.sh
+
 # テスト実行
 cargo test
 
@@ -141,6 +168,25 @@ cargo clippy
 # フォーマット
 cargo fmt
 ```
+
+#### 🔄 cargo-watch による自動リロード開発
+
+`cargo-watch`をインストールすることで、ファイル変更時の自動再起動が可能になります：
+
+```bash
+# インストール
+cargo install cargo-watch
+
+# 使用方法
+cargo watch -c -w src -w .env -x run
+```
+
+オプション説明：
+
+- `-c` : 実行前に画面をクリア
+- `-w src` : srcディレクトリを監視
+- `-w .env` : .envファイルも監視
+- `-x run` : cargo runを実行
 
 ### フロントエンド (Svelte)
 
@@ -300,6 +346,17 @@ npm run lint
 
 ### 🎉 最近の更新
 
+- [x] **AI機能の実装（2025-06-15）** 🤖 NEW
+  - [x] マルチプロバイダー対応（OpenAI GPT-4、Anthropic Claude）
+  - [x] AIマーケティングシナリオ自動生成API
+  - [x] AIコンテンツ生成・最適化API
+  - [x] 件名最適化エンジン（予測開封率付き）
+  - [x] フロントエンドUI統合（シナリオ生成、コンテンツ生成、件名最適化）
+  - [x] プロバイダー抽象化によるフォールバック機構
+  - [x] トークンカウント機能とレート制限対応
+- [x] **開発環境の改善（2025-06-15）** 🛠️ NEW
+  - [x] cargo-watchによる自動リロード開発環境
+  - [x] watch.shスクリプトの追加
 - [x] **シーケンス自動化システムの完全実装（2025-06-12）**
   - [x] バックグラウンドワーカーによる自動実行
   - [x] フォーム送信から購読者作成・シーケンス登録の完全自動化
@@ -334,16 +391,16 @@ npm run lint
   - [ ] クリティカルユーザージャーニーのテスト作成
   - [ ] テストデータ管理システム
   - [ ] 並列実行環境の構築
-- [ ] **AI機能の実装** 🚀 NEW
-  - [ ] AIマーケティングシナリオ自動生成
-    - [ ] プロンプトインターフェース
-    - [ ] 業界別テンプレート
-    - [ ] シーケンス・フォーム・テンプレート自動生成
-  - [ ] AIコンテンツアシスタント
-    - [ ] メール文面自動生成
-    - [ ] 件名最適化
-    - [ ] パーソナライゼーション提案
-  - [ ] インテリジェントセグメンテーション
+- [x] **AI機能の実装** ✅ COMPLETED
+  - [x] AIマーケティングシナリオ自動生成
+    - [x] プロンプトインターフェース
+    - [x] 業界別テンプレート
+    - [x] シーケンス・フォーム・テンプレート自動生成
+  - [x] AIコンテンツアシスタント
+    - [x] メール文面自動生成
+    - [x] 件名最適化
+    - [x] パーソナライゼーション提案
+  - [ ] インテリジェントセグメンテーション（Phase 2）
     - [ ] 購読者行動分析
     - [ ] エンゲージメントスコアリング
     - [ ] チャーン予測
