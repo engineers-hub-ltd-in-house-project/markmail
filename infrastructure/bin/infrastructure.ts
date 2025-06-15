@@ -141,6 +141,7 @@ const ecsServiceStack = new ECSServiceStack(app, `MarkMail-${environmentName}-EC
   frontendRepo: ecrStack.frontendRepo,
   database: databaseStack.database,
   dbSecret: databaseStack.dbSecret,
+  aiSecret: databaseStack.aiSecret,
   cacheCluster: databaseStack.cacheCluster,
   loadBalancer: albStack.loadBalancer,
   httpsListener: albStack.httpsListener,
