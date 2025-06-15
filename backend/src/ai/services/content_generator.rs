@@ -109,28 +109,59 @@ impl ContentGeneratorService {
 
     /// コンテンツプロンプトを構築
     fn build_content_prompt(&self, request: &GenerateContentRequest) -> String {
-        let mut prompt = format!("{}を作成してください。\n\n", request.content_type);
+        let language = request.context.language.unwrap_or_default();
 
-        if let Some(industry) = &request.context.industry {
-            prompt.push_str(&format!("業界: {}\n", industry));
+        match language {
+            crate::ai::models::Language::Japanese => {
+                let mut prompt = format!("{}を作成してください。\n\n", request.content_type);
+
+                if let Some(industry) = &request.context.industry {
+                    prompt.push_str(&format!("業界: {}\n", industry));
+                }
+
+                if let Some(audience) = &request.context.target_audience {
+                    prompt.push_str(&format!("ターゲット層: {}\n", audience));
+                }
+
+                if let Some(tone) = &request.context.tone {
+                    prompt.push_str(&format!("トーン: {:?}\n", tone));
+                }
+
+                if let Some(existing) = &request.context.existing_content {
+                    prompt.push_str(&format!(
+                        "\n既存のコンテンツを改善してください:\n{}\n",
+                        existing
+                    ));
+                }
+
+                prompt.push_str("\n重要：すべての出力を日本語で生成してください。");
+                prompt
+            }
+            crate::ai::models::Language::English => {
+                let mut prompt = format!("Create a {} content.\n\n", request.content_type);
+
+                if let Some(industry) = &request.context.industry {
+                    prompt.push_str(&format!("Industry: {}\n", industry));
+                }
+
+                if let Some(audience) = &request.context.target_audience {
+                    prompt.push_str(&format!("Target Audience: {}\n", audience));
+                }
+
+                if let Some(tone) = &request.context.tone {
+                    prompt.push_str(&format!("Tone: {:?}\n", tone));
+                }
+
+                if let Some(existing) = &request.context.existing_content {
+                    prompt.push_str(&format!(
+                        "\nImprove the following existing content:\n{}\n",
+                        existing
+                    ));
+                }
+
+                prompt
+            }
         }
-
-        if let Some(audience) = &request.context.target_audience {
-            prompt.push_str(&format!("ターゲット層: {}\n", audience));
-        }
-
-        if let Some(tone) = &request.context.tone {
-            prompt.push_str(&format!("トーン: {:?}\n", tone));
-        }
-
-        if let Some(existing) = &request.context.existing_content {
-            prompt.push_str(&format!(
-                "\n既存のコンテンツを改善してください:\n{}\n",
-                existing
-            ));
-        }
-
-        prompt
     }
 
     /// 変数を抽出

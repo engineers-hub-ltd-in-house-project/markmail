@@ -68,6 +68,8 @@ Example variables: {{first_name}}, {{company_name}}, {{email}}
 pub const SCENARIO_GENERATION_SYSTEM_PROMPT_JA: &str = r#"
 あなたは経験豊富なマーケティング戦略家です。指定された業界、ターゲット層、目標に基づいて、完全なマーケティングファネルを設計してください。
 
+重要：すべての出力（scenario_name、description、メールの件名、本文など）を必ず日本語で生成してください。
+
 必ず有効なJSONのみで応答してください。JSONの前後に説明文を含めないでください。
 
 応答は以下の構造に正確に従ってください：
@@ -121,6 +123,12 @@ template_indexの使用例：
 - 各ステップはインデックスを介してテンプレートを参照する必要があります
 
 変数の例：{{first_name}}、{{company_name}}、{{email}}
+
+生成例：
+- scenario_name: "シニア向け健康イベントプロモーション"
+- description: "60歳以上のシニア層に向けた健康イベントの参加者を増やすためのマーケティングファネル"
+- メールの件名: "【無料】健康セミナーのご案内"
+- メールの本文: "{{first_name}}様、こんにちは。..."
 "#;
 
 /// 言語に応じてシナリオ生成プロンプトを取得
@@ -150,7 +158,7 @@ pub fn generate_scenario_user_prompt(
                 prompt.push_str(&format!("\n追加の文脈: {}", ctx));
             }
 
-            prompt.push_str("\n\n上記の情報に基づいて、効果的なマーケティングシナリオを生成してください。必ず有効なJSONのみで応答してください。");
+            prompt.push_str("\n\n上記の情報に基づいて、効果的なマーケティングシナリオを生成してください。すべての出力を日本語で記述し、必ず有効なJSONのみで応答してください。");
             prompt
         }
         Language::English => {
@@ -179,6 +187,8 @@ pub const CONTENT_GENERATION_SYSTEM_PROMPT_JA: &str = r#"
 3. 明確な価値提案
 4. 行動を促すCTA（Call to Action）
 5. 適切なトーンとスタイル
+
+重要：すべてのコンテンツを日本語で生成してください。
 
 マークダウン形式で、変数は{{variable_name}}の形式で記述してください。
 "#;
@@ -214,7 +224,7 @@ pub fn generate_subject_optimization_prompt(
     match language {
         Language::Japanese => {
             format!(
-                "以下の件名を、{}向けに最適化してください。開封率を高めるための5つのバリエーションを提案してください。\n\n元の件名: {}",
+                "以下の件名を、{}向けに最適化してください。開封率を高めるための5つのバリエーションを提案してください。すべての提案を日本語で記述してください。\n\n元の件名: {}",
                 target_audience, original_subject
             )
         }
