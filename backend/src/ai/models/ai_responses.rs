@@ -8,13 +8,15 @@ pub struct GenerateContentRequest {
     pub options: Option<GenerationOptions>,
 }
 
+use crate::ai::models::Language;
+
 /// コンテンツコンテキスト
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContentContext {
     pub industry: Option<String>,
     pub target_audience: Option<String>,
     pub tone: Option<ContentTone>,
-    pub language: Option<String>,
+    pub language: Option<Language>,
     pub existing_content: Option<String>,
 }
 
@@ -62,6 +64,7 @@ pub struct OptimizeSubjectRequest {
     pub target_audience: String,
     pub campaign_goal: Option<String>,
     pub variations_count: Option<u8>,
+    pub language: Option<Language>,
 }
 
 /// 件名最適化レスポンス

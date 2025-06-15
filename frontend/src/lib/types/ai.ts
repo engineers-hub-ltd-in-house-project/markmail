@@ -1,5 +1,8 @@
 // AI機能の型定義
 
+// サポートされる言語
+export type Language = "ja" | "en";
+
 // コンテンツタイプ
 export type ContentType =
   | "email_template"
@@ -22,6 +25,7 @@ export interface GenerateScenarioRequest {
   target_audience: string;
   goal: string;
   additional_context?: string;
+  language?: Language;
 }
 
 // シナリオ生成レスポンス
@@ -87,7 +91,7 @@ export interface ContentContext {
   industry?: string;
   target_audience?: string;
   tone?: ContentTone;
-  language?: string;
+  language?: Language;
   existing_content?: string;
 }
 
@@ -120,6 +124,7 @@ export interface OptimizeSubjectRequest {
   target_audience: string;
   campaign_goal?: string;
   variations_count?: number;
+  language?: Language;
 }
 
 // 件名最適化レスポンス

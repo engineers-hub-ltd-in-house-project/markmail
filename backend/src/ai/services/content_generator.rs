@@ -7,7 +7,7 @@ use crate::ai::models::ai_responses::{
     OptimizeSubjectResponse, SubjectVariation,
 };
 use crate::ai::models::prompts::{
-    generate_subject_optimization_prompt, CONTENT_GENERATION_SYSTEM_PROMPT,
+    generate_subject_optimization_prompt, get_content_generation_system_prompt,
 };
 use crate::ai::{AIProvider, ChatMessage, MessageRole};
 
@@ -32,10 +32,14 @@ impl ContentGeneratorService {
     ) -> Result<GenerateContentResponse> {
         let prompt = self.build_content_prompt(&request);
 
+        // 言語の決定（デフォルトは日本語）
+        let language = request.context.language.unwrap_or_default();
+        let system_prompt = get_content_generation_system_prompt(&language);
+
         let messages = vec![
             ChatMessage {
                 role: MessageRole::System,
-                content: CONTENT_GENERATION_SYSTEM_PROMPT.to_string(),
+                content: system_prompt.to_string(),
             },
             ChatMessage {
                 role: MessageRole::User,
@@ -64,15 +68,24 @@ impl ContentGeneratorService {
         &self,
         request: OptimizeSubjectRequest,
     ) -> Result<OptimizeSubjectResponse> {
+        // 言語の決定（デフォルトは日本語）
+        let language = request.language.unwrap_or_default();
+
         let prompt = generate_subject_optimization_prompt(
             &request.original_subject,
             &request.target_audience,
+            &language,
         );
+
+        let system_message = match language {
+            crate::ai::models::Language::Japanese => "あなたはメールマーケティングの専門家です。開封率を最大化する件名を提案してください。",
+            crate::ai::models::Language::English => "You are an email marketing expert. Suggest subject lines that maximize open rates.",
+        };
 
         let messages = vec![
             ChatMessage {
                 role: MessageRole::System,
-                content: "あなたはメールマーケティングの専門家です。開封率を最大化する件名を提案してください。".to_string(),
+                content: system_message.to_string(),
             },
             ChatMessage {
                 role: MessageRole::User,

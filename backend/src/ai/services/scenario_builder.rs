@@ -2,9 +2,7 @@ use anyhow::{anyhow, Result};
 use serde_json;
 use std::sync::Arc;
 
-use crate::ai::models::prompts::{
-    generate_scenario_user_prompt, SCENARIO_GENERATION_SYSTEM_PROMPT,
-};
+use crate::ai::models::prompts::{generate_scenario_user_prompt, get_scenario_system_prompt};
 use crate::ai::models::{
     GenerateScenarioRequest, GenerateScenarioResponse, GeneratedForm, GeneratedFormField,
 };
@@ -25,18 +23,24 @@ impl ScenarioBuilderService {
         &self,
         request: GenerateScenarioRequest,
     ) -> Result<GenerateScenarioResponse> {
+        // 言語の決定（デフォルトは日本語）
+        let language = request.language.unwrap_or_default();
+
         // プロンプトの構築
         let user_prompt = generate_scenario_user_prompt(
             &request.industry,
             &request.target_audience,
             &request.goal,
             request.additional_context.as_deref(),
+            &language,
         );
+
+        let system_prompt = get_scenario_system_prompt(&language);
 
         let messages = vec![
             ChatMessage {
                 role: MessageRole::System,
-                content: SCENARIO_GENERATION_SYSTEM_PROMPT.to_string(),
+                content: system_prompt.to_string(),
             },
             ChatMessage {
                 role: MessageRole::User,

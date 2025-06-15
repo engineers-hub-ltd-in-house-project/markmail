@@ -1,6 +1,6 @@
 use crate::ai::models::{
     ai_responses::{ContentContext, GenerateContentRequest, OptimizeSubjectRequest},
-    GenerateScenarioRequest,
+    GenerateScenarioRequest, Language,
 };
 
 #[cfg(test)]
@@ -18,6 +18,7 @@ mod tests {
             target_audience: "スタートアップ企業".to_string(),
             goal: "無料トライアルから有料プランへの転換".to_string(),
             additional_context: Some("B2B向けのプロジェクト管理ツール".to_string()),
+            language: Some(Language::Japanese),
         };
 
         assert_eq!(request.industry, "SaaS");
@@ -33,7 +34,7 @@ mod tests {
                 industry: Some("SaaS".to_string()),
                 target_audience: Some("エンジニア".to_string()),
                 tone: None,
-                language: Some("ja".to_string()),
+                language: Some(Language::Japanese),
                 existing_content: None,
             },
             options: None,
@@ -41,7 +42,7 @@ mod tests {
 
         assert_eq!(request.content_type, "email");
         assert_eq!(request.context.industry, Some("SaaS".to_string()));
-        assert_eq!(request.context.language, Some("ja".to_string()));
+        assert_eq!(request.context.language, Some(Language::Japanese));
     }
 
     #[test]
@@ -51,6 +52,7 @@ mod tests {
             target_audience: "既存ユーザー".to_string(),
             campaign_goal: Some("エンゲージメント向上".to_string()),
             variations_count: Some(5),
+            language: Some(Language::Japanese),
         };
 
         assert_eq!(request.original_subject, "新機能のお知らせ");
