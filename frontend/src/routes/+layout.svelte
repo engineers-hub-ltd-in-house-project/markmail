@@ -55,6 +55,7 @@
             <a href="/subscribers" class="nav-link text-sm"> 購読者 </a>
             <a href="/forms" class="nav-link text-sm"> フォーム </a>
             <a href="/sequences" class="nav-link text-sm"> シーケンス </a>
+            <a href="/ai" class="nav-link text-sm"> AI機能 </a>
 
             <!-- ユーザーメニュー -->
             <div class="relative ml-4">

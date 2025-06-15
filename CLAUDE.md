@@ -91,10 +91,15 @@ provides guidance for Claude Code when working with this repository.
 # 開発
 cd backend
 cargo run                          # 開発サーバー起動 (ポート3000)
+cargo watch -c -w src -w .env -x run  # 自動リロード開発サーバー起動 ⭐ 推奨
+./watch.sh                         # 上記と同じ（スクリプト版）
 cargo test                         # 全テスト実行
 cargo test test_name               # 特定のテスト実行
 cargo clippy -- -D warnings        # リンター実行
 cargo fmt                          # コードフォーマット
+
+# cargo-watchのインストール（初回のみ）
+cargo install cargo-watch
 
 # データベース
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/markmail"
@@ -137,6 +142,22 @@ npm run lint                      # コードベース全体をリント
 ./scripts/setup-lefthook.sh       # Gitフックのセットアップ
 ```
 
+### AI機能の設定
+
+```bash
+# .envファイルに以下を追加
+AI_PROVIDER=openai                 # または 'anthropic'
+OPENAI_API_KEY=sk-xxxx            # OpenAI APIキー
+ANTHROPIC_API_KEY=sk-ant-xxxx     # Anthropic APIキー
+
+# AI機能へのアクセス
+# 1. ナビゲーションメニューの「AI機能」をクリック
+# 2. 以下の3つの機能が利用可能：
+#    - マーケティングシナリオ生成
+#    - コンテンツ生成
+#    - 件名最適化
+```
+
 ## 🏗️ アーキテクチャ概要
 
 ### システム全体の構成
@@ -159,7 +180,11 @@ backend/src/
 ├── services/      # ビジネスロジック層
 ├── workers/       # バックグラウンドワーカー
 ├── middleware/    # 認証、CORS、ロギングミドルウェア
-└── utils/         # 共有ユーティリティ（JWT、パスワードハッシュ、バリデーション）
+├── utils/         # 共有ユーティリティ（JWT、パスワードハッシュ、バリデーション）
+└── ai/            # AI機能モジュール ⭐ NEW
+    ├── providers/ # プロバイダー実装（OpenAI、Anthropic）
+    ├── services/  # AIサービス（シナリオビルダー、コンテンツ生成）
+    └── models/    # AI関連のデータモデルとプロンプト
 ```
 
 **主要パターン**:
