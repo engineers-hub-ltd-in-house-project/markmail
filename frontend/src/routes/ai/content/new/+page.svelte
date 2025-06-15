@@ -11,6 +11,7 @@
     GenerateContentRequest,
     GenerateContentResponse,
     ContentTone,
+    Language,
   } from "$lib/types/ai";
 
   let isAuthenticated = false;
@@ -23,7 +24,7 @@
   let industry = "";
   let targetAudience = "";
   let tone: ContentTone = "professional";
-  let language = "ja";
+  let language: Language = "ja";
   let existingContent = "";
   let includeVariations = true;
   let includePersonalization = true;
@@ -243,6 +244,27 @@
               placeholder="既存のメールやコンテンツを貼り付けると、そのスタイルを参考に生成します"
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
+          </div>
+
+          <!-- 出力言語 -->
+          <div>
+            <label
+              for="language"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              出力言語
+            </label>
+            <select
+              id="language"
+              bind:value={language}
+              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="ja">日本語</option>
+              <option value="en">英語</option>
+            </select>
+            <p class="mt-1 text-sm text-gray-500">
+              生成されるコンテンツの言語を選択してください
+            </p>
           </div>
 
           <!-- オプション -->

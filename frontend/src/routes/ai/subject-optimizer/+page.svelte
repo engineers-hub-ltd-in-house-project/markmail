@@ -6,6 +6,7 @@
   import type {
     OptimizeSubjectRequest,
     OptimizeSubjectResponse,
+    Language,
   } from "$lib/types/ai";
 
   let isAuthenticated = false;
@@ -18,6 +19,7 @@
   let targetAudience = "";
   let campaignGoal = "";
   let variationsCount = 5;
+  let language: Language = "ja";
 
   // 最適化結果
   let optimizationResult: OptimizeSubjectResponse | null = null;
@@ -55,6 +57,7 @@
       target_audience: targetAudience,
       campaign_goal: campaignGoal || undefined,
       variations_count: variationsCount,
+      language,
     };
 
     try {
@@ -220,6 +223,27 @@
               <option value={7}>7つ</option>
               <option value={10}>10つ</option>
             </select>
+          </div>
+
+          <!-- 出力言語 -->
+          <div>
+            <label
+              for="language"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              出力言語
+            </label>
+            <select
+              id="language"
+              bind:value={language}
+              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="ja">日本語</option>
+              <option value="en">英語</option>
+            </select>
+            <p class="mt-1 text-sm text-gray-500">
+              最適化された件名の言語を選択してください
+            </p>
           </div>
 
           <!-- エラーメッセージ -->

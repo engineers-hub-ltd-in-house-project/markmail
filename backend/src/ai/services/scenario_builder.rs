@@ -2,11 +2,9 @@ use anyhow::{anyhow, Result};
 use serde_json;
 use std::sync::Arc;
 
-use crate::ai::models::prompts::{
-    generate_scenario_user_prompt, SCENARIO_GENERATION_SYSTEM_PROMPT,
-};
+use crate::ai::models::prompts::{generate_scenario_user_prompt, get_scenario_system_prompt};
 use crate::ai::models::{
-    GenerateScenarioRequest, GenerateScenarioResponse, GeneratedForm, GeneratedFormField,
+    GenerateScenarioRequest, GenerateScenarioResponse, GeneratedForm, GeneratedFormField, Language,
 };
 use crate::ai::{AIProvider, ChatMessage, MessageRole};
 
@@ -25,18 +23,24 @@ impl ScenarioBuilderService {
         &self,
         request: GenerateScenarioRequest,
     ) -> Result<GenerateScenarioResponse> {
+        // 言語の決定（デフォルトは日本語）
+        let language = request.language.unwrap_or_default();
+
         // プロンプトの構築
         let user_prompt = generate_scenario_user_prompt(
             &request.industry,
             &request.target_audience,
             &request.goal,
             request.additional_context.as_deref(),
+            &language,
         );
+
+        let system_prompt = get_scenario_system_prompt(&language);
 
         let messages = vec![
             ChatMessage {
                 role: MessageRole::System,
-                content: SCENARIO_GENERATION_SYSTEM_PROMPT.to_string(),
+                content: system_prompt.to_string(),
             },
             ChatMessage {
                 role: MessageRole::User,
@@ -58,7 +62,7 @@ impl ScenarioBuilderService {
             })?;
 
         // 検証とデフォルト値の設定
-        let validated_response = self.validate_and_enhance_response(response)?;
+        let validated_response = self.validate_and_enhance_response(response, &language)?;
 
         Ok(validated_response)
     }
@@ -67,6 +71,7 @@ impl ScenarioBuilderService {
     fn validate_and_enhance_response(
         &self,
         mut response: GenerateScenarioResponse,
+        language: &Language,
     ) -> Result<GenerateScenarioResponse> {
         // シーケンスの検証
         if response.sequence.steps.is_empty() {
@@ -81,7 +86,7 @@ impl ScenarioBuilderService {
         // フォームの検証と拡張
         if response.forms.is_empty() {
             // デフォルトのリードキャプチャフォームを追加
-            response.forms.push(self.create_default_lead_form());
+            response.forms.push(self.create_default_lead_form(language));
         }
 
         // ステップの遅延時間を正規化
@@ -98,33 +103,62 @@ impl ScenarioBuilderService {
     }
 
     /// デフォルトのリードキャプチャフォームを作成
-    fn create_default_lead_form(&self) -> GeneratedForm {
-        GeneratedForm {
-            name: "リードキャプチャフォーム".to_string(),
-            description: "メールアドレスと基本情報を収集するフォーム".to_string(),
-            fields: vec![
-                GeneratedFormField {
-                    field_type: "email".to_string(),
-                    name: "email".to_string(),
-                    label: "メールアドレス".to_string(),
-                    required: true,
-                    options: None,
-                },
-                GeneratedFormField {
-                    field_type: "text".to_string(),
-                    name: "name".to_string(),
-                    label: "お名前".to_string(),
-                    required: true,
-                    options: None,
-                },
-                GeneratedFormField {
-                    field_type: "text".to_string(),
-                    name: "company".to_string(),
-                    label: "会社名".to_string(),
-                    required: false,
-                    options: None,
-                },
-            ],
+    fn create_default_lead_form(&self, language: &Language) -> GeneratedForm {
+        match language {
+            Language::Japanese => GeneratedForm {
+                name: "リードキャプチャフォーム".to_string(),
+                description: "メールアドレスと基本情報を収集するフォーム".to_string(),
+                fields: vec![
+                    GeneratedFormField {
+                        field_type: "email".to_string(),
+                        name: "email".to_string(),
+                        label: "メールアドレス".to_string(),
+                        required: true,
+                        options: None,
+                    },
+                    GeneratedFormField {
+                        field_type: "text".to_string(),
+                        name: "name".to_string(),
+                        label: "お名前".to_string(),
+                        required: true,
+                        options: None,
+                    },
+                    GeneratedFormField {
+                        field_type: "text".to_string(),
+                        name: "company".to_string(),
+                        label: "会社名".to_string(),
+                        required: false,
+                        options: None,
+                    },
+                ],
+            },
+            Language::English => GeneratedForm {
+                name: "Lead Capture Form".to_string(),
+                description: "Form to collect email address and basic information".to_string(),
+                fields: vec![
+                    GeneratedFormField {
+                        field_type: "email".to_string(),
+                        name: "email".to_string(),
+                        label: "Email Address".to_string(),
+                        required: true,
+                        options: None,
+                    },
+                    GeneratedFormField {
+                        field_type: "text".to_string(),
+                        name: "name".to_string(),
+                        label: "Name".to_string(),
+                        required: true,
+                        options: None,
+                    },
+                    GeneratedFormField {
+                        field_type: "text".to_string(),
+                        name: "company".to_string(),
+                        label: "Company".to_string(),
+                        required: false,
+                        options: None,
+                    },
+                ],
+            },
         }
     }
 }
@@ -148,9 +182,10 @@ mod tests {
         let provider = create_ai_provider(config).unwrap();
         let service = ScenarioBuilderService::new(provider);
 
-        let form = service.create_default_lead_form();
+        let form = service.create_default_lead_form(&Language::Japanese);
         assert_eq!(form.fields.len(), 3);
         assert_eq!(form.fields[0].field_type, "email");
         assert!(form.fields[0].required);
+        assert_eq!(form.fields[0].label, "メールアドレス");
     }
 }

@@ -1,9 +1,42 @@
 pub mod ai_responses;
 pub mod prompts;
 
+#[cfg(test)]
+mod tests;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// サポートされる言語
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    #[serde(rename = "ja")]
+    #[default]
+    Japanese,
+    #[serde(rename = "en")]
+    English,
+}
+
+impl Language {
+    /// 言語コードから変換
+    pub fn from_code(code: &str) -> Option<Self> {
+        match code.to_lowercase().as_str() {
+            "ja" | "japanese" => Some(Language::Japanese),
+            "en" | "english" => Some(Language::English),
+            _ => None,
+        }
+    }
+
+    /// 言語コードに変換
+    pub fn to_code(&self) -> &'static str {
+        match self {
+            Language::Japanese => "ja",
+            Language::English => "en",
+        }
+    }
+}
 
 /// AI生成コンテンツ
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +81,7 @@ pub struct GenerateScenarioRequest {
     pub target_audience: String,
     pub goal: String,
     pub additional_context: Option<String>,
+    pub language: Option<Language>,
 }
 
 /// シナリオ生成レスポンス
