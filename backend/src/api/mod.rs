@@ -14,6 +14,7 @@ pub mod forms;
 pub mod integrations;
 pub mod markdown;
 pub mod sequences;
+pub mod stripe_webhook;
 pub mod subscribers;
 pub mod subscriptions;
 pub mod templates;
@@ -29,7 +30,12 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/auth/reset-password", post(auth::reset_password))
         // フォームの公開エンドポイント
         .route("/api/forms/:id/public", get(forms::get_public_form))
-        .route("/api/forms/:id/submit", post(forms::submit_form));
+        .route("/api/forms/:id/submit", post(forms::submit_form))
+        // Stripe Webhook
+        .route(
+            "/api/stripe/webhook",
+            post(stripe_webhook::handle_stripe_webhook),
+        );
 
     // 保護されたルート（認証必要）
     let protected_routes = Router::new()
@@ -135,6 +141,10 @@ pub fn create_routes() -> Router<AppState> {
         .route(
             "/api/subscriptions/payment-history",
             get(subscriptions::get_payment_history),
+        )
+        .route(
+            "/api/subscriptions/checkout",
+            post(subscriptions::create_checkout_session),
         )
         .route("/api/subscriptions/usage", get(subscriptions::get_usage))
         // AI機能

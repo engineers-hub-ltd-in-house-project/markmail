@@ -120,3 +120,57 @@ pub async fn update_password(pool: &PgPool, user_id: Uuid, password_hash: &str) 
 
     Ok(())
 }
+
+/// ユーザーのStripe顧客IDを更新
+pub async fn update_stripe_customer_id(
+    pool: &PgPool,
+    user_id: Uuid,
+    stripe_customer_id: &str,
+) -> Result<()> {
+    sqlx::query!(
+        r#"
+        UPDATE users
+        SET stripe_customer_id = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        "#,
+        user_id,
+        stripe_customer_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// ユーザー情報を取得（stripe_customer_idを含む）
+pub async fn get_user_by_id(pool: &PgPool, user_id: Uuid) -> Result<Option<UserWithStripe>> {
+    let user = sqlx::query_as!(
+        UserWithStripe,
+        r#"
+        SELECT id, email, password_hash, name, avatar_url, is_active, email_verified, 
+               stripe_customer_id, created_at, updated_at
+        FROM users
+        WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(user)
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct UserWithStripe {
+    pub id: Uuid,
+    pub email: String,
+    pub password_hash: String,
+    pub name: Option<String>,
+    pub avatar_url: Option<String>,
+    pub is_active: bool,
+    pub email_verified: bool,
+    pub stripe_customer_id: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}

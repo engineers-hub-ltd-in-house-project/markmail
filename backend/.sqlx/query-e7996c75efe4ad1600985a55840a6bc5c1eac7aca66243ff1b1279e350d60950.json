@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            id, name, display_name, description, price, billing_interval,\n            contact_limit, monthly_email_limit, campaign_limit, template_limit,\n            sequence_limit, sequence_step_limit, form_limit, form_submission_limit,\n            user_limit, webhook_limit, custom_markdown_components, ai_features, \n            advanced_analytics, ab_testing, api_access, priority_support, \n            custom_domain, white_label, sort_order, is_active, \n            features as \"features: Option<serde_json::Value>\", \n            created_at, updated_at\n        FROM subscription_plans\n        WHERE name = $1\n        ",
+  "query": "\n        SELECT \n            id, name, display_name, description, price, billing_interval,\n            contact_limit, monthly_email_limit, campaign_limit, template_limit,\n            sequence_limit, sequence_step_limit, form_limit, form_submission_limit,\n            user_limit, webhook_limit, custom_markdown_components, ai_features, \n            advanced_analytics, ab_testing, api_access, priority_support, \n            custom_domain, white_label, sort_order, is_active, \n            features as \"features: Option<serde_json::Value>\", \n            stripe_price_id, stripe_product_id,\n            created_at, updated_at\n        FROM subscription_plans\n        WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -140,17 +140,27 @@
       },
       {
         "ordinal": 27,
+        "name": "stripe_price_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 28,
+        "name": "stripe_product_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 29,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 28,
+        "ordinal": 30,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": ["Text"]
+      "Left": ["Uuid"]
     },
     "nullable": [
       false,
@@ -180,9 +190,11 @@
       false,
       false,
       false,
+      true,
+      true,
       false,
       false
     ]
   },
-  "hash": "4dbacc275de543b0d5f1eb2f20ac2243b33adf906145e0d4a06e8a51b08ea2a8"
+  "hash": "e7996c75efe4ad1600985a55840a6bc5c1eac7aca66243ff1b1279e350d60950"
 }

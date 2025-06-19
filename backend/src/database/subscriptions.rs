@@ -19,6 +19,7 @@ pub async fn get_active_plans(pool: &PgPool) -> Result<Vec<SubscriptionPlan>> {
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
             features as "features: Option<serde_json::Value>", 
+            stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
         WHERE is_active = true
@@ -44,6 +45,7 @@ pub async fn get_plan_by_id(pool: &PgPool, plan_id: Uuid) -> Result<Subscription
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
             features as "features: Option<serde_json::Value>", 
+            stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
         WHERE id = $1
@@ -70,6 +72,7 @@ pub async fn get_plan_by_name(pool: &PgPool, name: &str) -> Result<SubscriptionP
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
             features as "features: Option<serde_json::Value>", 
+            stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
         WHERE name = $1

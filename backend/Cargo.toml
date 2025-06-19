@@ -72,3 +72,6 @@ mockall = "0.12.1"
 # AI/LLM統合
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 tiktoken-rs = "0.5"
+
+# 決済処理（Stripe推奨のコミュニティSDK）
+async-stripe = { version = "0.31", features = ["runtime-tokio-hyper", "checkout"] }

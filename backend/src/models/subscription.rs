@@ -36,6 +36,8 @@ pub struct SubscriptionPlan {
     pub sort_order: i32,
     pub is_active: bool,
     pub features: Option<serde_json::Value>,
+    pub stripe_price_id: Option<String>,
+    pub stripe_product_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
