@@ -354,6 +354,72 @@ frontend/src/
   `pwd`で常に現在位置を確認、適切なディレクトリに移動してから作業 / Always check
   with `pwd` and navigate to correct directory
 
+## 🚨 外部ライブラリ・SDK導入時の必須確認事項
+
+### 1. 公式ドキュメントの確認を最優先
+
+新しいライブラリやSDKを導入する前に、**必ず以下の手順で公式情報を確認**してください：
+
+1. **公式サイトの確認**
+
+   ```bash
+   # 例：Stripeの場合
+   # 1. https://docs.stripe.com/sdks で公式SDKを確認
+   # 2. コミュニティSDKセクションを確認
+   # 3. 推奨されているライブラリを使用
+   ```
+
+2. **最新情報の取得**
+
+   - 現在の年（2025年）の情報を検索
+   - ライブラリの最新バージョンを確認
+   - GitHubリポジトリで最新リリースを確認
+
+3. **実装前の検証**
+
+   - 公式の実装例を確認
+   - 依存関係の互換性を確認
+   - 既存コードとの整合性を確認
+
+4. **決定プロセスの記録**
+   - なぜそのライブラリを選んだかを明確に記録
+   - 検討した他の選択肢とその却下理由
+   - 公式ドキュメントのURLを保存
+
+### 2. ロールバック作業の禁止
+
+**絶対にやってはいけないこと**：
+
+- ❌ 一度決定したライブラリを何度も変更する
+- ❌ 「試してみてダメだったら別のものに変える」アプローチ
+- ❌ 公式情報を確認せずに推測で進める
+
+**正しいアプローチ**：
+
+- ✅ 最初に十分な調査を行う
+- ✅ 公式推奨の方法を採用する
+- ✅ 実装前に方針を明確にする
+
+### 3. 具体例：Stripe SDK導入の正しい手順
+
+```bash
+# 1. 公式ドキュメントを確認
+WebFetch: https://docs.stripe.com/sdks
+# → コミュニティSDKセクションを確認
+
+# 2. 推奨ライブラリを特定
+WebFetch: https://docs.stripe.com/sdks/community
+# → Rustの場合：async-stripe by Alex Lyon
+
+# 3. 最新バージョンと使用方法を確認
+WebSearch: "async-stripe arlyon GitHub latest version 2025"
+WebFetch: https://github.com/arlyon/async-stripe
+# → バージョン0.31、featuresの確認
+
+# 4. 実装例を確認してから実装開始
+WebFetch: https://github.com/arlyon/async-stripe/blob/master/examples/
+```
+
 ## 🚨 新規サービス実装時の必須チェックリスト
 
 新しいサービスファイルを作成する際は、**必ず既存のサービスファイルのパターンを参照**してください。
