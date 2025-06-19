@@ -38,19 +38,25 @@
   }
 
   async function handleUpgrade(planId: string) {
-    if (!confirm("プランをアップグレードしますか？")) {
+    if (
+      !confirm(
+        "プランをアップグレードしますか？\nStripeの決済画面に移動します。",
+      )
+    ) {
       return;
     }
 
     try {
       upgrading = true;
       error = "";
-      await subscriptionService.upgradePlan(planId);
-      alert("プランのアップグレードが完了しました");
-      await loadData();
+      // Stripe Checkoutへリダイレクト
+      await subscriptionService.createCheckoutSession(
+        planId,
+        `${window.location.origin}/subscriptions/success`,
+        `${window.location.origin}/subscriptions`,
+      );
     } catch (err: any) {
       error = err.message || "アップグレードに失敗しました";
-    } finally {
       upgrading = false;
     }
   }

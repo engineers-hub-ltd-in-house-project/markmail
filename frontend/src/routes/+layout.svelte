@@ -110,14 +110,14 @@
                       設定
                     </a>
                     <a
-                      href="/subscription"
+                      href="/subscriptions"
                       class="dropdown-item"
                       role="menuitem"
                     >
                       サブスクリプション
                     </a>
                     <a
-                      href="/subscription/payment-history"
+                      href="/subscriptions/payment-history"
                       class="dropdown-item"
                       role="menuitem"
                     >

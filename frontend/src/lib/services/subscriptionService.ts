@@ -108,4 +108,33 @@ export const subscriptionService = {
   async getUsage(): Promise<UsageSummary> {
     return fetchAPI<UsageSummary>("/subscriptions/usage");
   },
+
+  // Stripe Checkoutセッションを作成してリダイレクト
+  async createCheckoutSession(
+    planId: string,
+    successUrl?: string,
+    cancelUrl?: string,
+  ): Promise<{ checkout_url: string }> {
+    const request = {
+      plan_id: planId,
+      success_url:
+        successUrl || `${window.location.origin}/subscriptions/success`,
+      cancel_url: cancelUrl || `${window.location.origin}/subscriptions`,
+    };
+
+    const response = await fetchAPI<{ checkout_url: string }>(
+      "/subscriptions/checkout",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    );
+
+    // Stripe Checkoutへリダイレクト
+    if (response.checkout_url) {
+      window.location.href = response.checkout_url;
+    }
+
+    return response;
+  },
 };
