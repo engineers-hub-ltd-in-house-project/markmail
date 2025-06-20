@@ -489,10 +489,247 @@ CREATE TABLE ml_models (
    - モバイルアプリ
    - リアルタイムコラボレーション
 
-## 13. 用語定義
+## 13. サブスクリプション・料金プラン要件
+
+### 13.1 料金プラン構成
+
+#### Free（無料プラン）
+
+**対象**: 個人・スタートアップ
+
+**リソース制限**:
+
+- コンタクト数: 100
+- 月間メール送信数: 1,000
+- キャンペーン数: 3
+- テンプレート数: 5
+- フォーム数: 3
+- シーケンス数: 1
+- シーケンスステップ数: 5
+- フォーム送信数: 100/月
+- ユーザー数: 1
+- Webhook数: 0
+
+**AI機能（制限付き）**:
+
+- AI使用回数: 月10回まで
+- シナリオ生成: 月3回まで
+- コンテンツ生成: 月5回まで
+- 件名最適化: 月2回まで
+
+**利用不可機能**:
+
+- API連携
+- 高度な分析
+- A/Bテスト
+- カスタムドメイン
+- 優先サポート
+
+#### Pro（プロフェッショナルプラン）
+
+**料金**: ¥4,980/月 **対象**: 成長企業
+
+**リソース制限**:
+
+- コンタクト数: 10,000
+- 月間メール送信数: 100,000
+- キャンペーン数: 50
+- テンプレート数: 100
+- フォーム数: 50
+- シーケンス数: 20
+- シーケンスステップ数: 50
+- フォーム送信数: 10,000/月
+- ユーザー数: 5
+- Webhook数: 10
+
+**AI機能（標準）**:
+
+- AI使用回数: 月500回まで
+- シナリオ生成: 月50回まで
+- コンテンツ生成: 月300回まで
+- 件名最適化: 月150回まで
+
+**追加機能**:
+
+- API連携（レート制限: 1000リクエスト/時）
+- 高度な分析
+- A/Bテスト
+- カスタムMarkdownコンポーネント
+
+#### Business（ビジネスプラン）
+
+**料金**: ¥19,800/月 **対象**: エンタープライズ
+
+**リソース制限**:
+
+- コンタクト数: 100,000
+- 月間メール送信数: 1,000,000
+- キャンペーン数: 無制限
+- テンプレート数: 無制限
+- フォーム数: 無制限
+- シーケンス数: 無制限
+- シーケンスステップ数: 無制限
+- フォーム送信数: 無制限
+- ユーザー数: 無制限
+- Webhook数: 無制限
+
+**AI機能（無制限）**:
+
+- 全AI機能を無制限で利用可能
+
+**全機能利用可能**:
+
+- API連携（レート制限なし）
+- 高度な分析
+- A/Bテスト
+- カスタムドメイン
+- ホワイトラベル
+- 優先サポート
+
+### 13.2 サブスクリプション技術要件
+
+#### データベース設計
+
+```sql
+-- サブスクリプションプラン
+CREATE TABLE subscription_plans (
+    id UUID PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    display_name VARCHAR(100) NOT NULL,
+    price_monthly INTEGER NOT NULL,
+    -- リソース制限
+    contact_limit INTEGER,
+    monthly_email_limit INTEGER,
+    campaign_limit INTEGER,
+    template_limit INTEGER,
+    sequence_limit INTEGER,
+    sequence_step_limit INTEGER,
+    form_limit INTEGER,
+    form_submission_limit INTEGER,
+    user_limit INTEGER,
+    webhook_limit INTEGER,
+    -- AI制限
+    ai_monthly_limit INTEGER,
+    ai_scenario_limit INTEGER,
+    ai_content_limit INTEGER,
+    ai_subject_limit INTEGER,
+    -- 機能フラグ
+    custom_markdown_components BOOLEAN DEFAULT FALSE,
+    ai_features BOOLEAN DEFAULT FALSE,
+    advanced_analytics BOOLEAN DEFAULT FALSE,
+    ab_testing BOOLEAN DEFAULT FALSE,
+    api_access BOOLEAN DEFAULT FALSE,
+    api_rate_limit INTEGER,
+    priority_support BOOLEAN DEFAULT FALSE,
+    custom_domain BOOLEAN DEFAULT FALSE,
+    white_label BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ユーザーサブスクリプション
+CREATE TABLE user_subscriptions (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    plan_id UUID REFERENCES subscription_plans(id),
+    status VARCHAR(20) NOT NULL, -- active, cancelled, past_due, expired
+    current_period_start TIMESTAMP NOT NULL,
+    current_period_end TIMESTAMP NOT NULL,
+    cancel_at_period_end BOOLEAN DEFAULT FALSE,
+    stripe_subscription_id VARCHAR(255),
+    stripe_customer_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 使用量記録
+CREATE TABLE usage_records (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    resource_type VARCHAR(50) NOT NULL, -- email_sent, ai_usage, etc
+    quantity INTEGER NOT NULL,
+    period_start TIMESTAMP NOT NULL,
+    period_end TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AI使用ログ
+CREATE TABLE ai_usage_logs (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    feature_type VARCHAR(50) NOT NULL, -- scenario, content, subject
+    prompt TEXT,
+    response TEXT,
+    tokens_used INTEGER,
+    model_used VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### 制限チェックミドルウェア
+
+```rust
+// サブスクリプション制限チェック
+async fn check_subscription_limit(
+    user_id: Uuid,
+    resource_type: &str,
+    db: &PgPool
+) -> Result<bool, AppError>;
+
+// AI使用回数チェック
+async fn check_ai_usage_limit(
+    user_id: Uuid,
+    feature_type: &str,
+    db: &PgPool
+) -> Result<bool, AppError>;
+
+// 機能アクセスチェック
+async fn check_feature_access(
+    user_id: Uuid,
+    feature: &str,
+    db: &PgPool
+) -> Result<bool, AppError>;
+```
+
+### 13.3 決済システム統合（Stripe）
+
+#### 必要なStripe機能
+
+- Customer管理
+- Subscription管理
+- Payment Method管理
+- Webhook処理
+- 請求書・領収書発行
+
+#### Webhook対応イベント
+
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+
+### 13.4 使用量トラッキング
+
+#### リアルタイムトラッキング対象
+
+- メール送信数
+- AI API呼び出し回数
+- APIリクエスト数
+- ストレージ使用量
+
+#### 月次リセット処理
+
+- 毎月1日0時（JST）に使用量をリセット
+- リセット前に使用量レポートを生成・保存
+
+## 14. 用語定義
 
 - **キャンペーン**: 一度に複数の購読者に送信するメール配信
 - **シーケンス**: トリガーに基づいて自動的に送信される一連のメール
 - **ステップ**: シーケンス内の個別のアクション（メール送信、遅延など）
 - **エンロールメント**: 購読者がシーケンスに登録された状態
 - **トリガー**: シーケンスを開始するイベント（登録、フォーム送信など）
+- **サブスクリプション**: ユーザーが契約している料金プラン
+- **使用量制限**: プランごとに設定されたリソース使用の上限
+- **AI使用回数**: AI機能を呼び出した回数（月次カウント）
