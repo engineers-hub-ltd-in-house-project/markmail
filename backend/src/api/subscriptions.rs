@@ -124,7 +124,7 @@ pub async fn create_checkout_session(
     State(state): State<AppState>,
     Json(request): Json<CreateCheckoutRequest>,
 ) -> Json<serde_json::Value> {
-    // ユーザーの情報を取得
+    // ユーザーの情報を取得（Stripe customer IDを含む）
     let user_info = match crate::database::users::get_user_by_id(&state.db, user.user_id).await {
         Ok(Some(u)) => u,
         _ => {

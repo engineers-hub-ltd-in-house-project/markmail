@@ -1,4 +1,6 @@
 use anyhow::Result;
+use serde_json::Value;
+use sqlx::PgPool;
 use std::str::FromStr;
 use stripe::{
     CheckoutSession, CheckoutSessionMode, Client, CreateCheckoutSession,
@@ -6,7 +8,7 @@ use stripe::{
     EventObject, EventType, ListSubscriptions, Price, PriceId, Product, ProductId, Subscription,
     SubscriptionId, SubscriptionStatus, SubscriptionStatusFilter, UpdateSubscription, Webhook,
 };
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 pub struct StripeService {
@@ -44,7 +46,7 @@ impl StripeService {
     }
 
     /// Stripeの顧客IDからユーザーIDを取得
-    pub fn get_user_id_from_customer(&self, customer: &Customer) -> Option<Uuid> {
+    fn get_user_id_from_customer(&self, customer: &Customer) -> Option<Uuid> {
         customer
             .metadata
             .as_ref()
@@ -151,19 +153,141 @@ impl StripeService {
         Ok(updated_subscription)
     }
 
-    /// Webhookイベントを検証
-    pub fn verify_webhook_signature(&self, payload: &str, signature: &str) -> Result<WebhookEvent> {
-        let event = Webhook::construct_event(payload, signature, &self.webhook_secret)?;
-        Ok(event)
+    /// Webhook署名を検証（パースなし）
+    pub fn verify_webhook_raw(&self, payload: &str, signature: &str) -> Result<()> {
+        // Stripeの署名検証のみを使用（JSONパースエラーは無視）
+        use stripe::WebhookError;
+
+        match Webhook::construct_event(payload, signature, &self.webhook_secret) {
+            Ok(_) => Ok(()),
+            Err(WebhookError::BadSignature) => Err(anyhow::anyhow!("Invalid signature")),
+            Err(WebhookError::BadHeader(_)) => Err(anyhow::anyhow!("Invalid header")),
+            Err(WebhookError::BadKey) => Err(anyhow::anyhow!("Invalid key")),
+            // JSONパースエラーは署名が有効な場合なので成功とする
+            Err(e) => {
+                // エラーメッセージにJSONパースエラーが含まれているか確認
+                let error_msg = format!("{:?}", e);
+                if error_msg.contains("error parsing event object")
+                    || error_msg.contains("unknown variant")
+                {
+                    Ok(()) // JSONパースエラーは無視
+                } else {
+                    Err(anyhow::anyhow!("Webhook error: {:?}", e))
+                }
+            }
+        }
+    }
+
+    /// JSONからWebhookイベントを処理
+    pub async fn handle_webhook_json(
+        &self,
+        event_type: &str,
+        json: &Value,
+        db: &PgPool,
+    ) -> Result<()> {
+        match event_type {
+            "checkout.session.completed" => {
+                self.handle_checkout_session_completed(json, db).await?;
+            }
+            "customer.subscription.created" | "customer.subscription.updated" => {
+                self.handle_subscription_updated(json, db).await?;
+            }
+            "customer.subscription.deleted" => {
+                self.handle_subscription_deleted(json, db).await?;
+            }
+            _ => {
+                info!("Unhandled webhook event type: {}", event_type);
+            }
+        }
+        Ok(())
     }
 
     /// Webhookイベントを処理
-    pub async fn handle_webhook_event(&self, event: WebhookEvent) -> Result<()> {
+    pub async fn handle_webhook_event(&self, event: WebhookEvent, db: &PgPool) -> Result<()> {
         match event.type_ {
             EventType::CheckoutSessionCompleted => {
                 if let EventObject::CheckoutSession(session) = event.data.object {
                     info!("チェックアウトセッション完了: {}", session.id);
-                    // ここでサブスクリプションの有効化処理を行う
+
+                    // サブスクリプションIDが存在する場合（サブスクリプションモード）
+                    if let Some(subscription_id) = session.subscription {
+                        // Stripeからサブスクリプション詳細を取得
+                        let sub_id = match subscription_id {
+                            stripe::Expandable::Id(id) => id,
+                            stripe::Expandable::Object(_) => {
+                                error!("Unexpected subscription object in webhook");
+                                return Ok(());
+                            }
+                        };
+                        let subscription =
+                            Subscription::retrieve(&self.client, &sub_id, &[]).await?;
+
+                        // 顧客IDからユーザーIDを取得
+                        if let Some(user_id) =
+                            self.get_user_id_from_subscription(&subscription).await?
+                        {
+                            // プランIDを取得
+                            if let Some(item) = subscription.items.data.first() {
+                                let price_id = match &item.price {
+                                    Some(price) => price.id.to_string(),
+                                    None => {
+                                        error!("No price found in subscription item");
+                                        return Ok(());
+                                    }
+                                };
+
+                                // データベースでプランIDを検索
+                                let plan = sqlx::query!(
+                                    "SELECT id FROM subscription_plans WHERE stripe_price_id = $1",
+                                    price_id
+                                )
+                                .fetch_optional(db)
+                                .await?;
+
+                                if let Some(plan) = plan {
+                                    // サブスクリプションを更新または作成
+                                    let status =
+                                        Self::convert_subscription_status(&subscription.status);
+
+                                    sqlx::query!(
+                                        r#"
+                                        INSERT INTO user_subscriptions (
+                                            id, user_id, plan_id, status, 
+                                            current_period_start, current_period_end,
+                                            stripe_subscription_id, stripe_customer_id,
+                                            created_at, updated_at
+                                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                                        ON CONFLICT (user_id) DO UPDATE SET
+                                            plan_id = EXCLUDED.plan_id,
+                                            status = EXCLUDED.status,
+                                            current_period_start = EXCLUDED.current_period_start,
+                                            current_period_end = EXCLUDED.current_period_end,
+                                            stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                                            updated_at = NOW()
+                                        "#,
+                                        Uuid::new_v4(),
+                                        user_id,
+                                        plan.id,
+                                        status,
+                                        chrono::DateTime::from_timestamp(subscription.current_period_start, 0),
+                                        chrono::DateTime::from_timestamp(subscription.current_period_end, 0),
+                                        subscription.id.to_string(),
+                                        match &subscription.customer {
+                                            stripe::Expandable::Id(id) => id.to_string(),
+                                            stripe::Expandable::Object(customer) => customer.id.to_string(),
+                                        }
+                                    )
+                                    .execute(db)
+                                    .await?;
+
+                                    info!(
+                                        "サブスクリプションを更新しました: user_id={:?}",
+                                        user_id
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
             EventType::CustomerSubscriptionCreated => {
@@ -216,6 +340,302 @@ impl StripeService {
         let product_id = ProductId::from_str(product_id)?;
         let product = Product::retrieve(&self.client, &product_id, &[]).await?;
         Ok(product)
+    }
+
+    /// サブスクリプションからユーザーIDを取得
+    async fn get_user_id_from_subscription(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<Option<Uuid>> {
+        // まずサブスクリプションのメタデータを確認
+        if let Some(user_id_str) = subscription.metadata.get("user_id") {
+            if let Ok(user_id) = Uuid::parse_str(user_id_str) {
+                return Ok(Some(user_id));
+            }
+        }
+
+        // メタデータにない場合は、顧客情報から取得
+        let customer_id = match &subscription.customer {
+            stripe::Expandable::Id(id) => id.clone(),
+            stripe::Expandable::Object(customer) => {
+                return Ok(self.get_user_id_from_customer(customer))
+            }
+        };
+
+        let customer = Customer::retrieve(&self.client, &customer_id, &[]).await?;
+        Ok(self.get_user_id_from_customer(&customer))
+    }
+
+    /// チェックアウトセッション完了を処理
+    async fn handle_checkout_session_completed(&self, json: &Value, db: &PgPool) -> Result<()> {
+        let data = json
+            .get("data")
+            .and_then(|d| d.get("object"))
+            .ok_or_else(|| anyhow::anyhow!("Missing data.object"))?;
+
+        let subscription_id = data.get("subscription").and_then(|s| s.as_str());
+        let customer_id = data
+            .get("customer")
+            .and_then(|c| c.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing customer"))?;
+
+        if let Some(sub_id) = subscription_id {
+            info!(
+                "Processing checkout.session.completed for subscription: {}",
+                sub_id
+            );
+
+            // Stripeからサブスクリプション詳細を取得
+            let subscription =
+                Subscription::retrieve(&self.client, &SubscriptionId::from_str(sub_id)?, &[])
+                    .await?;
+
+            // ユーザーIDを取得
+            let user_id =
+                if let Some(uid) = self.get_user_id_from_subscription(&subscription).await? {
+                    uid
+                } else {
+                    // 顧客IDから直接取得を試みる
+                    match sqlx::query!(
+                        "SELECT id FROM users WHERE stripe_customer_id = $1",
+                        customer_id
+                    )
+                    .fetch_optional(db)
+                    .await?
+                    {
+                        Some(user) => user.id,
+                        None => {
+                            error!("User not found for customer: {}", customer_id);
+                            return Ok(());
+                        }
+                    }
+                };
+
+            // プランIDを取得
+            if let Some(item) = subscription.items.data.first() {
+                let price_id = match &item.price {
+                    Some(price) => price.id.to_string(),
+                    None => {
+                        error!("No price found in subscription item");
+                        return Ok(());
+                    }
+                };
+
+                // データベースでプランIDを検索
+                let plan = sqlx::query!(
+                    "SELECT id FROM subscription_plans WHERE stripe_price_id = $1",
+                    price_id
+                )
+                .fetch_optional(db)
+                .await?;
+
+                if let Some(plan) = plan {
+                    // サブスクリプションを更新または作成
+                    let status = Self::convert_subscription_status(&subscription.status);
+
+                    // 既存のサブスクリプションを確認
+                    let existing = sqlx::query!(
+                        "SELECT id FROM user_subscriptions WHERE user_id = $1",
+                        user_id
+                    )
+                    .fetch_optional(db)
+                    .await?;
+
+                    if let Some(_existing) = existing {
+                        // 既存のサブスクリプションを更新
+                        sqlx::query!(
+                            r#"
+                            UPDATE user_subscriptions SET
+                                plan_id = $1,
+                                status = $2,
+                                current_period_start = $3,
+                                current_period_end = $4,
+                                stripe_subscription_id = $5,
+                                stripe_customer_id = $6,
+                                updated_at = NOW()
+                            WHERE user_id = $7
+                            "#,
+                            plan.id,
+                            status,
+                            chrono::DateTime::from_timestamp(subscription.current_period_start, 0),
+                            chrono::DateTime::from_timestamp(subscription.current_period_end, 0),
+                            subscription.id.to_string(),
+                            customer_id,
+                            user_id
+                        )
+                        .execute(db)
+                        .await?;
+                    } else {
+                        // 新しいサブスクリプションを作成
+                        sqlx::query!(
+                            r#"
+                            INSERT INTO user_subscriptions (
+                                id, user_id, plan_id, status, 
+                                current_period_start, current_period_end,
+                                stripe_subscription_id, stripe_customer_id,
+                                created_at, updated_at
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                            "#,
+                            Uuid::new_v4(),
+                            user_id,
+                            plan.id,
+                            status,
+                            chrono::DateTime::from_timestamp(subscription.current_period_start, 0),
+                            chrono::DateTime::from_timestamp(subscription.current_period_end, 0),
+                            subscription.id.to_string(),
+                            customer_id
+                        )
+                        .execute(db)
+                        .await?;
+                    }
+
+                    info!("Updated subscription for user: {:?}", user_id);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// サブスクリプション更新を処理
+    async fn handle_subscription_updated(&self, json: &Value, db: &PgPool) -> Result<()> {
+        let data = json
+            .get("data")
+            .and_then(|d| d.get("object"))
+            .ok_or_else(|| anyhow::anyhow!("Missing data.object"))?;
+
+        let subscription_id = data
+            .get("id")
+            .and_then(|s| s.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing subscription id"))?;
+        let customer_id = data
+            .get("customer")
+            .and_then(|c| c.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing customer"))?;
+        let status = data
+            .get("status")
+            .and_then(|s| s.as_str())
+            .unwrap_or("active");
+
+        info!("Processing subscription update: {}", subscription_id);
+
+        // ユーザーIDを取得
+        let user = match sqlx::query!(
+            "SELECT id FROM users WHERE stripe_customer_id = $1",
+            customer_id
+        )
+        .fetch_optional(db)
+        .await?
+        {
+            Some(u) => u,
+            None => {
+                error!("User not found for customer: {}", customer_id);
+                return Ok(());
+            }
+        };
+
+        // 現在のプランを取得
+        if let Some(items) = data
+            .get("items")
+            .and_then(|i| i.get("data"))
+            .and_then(|d| d.as_array())
+        {
+            if let Some(item) = items.first() {
+                if let Some(price_id) = item
+                    .get("price")
+                    .and_then(|p| p.get("id"))
+                    .and_then(|id| id.as_str())
+                {
+                    // データベースでプランIDを検索
+                    let plan = sqlx::query!(
+                        "SELECT id FROM subscription_plans WHERE stripe_price_id = $1",
+                        price_id
+                    )
+                    .fetch_optional(db)
+                    .await?;
+
+                    if let Some(plan) = plan {
+                        let period_start = data
+                            .get("current_period_start")
+                            .and_then(|t| t.as_i64())
+                            .unwrap_or(0);
+                        let period_end = data
+                            .get("current_period_end")
+                            .and_then(|t| t.as_i64())
+                            .unwrap_or(0);
+
+                        sqlx::query!(
+                            r#"
+                            UPDATE user_subscriptions SET
+                                plan_id = $1,
+                                status = $2,
+                                current_period_start = $3,
+                                current_period_end = $4,
+                                stripe_subscription_id = $5,
+                                updated_at = NOW()
+                            WHERE user_id = $6
+                            "#,
+                            plan.id,
+                            status,
+                            chrono::DateTime::from_timestamp(period_start, 0),
+                            chrono::DateTime::from_timestamp(period_end, 0),
+                            subscription_id,
+                            user.id
+                        )
+                        .execute(db)
+                        .await?;
+
+                        info!("Updated subscription for user: {:?}", user.id);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// サブスクリプション削除を処理
+    async fn handle_subscription_deleted(&self, json: &Value, db: &PgPool) -> Result<()> {
+        let data = json
+            .get("data")
+            .and_then(|d| d.get("object"))
+            .ok_or_else(|| anyhow::anyhow!("Missing data.object"))?;
+
+        let customer_id = data
+            .get("customer")
+            .and_then(|c| c.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing customer"))?;
+
+        info!(
+            "Processing subscription deletion for customer: {}",
+            customer_id
+        );
+
+        // ユーザーIDを取得
+        let user = match sqlx::query!(
+            "SELECT id FROM users WHERE stripe_customer_id = $1",
+            customer_id
+        )
+        .fetch_optional(db)
+        .await?
+        {
+            Some(u) => u,
+            None => {
+                error!("User not found for customer: {}", customer_id);
+                return Ok(());
+            }
+        };
+
+        // サブスクリプションをキャンセル状態に更新
+        sqlx::query!(
+            "UPDATE user_subscriptions SET status = 'canceled', updated_at = NOW() WHERE user_id = $1",
+            user.id
+        )
+        .execute(db)
+        .await?;
+
+        info!("Canceled subscription for user: {:?}", user.id);
+        Ok(())
     }
 
     /// サブスクリプションステータスをデータベースのステータスに変換
