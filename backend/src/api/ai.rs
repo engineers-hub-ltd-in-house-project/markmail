@@ -21,6 +21,9 @@ use crate::{
         },
     },
     middleware::auth::AuthUser,
+    services::scenario_implementation_service::{
+        ScenarioImplementationResult, ScenarioImplementationService,
+    },
     AppState,
 };
 
@@ -152,6 +155,31 @@ pub async fn optimize_subject(
     })?;
 
     Ok(Json(response))
+}
+
+/// シナリオ実装エンドポイント（生成されたシナリオを実際に作成）
+pub async fn implement_scenario(
+    Extension(auth_user): Extension<AuthUser>,
+    State(state): State<AppState>,
+    Json(scenario): Json<GenerateScenarioResponse>,
+) -> Result<Json<ScenarioImplementationResult>, (StatusCode, Json<Value>)> {
+    tracing::info!("implement_scenario called for user: {}", auth_user.user_id);
+
+    let service = ScenarioImplementationService::new();
+    let result = service
+        .implement_scenario(&state.db, auth_user.user_id, &scenario)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to implement scenario: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to implement scenario: {}", e)
+                })),
+            )
+        })?;
+
+    Ok(Json(result))
 }
 
 /// ヘルスチェックエンドポイント

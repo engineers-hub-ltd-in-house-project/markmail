@@ -149,6 +149,7 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/subscriptions/usage", get(subscriptions::get_usage))
         // AI機能
         .route("/api/ai/scenarios/generate", post(ai::generate_scenario))
+        .route("/api/ai/scenarios/implement", post(ai::implement_scenario))
         .route("/api/ai/content/generate", post(ai::generate_content))
         .route(
             "/api/ai/content/optimize-subject",
