@@ -1,3 +1,4 @@
+pub mod ai_usage;
 pub mod campaign;
 pub mod form;
 pub mod sequence;

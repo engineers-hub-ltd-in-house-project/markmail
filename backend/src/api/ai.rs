@@ -20,7 +20,10 @@ use crate::{
             content_generator::ContentGeneratorService, scenario_builder::ScenarioBuilderService,
         },
     },
+    database::subscriptions,
     middleware::auth::AuthUser,
+    models::ai_usage::CreateAiUsageLog,
+    services::ai_usage_service::AiUsageService,
     AppState,
 };
 
@@ -92,64 +95,299 @@ async fn get_ai_provider(
 
 /// シナリオ生成エンドポイント
 pub async fn generate_scenario(
-    Extension(_auth_user): Extension<AuthUser>,
+    Extension(auth_user): Extension<AuthUser>,
     State(state): State<AppState>,
     Json(request): Json<GenerateScenarioRequest>,
 ) -> Result<Json<GenerateScenarioResponse>, (StatusCode, Json<Value>)> {
     tracing::info!("generate_scenario called with request: {:?}", request);
+
+    // ユーザーのサブスクリプションプランを取得
+    let subscription = subscriptions::get_user_subscription(&state.db, auth_user.user_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get subscription: {}", e)
+                })),
+            )
+        })?;
+
+    let subscription = match subscription {
+        Some(sub) => sub,
+        None => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "ユーザーのサブスクリプションが見つかりません"
+                })),
+            ));
+        }
+    };
+
+    let plan = subscriptions::get_plan_by_id(&state.db, subscription.plan_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get plan: {}", e)
+                })),
+            )
+        })?;
+
+    // AI使用制限をチェック
+    let can_use =
+        AiUsageService::check_ai_usage_limit(&state.db, auth_user.user_id, "scenario", &plan)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": format!("Failed to check usage limit: {}", e)
+                    })),
+                )
+            })?;
+
+    if !can_use {
+        return Err((
+            StatusCode::PAYMENT_REQUIRED,
+            Json(json!({
+                "error": "AI使用量の上限に達しました。プランをアップグレードしてください。"
+            })),
+        ));
+    }
+
     let provider = get_ai_provider(&state).await?;
     let service = ScenarioBuilderService::new(provider);
 
-    let response = service.generate_scenario(request).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("Failed to generate scenario: {}", e)
-            })),
-        )
-    })?;
+    let response = service
+        .generate_scenario(request.clone())
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to generate scenario: {}", e)
+                })),
+            )
+        })?;
+
+    // 使用ログを記録
+    let usage_log = CreateAiUsageLog {
+        user_id: auth_user.user_id,
+        feature_type: "scenario".to_string(),
+        prompt: Some(serde_json::to_string(&request).unwrap_or_default()),
+        response: Some(serde_json::to_string(&response).unwrap_or_default()),
+        tokens_used: None, // TODO: プロバイダーからトークン数を取得
+        model_used: Some(std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4".to_string())),
+    };
+
+    AiUsageService::record_usage(&state.db, usage_log)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to record AI usage: {}", e);
+            // ログ記録に失敗してもレスポンスは返す
+        })
+        .ok();
 
     Ok(Json(response))
 }
 
 /// コンテンツ生成エンドポイント
 pub async fn generate_content(
-    Extension(_auth_user): Extension<AuthUser>,
+    Extension(auth_user): Extension<AuthUser>,
     State(state): State<AppState>,
     Json(request): Json<GenerateContentRequest>,
 ) -> Result<Json<GenerateContentResponse>, (StatusCode, Json<Value>)> {
+    // ユーザーのサブスクリプションプランを取得
+    let subscription = subscriptions::get_user_subscription(&state.db, auth_user.user_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get subscription: {}", e)
+                })),
+            )
+        })?;
+
+    let subscription = match subscription {
+        Some(sub) => sub,
+        None => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "ユーザーのサブスクリプションが見つかりません"
+                })),
+            ));
+        }
+    };
+
+    let plan = subscriptions::get_plan_by_id(&state.db, subscription.plan_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get plan: {}", e)
+                })),
+            )
+        })?;
+
+    // AI使用制限をチェック
+    let can_use =
+        AiUsageService::check_ai_usage_limit(&state.db, auth_user.user_id, "content", &plan)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": format!("Failed to check usage limit: {}", e)
+                    })),
+                )
+            })?;
+
+    if !can_use {
+        return Err((
+            StatusCode::PAYMENT_REQUIRED,
+            Json(json!({
+                "error": "AI使用量の上限に達しました。プランをアップグレードしてください。"
+            })),
+        ));
+    }
+
     let provider = get_ai_provider(&state).await?;
     let service = ContentGeneratorService::new(provider);
 
-    let response = service.generate_content(request).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("Failed to generate content: {}", e)
-            })),
-        )
-    })?;
+    let response = service
+        .generate_content(request.clone())
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to generate content: {}", e)
+                })),
+            )
+        })?;
+
+    // 使用ログを記録
+    let usage_log = CreateAiUsageLog {
+        user_id: auth_user.user_id,
+        feature_type: "content".to_string(),
+        prompt: Some(serde_json::to_string(&request).unwrap_or_default()),
+        response: Some(serde_json::to_string(&response).unwrap_or_default()),
+        tokens_used: None, // TODO: プロバイダーからトークン数を取得
+        model_used: Some(std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4".to_string())),
+    };
+
+    AiUsageService::record_usage(&state.db, usage_log)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to record AI usage: {}", e);
+            // ログ記録に失敗してもレスポンスは返す
+        })
+        .ok();
 
     Ok(Json(response))
 }
 
 /// 件名最適化エンドポイント
 pub async fn optimize_subject(
-    Extension(_auth_user): Extension<AuthUser>,
+    Extension(auth_user): Extension<AuthUser>,
     State(state): State<AppState>,
     Json(request): Json<OptimizeSubjectRequest>,
 ) -> Result<Json<OptimizeSubjectResponse>, (StatusCode, Json<Value>)> {
+    // ユーザーのサブスクリプションプランを取得
+    let subscription = subscriptions::get_user_subscription(&state.db, auth_user.user_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get subscription: {}", e)
+                })),
+            )
+        })?;
+
+    let subscription = match subscription {
+        Some(sub) => sub,
+        None => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "ユーザーのサブスクリプションが見つかりません"
+                })),
+            ));
+        }
+    };
+
+    let plan = subscriptions::get_plan_by_id(&state.db, subscription.plan_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to get plan: {}", e)
+                })),
+            )
+        })?;
+
+    // AI使用制限をチェック
+    let can_use =
+        AiUsageService::check_ai_usage_limit(&state.db, auth_user.user_id, "subject", &plan)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": format!("Failed to check usage limit: {}", e)
+                    })),
+                )
+            })?;
+
+    if !can_use {
+        return Err((
+            StatusCode::PAYMENT_REQUIRED,
+            Json(json!({
+                "error": "AI使用量の上限に達しました。プランをアップグレードしてください。"
+            })),
+        ));
+    }
+
     let provider = get_ai_provider(&state).await?;
     let service = ContentGeneratorService::new(provider);
 
-    let response = service.optimize_subject(request).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("Failed to optimize subject: {}", e)
-            })),
-        )
-    })?;
+    let response = service
+        .optimize_subject(request.clone())
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to optimize subject: {}", e)
+                })),
+            )
+        })?;
+
+    // 使用ログを記録
+    let usage_log = CreateAiUsageLog {
+        user_id: auth_user.user_id,
+        feature_type: "subject".to_string(),
+        prompt: Some(serde_json::to_string(&request).unwrap_or_default()),
+        response: Some(serde_json::to_string(&response).unwrap_or_default()),
+        tokens_used: None, // TODO: プロバイダーからトークン数を取得
+        model_used: Some(std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4".to_string())),
+    };
+
+    AiUsageService::record_usage(&state.db, usage_log)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to record AI usage: {}", e);
+            // ログ記録に失敗してもレスポンスは返す
+        })
+        .ok();
 
     Ok(Json(response))
 }

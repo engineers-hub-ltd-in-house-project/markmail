@@ -1,3 +1,4 @@
+pub mod ai_usage_service;
 pub mod auth_service;
 pub mod campaign_service;
 pub mod email_service;

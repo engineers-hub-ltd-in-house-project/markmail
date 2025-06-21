@@ -23,6 +23,11 @@ pub struct SubscriptionPlan {
     pub form_submission_limit: i32,
     pub user_limit: i32,
     pub webhook_limit: i32,
+    // AI制限
+    pub ai_monthly_limit: Option<i32>,
+    pub ai_scenario_limit: Option<i32>,
+    pub ai_content_limit: Option<i32>,
+    pub ai_subject_limit: Option<i32>,
     // 機能フラグ
     pub custom_markdown_components: bool,
     pub ai_features: bool,
