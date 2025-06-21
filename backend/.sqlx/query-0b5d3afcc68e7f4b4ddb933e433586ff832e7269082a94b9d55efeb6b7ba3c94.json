@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                            UPDATE user_subscriptions SET\n                                plan_id = $1,\n                                status = $2,\n                                current_period_start = $3,\n                                current_period_end = $4,\n                                stripe_subscription_id = $5,\n                                stripe_customer_id = $6,\n                                updated_at = NOW()\n                            WHERE user_id = $7\n                            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Timestamptz", "Timestamptz", "Varchar", "Varchar", "Uuid"]
+    },
+    "nullable": []
+  },
+  "hash": "0b5d3afcc68e7f4b4ddb933e433586ff832e7269082a94b9d55efeb6b7ba3c94"
+}

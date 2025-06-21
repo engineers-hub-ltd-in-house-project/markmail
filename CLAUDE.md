@@ -4,6 +4,16 @@
 (claude.ai/code)がこのリポジトリで作業する際のガイダンスを提供します。This file
 provides guidance for Claude Code when working with this repository.
 
+## 🔴 絶対に守るべき責任感 / ABSOLUTE RESPONSIBILITY
+
+**AIとして作業する際の絶対的な責任**：
+
+- **全ての問題は自分の責任** - 言い訳は一切禁止
+- **「関係ない」「別の問題」という逃げ口上は絶対禁止**
+- **全てのテストが通るまで作業は完了しない**
+- **問題を発見したら必ず修正する** - 見て見ぬふりは禁止
+- **「元々壊れていた」は言い訳にならない** - 修正するのが責任
+
 ## 🔴 エラー発生時は必ずこのセクションを確認すること / ALWAYS CHECK THIS SECTION WHEN ERRORS OCCUR
 
 ### テストが失敗した場合の対処法 / How to Handle Test Failures
@@ -39,6 +49,59 @@ provides guidance for Claude Code when working with this repository.
 
 ## ⚡ 最重要事項 - 絶対に行ってはいけないこと / CRITICAL - NEVER DO THESE
 
+### 0. 【最重要】実装前の徹底的な検証 / THOROUGH VERIFICATION BEFORE IMPLEMENTATION
+
+- **❌ 行き当たりばったりの実装は禁止** / No ad-hoc implementations
+- **❌ SQLxの型エラーを場当たり的に修正しない** / Don't fix SQLx type errors on
+  the spot
+- **❌ テストを実行せずに進めない** / Don't proceed without running tests
+- **✅ 実装前に必ず以下を確認:**
+  1. 既存のコードパターンを調査
+  2. 影響範囲を特定
+  3. テストを実行して現状を把握
+  4. 小さな変更で検証
+  5. 問題があれば即座に元に戻す
+
+### 0.1. SQLx関連の作業時の鉄則 / Iron Rules for SQLx Work
+
+- **❌ 型キャストを安易に変更しない** / Don't carelessly change type casts
+- **❌ Option<Option<T>>エラーを見たら一旦停止** / Stop when you see
+  Option<Option<T>> errors
+- **❌ .sqlxファイルの大量変更は危険信号** / Mass changes to .sqlx files are
+  danger signs
+- **✅ SQLxの型エラーが出た場合:**
+  1. まず原因を理解する
+  2. 既存の同様のパターンを確認
+  3. 最小限の変更で対応
+  4. `cargo sqlx prepare`後は必ずテスト実行
+
+### 0.2. 関連ファイルを触る際の注意 / Caution When Touching Related Files
+
+- **❌ 新機能実装時に既存の共通モジュールを安易に変更しない** / Don't carelessly
+  modify shared modules
+- **❌ subscriptions.rs, users.rs等の基幹モジュールは特に注意** / Be extra
+  careful with core modules
+- **✅ 共通モジュールを変更する場合:**
+  1. 変更の影響を受ける全テストを特定
+  2. 変更前にテストが通ることを確認
+  3. 変更は最小限に留める
+  4. 変更後は全テストを実行
+
+### 0.3. テスト失敗時の対応 / Handling Test Failures
+
+- **❌ テストの失敗を無視して進めない** / Don't ignore test failures
+- **❌ 「私の変更が原因ではない」と考えない** / Don't think "it's not my fault"
+- **❌ デグレッションを軽視しない** / Don't downplay regressions
+- **❌ 「今回の文脈に関係ない」と言い訳しない** / Don't make excuses like "not
+  related to current context"
+- **❌ 「別の問題」として片付けない** / Don't dismiss as "a different issue"
+- **✅ テストが失敗したら:**
+  1. 即座に作業を停止
+  2. 失敗の原因を特定
+  3. **どんな理由でも必ず修正する** - 言い訳は一切禁止
+  4. 修正が困難なら変更を元に戻す
+  5. **全テストが通るまで絶対にプッシュしない**
+
 ### 1. 既存のマイグレーションファイルの削除・変更 / Never Delete or Modify Existing Migration Files
 
 - データベースマイグレーションファイル（`backend/migrations/*.sql`）は絶対に削除・変更しない /
@@ -64,6 +127,16 @@ provides guidance for Claude Code when working with this repository.
   NEVER execute destructive operations (except test DB)
 - データベーススキーマの変更は必ずマイグレーションファイル経由で行う / Always
   use migration files for schema changes
+- **🚨 マイグレーションファイルとデータベースの整合性を必ず保つ** / **ALWAYS
+  maintain consistency between migration files and database**
+  - ❌
+    **絶対にやってはいけないこと**: マイグレーションファイルを削除してデータベースの状態を放置
+  - ❌
+    **絶対にやってはいけないこと**: データベースに直接テーブルを作成してマイグレーションファイルを作らない
+  - ✅
+    **必ず守ること**: マイグレーションファイルを削除する場合は、対応するデータベースの変更も必ず元に戻す
+  - ✅ **必ず守ること**:
+    `_sqlx_migrations`テーブルとmigrationsディレクトリの内容は常に一致させる
 
 ### 4. 環境変数・シークレットの露出 / Never Expose Secrets
 
@@ -82,6 +155,19 @@ provides guidance for Claude Code when working with this repository.
   cautious expressions
 - 実装完了後も潜在的な問題の可能性を常に意識する / Always be aware of potential
   issues
+
+### 6. 責任逃れの禁止 / Never Evade Responsibility
+
+- **❌ 「私が触っていないから関係ない」という言い訳は絶対禁止** / NEVER say
+  "it's not related because I didn't touch it"
+- **❌ 「元々壊れていた」という責任転嫁は禁止** / Don't blame pre-existing
+  issues
+- **❌ 「今回の修正とは無関係」という逃げ口上は禁止** / Don't dismiss as
+  "unrelated to current changes"
+- **✅ 全ての問題に対して責任を持つ** / Take responsibility for ALL issues
+- **✅ 作業中に発見した全ての問題を修正する** / Fix ALL issues discovered during
+  work
+- **✅ 言い訳せずに行動で示す** / Show through actions, not excuses
 
 ## 🛠️ 必須開発コマンド
 
@@ -237,6 +323,52 @@ frontend/src/
 - 新規マイグレーションは常にタイムスタンプ付き: `sqlx migrate add description`
 - マイグレーション後は`cargo sqlx prepare`でオフラインコンパイルデータを更新
 
+#### 🚨 マイグレーション整合性チェックリスト
+
+新機能でデータベース変更を行う場合、**必ず以下の手順を守る**：
+
+1. **実装前の確認**
+
+   ```bash
+   # マイグレーションファイル数とDBの記録が一致するか確認
+   ls -1 migrations/*.sql | wc -l
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT COUNT(*) FROM _sqlx_migrations;"
+   ```
+
+2. **新規マイグレーション作成時**
+
+   ```bash
+   # 正しい手順
+   sqlx migrate add your_feature_description
+   # SQLを記述
+   sqlx migrate run
+   cargo sqlx prepare
+   ```
+
+3. **機能削除・ロールバック時**
+
+   ```bash
+   # ❌ 絶対にやってはいけないこと
+   rm migrations/20250621_your_feature.sql  # ファイルだけ削除してDB放置
+
+   # ✅ 正しい手順
+   # 1. まずDBの状態を元に戻す
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DROP TABLE your_table CASCADE;"
+   # 2. マイグレーション記録を削除
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DELETE FROM _sqlx_migrations WHERE version = 'your_version';"
+   # 3. ファイルを削除
+   rm migrations/20250621_your_feature.sql
+   # 4. SQLxメタデータを再生成
+   cargo sqlx prepare
+   ```
+
+4. **整合性が崩れた場合の修復**
+   ```bash
+   # 現状確認
+   diff <(ls -1 migrations/*.sql | sed 's/.*\///' | sed 's/_.*$//' | sort) \
+        <(docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -t -c "SELECT version FROM _sqlx_migrations ORDER BY version;" | grep -v '^$' | tr -d ' ')
+   ```
+
 ### テスト哲学
 
 - **失敗するテストを無効化しない** - 根本原因を修正する
@@ -311,6 +443,25 @@ frontend/src/
 - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: SES用
 
 ## 🚫 よくある愚行と防止策 / Common Mistakes and Prevention
+
+### 0. 【今回の大失態】新機能実装時の既存機能破壊 / Breaking Existing Features During New Feature Implementation
+
+- ❌ **最悪の例 / WORST**:
+  AI使用量トラッキング実装時にsubscriptions.rsを変更してテストを破壊
+- ❌ **悪い例 / Bad**:
+  SQLxの型エラーを場当たり的に修正して更なる問題を引き起こす
+- ❌ **悪い例 / Bad**: テストが失敗しても「私の変更が原因ではない」と軽視する
+- ❌ **最悪の言い訳 / WORST
+  EXCUSE**: 「今回の修正とは関係ない別の問題」と片付ける
+- ❌ **無責任の極み / PEAK
+  IRRESPONSIBILITY**: 「並行実行時の問題で、AIの破壊とは無関係」と逃げる
+- ✅ **良い例 / Good**:
+  1. 新機能は独立したモジュールとして実装
+  2. 既存モジュールへの変更は最小限に留める
+  3. 変更前に全テストが通ることを確認
+  4. 変更後も全テストが通ることを確認
+  5. 問題があれば即座に変更を元に戻す
+  6. **全てのテストが通るまで絶対に諦めない**
 
 ### 1. テストを通すためにロジックを変更する / Changing Logic to Pass Tests
 
