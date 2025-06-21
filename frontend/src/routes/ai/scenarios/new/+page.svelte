@@ -3,16 +3,34 @@
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/authStore";
   import { aiApi } from "$lib/services/aiService";
+  import { templateApi } from "$lib/services/api";
+  import { formService } from "$lib/services/formService";
+  import { sequenceService } from "$lib/services/sequenceService";
   import type {
     GenerateScenarioRequest,
     GenerateScenarioResponse,
     Language,
   } from "$lib/types/ai";
+  import type { CreateTemplateRequest } from "$lib/types/template";
+  import type { CreateFormRequest } from "$lib/types/form";
+  import type {
+    CreateSequenceRequest,
+    CreateSequenceStepRequest,
+    TriggerType,
+    StepType,
+  } from "$lib/types/sequence";
 
   let isAuthenticated = false;
   let isGenerating = false;
   let error = "";
   let showResults = false;
+  let isImplementing = false;
+  let implementationProgress = {
+    templates: 0,
+    forms: 0,
+    sequence: false,
+    completed: false,
+  };
 
   // フォームデータ
   let formData: GenerateScenarioRequest = {
@@ -98,10 +116,142 @@
   }
 
   async function implementScenario() {
-    // TODO: 実装機能を追加
-    alert(
-      "この機能は開発中です。生成されたシナリオを基に手動で作成してください。",
-    );
+    if (!generatedScenario) return;
+
+    isImplementing = true;
+    error = "";
+    implementationProgress = {
+      templates: 0,
+      forms: 0,
+      sequence: false,
+      completed: false,
+    };
+
+    try {
+      // 1. テンプレートを作成
+      const createdTemplates: string[] = [];
+      for (let i = 0; i < generatedScenario.templates.length; i++) {
+        const template = generatedScenario.templates[i];
+        const createRequest: CreateTemplateRequest = {
+          name: template.name,
+          subject_template: template.subject,
+          markdown_content: template.content,
+        };
+
+        const response = await templateApi.createTemplate(createRequest);
+        if (response.error) {
+          throw new Error(`テンプレート作成エラー: ${response.error}`);
+        }
+        if (response.data) {
+          createdTemplates.push(response.data.id);
+          implementationProgress.templates = i + 1;
+        }
+      }
+
+      // 2. フォームを作成
+      const createdForms: string[] = [];
+      for (let i = 0; i < generatedScenario.forms.length; i++) {
+        const generatedForm = generatedScenario.forms[i];
+        // スラッグを生成（重複を避けるためタイムスタンプとインデックスを含める）
+        const slug =
+          generatedForm.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "") +
+          "-" +
+          Date.now() +
+          "-" +
+          i;
+
+        const createRequest: CreateFormRequest = {
+          name: generatedForm.name,
+          description: generatedForm.description,
+          slug: slug,
+          markdown_content: `# ${generatedForm.name}\n\n${generatedForm.description || ""}`,
+          form_fields: generatedForm.fields.map((field, index) => ({
+            field_type: field.field_type as
+              | "text"
+              | "email"
+              | "textarea"
+              | "select"
+              | "radio"
+              | "checkbox",
+            name: field.name,
+            label: field.label,
+            required: field.required,
+            display_order: index + 1,
+            options: field.options,
+          })),
+          settings: {
+            submit_button_text: "送信",
+            success_message: "ご登録ありがとうございました。",
+            require_confirmation: true,
+          },
+        };
+
+        try {
+          const createdForm = await formService.create(createRequest);
+          createdForms.push(createdForm.id);
+          implementationProgress.forms = i + 1;
+        } catch (formErr: any) {
+          throw new Error(`フォーム作成エラー: ${formErr.message}`);
+        }
+      }
+
+      // 3. シーケンスを作成
+      const triggerConfig: Record<string, any> = {};
+      if (
+        generatedScenario.sequence.trigger_type === "form_submission" &&
+        createdForms.length > 0
+      ) {
+        triggerConfig.form_id = createdForms[0];
+      }
+
+      const createSequenceRequest: CreateSequenceRequest = {
+        name: generatedScenario.sequence.name,
+        description: generatedScenario.sequence.description,
+        trigger_type: generatedScenario.sequence.trigger_type as TriggerType,
+        trigger_config: triggerConfig,
+      };
+
+      const sequence = await sequenceService.createSequence(
+        createSequenceRequest,
+      );
+      const sequenceId = sequence.id;
+
+      // 4. シーケンスステップを作成
+      for (let i = 0; i < generatedScenario.sequence.steps.length; i++) {
+        const step = generatedScenario.sequence.steps[i];
+        const stepRequest: CreateSequenceStepRequest = {
+          name: step.name,
+          step_type: step.step_type as StepType,
+          step_order: i + 1,
+          delay_value: step.delay_value,
+          delay_unit: step.delay_unit,
+          template_id:
+            step.template_index !== undefined
+              ? createdTemplates[step.template_index]
+              : undefined,
+          conditions: step.conditions,
+        };
+
+        await sequenceService.createSequenceStep(sequenceId, stepRequest);
+      }
+
+      implementationProgress.sequence = true;
+      implementationProgress.completed = true;
+
+      // 成功メッセージを表示して、シーケンス管理画面に遷移
+      setTimeout(() => {
+        goto("/sequences");
+      }, 2000);
+    } catch (err: any) {
+      error = err.message || "シナリオの実装中にエラーが発生しました";
+    } finally {
+      if (!implementationProgress.completed) {
+        isImplementing = false;
+      }
+    }
   }
 </script>
 
@@ -459,12 +609,121 @@
           </div>
         {/if}
 
+        <!-- 実装進捗 -->
+        {#if isImplementing}
+          <div class="mb-6 rounded-lg border bg-blue-50 p-6">
+            <h3 class="text-lg font-semibold text-blue-900 mb-4">実装中...</h3>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div
+                  class={`w-5 h-5 rounded-full ${implementationProgress.templates > 0 ? "bg-green-500" : "bg-gray-300"}`}
+                >
+                  {#if implementationProgress.templates > 0}
+                    <svg
+                      class="w-5 h-5 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  {/if}
+                </div>
+                <span class="text-sm">
+                  テンプレート作成 ({implementationProgress.templates}/{generatedScenario
+                    .templates.length})
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div
+                  class={`w-5 h-5 rounded-full ${implementationProgress.forms > 0 ? "bg-green-500" : "bg-gray-300"}`}
+                >
+                  {#if implementationProgress.forms === generatedScenario.forms.length}
+                    <svg
+                      class="w-5 h-5 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  {/if}
+                </div>
+                <span class="text-sm">
+                  フォーム作成 ({implementationProgress.forms}/{generatedScenario
+                    .forms.length})
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div
+                  class={`w-5 h-5 rounded-full ${implementationProgress.sequence ? "bg-green-500" : "bg-gray-300"}`}
+                >
+                  {#if implementationProgress.sequence}
+                    <svg
+                      class="w-5 h-5 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  {/if}
+                </div>
+                <span class="text-sm"> シーケンス・ステップ作成 </span>
+              </div>
+            </div>
+            {#if implementationProgress.completed}
+              <div class="mt-4 rounded bg-green-100 p-3">
+                <p class="text-sm text-green-800">
+                  実装が完了しました！シーケンス管理画面に移動します...
+                </p>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
         <!-- アクションボタン -->
         <div class="flex gap-4">
-          <button on:click={implementScenario} class="btn-primary">
-            このシナリオを実装
+          <button
+            on:click={implementScenario}
+            disabled={isImplementing}
+            class="btn-primary flex items-center gap-2"
+          >
+            {#if isImplementing}
+              <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              実装中...
+            {:else}
+              このシナリオを実装
+            {/if}
           </button>
-          <button on:click={startOver} class="btn-secondary">
+          <button
+            on:click={startOver}
+            class="btn-secondary"
+            disabled={isImplementing}
+          >
             新しいシナリオを生成
           </button>
         </div>
