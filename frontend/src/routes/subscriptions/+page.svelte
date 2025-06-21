@@ -12,6 +12,12 @@
   let plans: SubscriptionPlan[] = [];
   let currentSubscription: SubscriptionDetailsResponse | null = null;
   let upgrading = false;
+  let aiUsageStats: {
+    total_usage: number;
+    scenario_usage: number;
+    content_usage: number;
+    subject_usage: number;
+  } | null = null;
 
   onMount(async () => {
     await loadData();
@@ -22,14 +28,17 @@
       loading = true;
       error = "";
 
-      // プラン一覧と現在のサブスクリプション情報を取得
-      const [plansResponse, subscriptionResponse] = await Promise.all([
-        subscriptionService.getPlans(),
-        subscriptionService.getCurrentSubscription(),
-      ]);
+      // プラン一覧、現在のサブスクリプション情報、AI使用量を取得
+      const [plansResponse, subscriptionResponse, aiUsageResponse] =
+        await Promise.all([
+          subscriptionService.getPlans(),
+          subscriptionService.getCurrentSubscription(),
+          subscriptionService.getAIUsageStats(),
+        ]);
 
       plans = plansResponse.plans;
       currentSubscription = subscriptionResponse;
+      aiUsageStats = aiUsageResponse;
     } catch (err: any) {
       error = err.message || "データの読み込みに失敗しました";
     } finally {
@@ -77,6 +86,19 @@
   function formatLimit(limit: number): string {
     if (limit < 0) return "無制限";
     return limit.toLocaleString();
+  }
+
+  function getAIUsageMetric(
+    current: number,
+    limit: number | null | undefined,
+  ): UsageMetric {
+    const actualLimit = limit === null || limit === undefined ? -1 : limit;
+    const percentage = actualLimit < 0 ? 0 : (current / actualLimit) * 100;
+    return {
+      current,
+      limit: actualLimit,
+      percentage,
+    };
   }
 </script>
 
@@ -263,6 +285,140 @@
               </div>
             </div>
           </div>
+
+          {#if aiUsageStats && currentSubscription}
+            <h3 class="text-lg font-semibold mt-6 mb-2">AI使用量（月間）</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>AI機能合計</span>
+                  <span
+                    class={getUsagePercentageClass(
+                      getAIUsageMetric(
+                        aiUsageStats.total_usage,
+                        currentSubscription.plan.ai_monthly_limit,
+                      ),
+                    )}
+                  >
+                    {aiUsageStats.total_usage} / {formatLimit(
+                      currentSubscription.plan.ai_monthly_limit || -1,
+                    )}
+                  </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    class="bg-blue-600 h-2 rounded-full"
+                    style="width: {Math.min(
+                      getAIUsageMetric(
+                        aiUsageStats.total_usage,
+                        currentSubscription.plan.ai_monthly_limit,
+                      ).percentage,
+                      100,
+                    )}%"
+                  ></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>シナリオ生成</span>
+                  <span
+                    class={getUsagePercentageClass(
+                      getAIUsageMetric(
+                        aiUsageStats.scenario_usage,
+                        currentSubscription.plan.ai_scenario_limit,
+                      ),
+                    )}
+                  >
+                    {aiUsageStats.scenario_usage} / {formatLimit(
+                      currentSubscription.plan.ai_scenario_limit ||
+                        currentSubscription.plan.ai_monthly_limit ||
+                        -1,
+                    )}
+                  </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    class="bg-blue-600 h-2 rounded-full"
+                    style="width: {Math.min(
+                      getAIUsageMetric(
+                        aiUsageStats.scenario_usage,
+                        currentSubscription.plan.ai_scenario_limit ||
+                          currentSubscription.plan.ai_monthly_limit,
+                      ).percentage,
+                      100,
+                    )}%"
+                  ></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>コンテンツ生成</span>
+                  <span
+                    class={getUsagePercentageClass(
+                      getAIUsageMetric(
+                        aiUsageStats.content_usage,
+                        currentSubscription.plan.ai_content_limit,
+                      ),
+                    )}
+                  >
+                    {aiUsageStats.content_usage} / {formatLimit(
+                      currentSubscription.plan.ai_content_limit ||
+                        currentSubscription.plan.ai_monthly_limit ||
+                        -1,
+                    )}
+                  </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    class="bg-blue-600 h-2 rounded-full"
+                    style="width: {Math.min(
+                      getAIUsageMetric(
+                        aiUsageStats.content_usage,
+                        currentSubscription.plan.ai_content_limit ||
+                          currentSubscription.plan.ai_monthly_limit,
+                      ).percentage,
+                      100,
+                    )}%"
+                  ></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>件名最適化</span>
+                  <span
+                    class={getUsagePercentageClass(
+                      getAIUsageMetric(
+                        aiUsageStats.subject_usage,
+                        currentSubscription.plan.ai_subject_limit,
+                      ),
+                    )}
+                  >
+                    {aiUsageStats.subject_usage} / {formatLimit(
+                      currentSubscription.plan.ai_subject_limit ||
+                        currentSubscription.plan.ai_monthly_limit ||
+                        -1,
+                    )}
+                  </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    class="bg-blue-600 h-2 rounded-full"
+                    style="width: {Math.min(
+                      getAIUsageMetric(
+                        aiUsageStats.subject_usage,
+                        currentSubscription.plan.ai_subject_limit ||
+                          currentSubscription.plan.ai_monthly_limit,
+                      ).percentage,
+                      100,
+                    )}%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
     {/if}

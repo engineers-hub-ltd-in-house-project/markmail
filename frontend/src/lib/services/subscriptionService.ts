@@ -137,4 +137,36 @@ export const subscriptionService = {
 
     return response;
   },
+
+  // AI使用量統計を取得
+  async getAIUsageStats(): Promise<{
+    total_usage: number;
+    scenario_usage: number;
+    content_usage: number;
+    subject_usage: number;
+  }> {
+    return fetchAPI("/ai/usage/stats");
+  },
+
+  // AI使用履歴を取得
+  async getAIUsageHistory(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{
+    usage_logs: Array<{
+      id: string;
+      user_id: string;
+      feature_type: string;
+      prompt?: string;
+      response?: string;
+      tokens_used?: number;
+      model_used?: string;
+      created_at: string;
+    }>;
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    return fetchAPI(`/ai/usage/history?limit=${limit}&offset=${offset}`);
+  },
 };
