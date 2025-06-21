@@ -4,6 +4,16 @@
 (claude.ai/code)がこのリポジトリで作業する際のガイダンスを提供します。This file
 provides guidance for Claude Code when working with this repository.
 
+## 🔴 絶対に守るべき責任感 / ABSOLUTE RESPONSIBILITY
+
+**AIとして作業する際の絶対的な責任**：
+
+- **全ての問題は自分の責任** - 言い訳は一切禁止
+- **「関係ない」「別の問題」という逃げ口上は絶対禁止**
+- **全てのテストが通るまで作業は完了しない**
+- **問題を発見したら必ず修正する** - 見て見ぬふりは禁止
+- **「元々壊れていた」は言い訳にならない** - 修正するのが責任
+
 ## 🔴 エラー発生時は必ずこのセクションを確認すること / ALWAYS CHECK THIS SECTION WHEN ERRORS OCCUR
 
 ### テストが失敗した場合の対処法 / How to Handle Test Failures
@@ -82,11 +92,15 @@ provides guidance for Claude Code when working with this repository.
 - **❌ テストの失敗を無視して進めない** / Don't ignore test failures
 - **❌ 「私の変更が原因ではない」と考えない** / Don't think "it's not my fault"
 - **❌ デグレッションを軽視しない** / Don't downplay regressions
+- **❌ 「今回の文脈に関係ない」と言い訳しない** / Don't make excuses like "not
+  related to current context"
+- **❌ 「別の問題」として片付けない** / Don't dismiss as "a different issue"
 - **✅ テストが失敗したら:**
   1. 即座に作業を停止
   2. 失敗の原因を特定
-  3. 自分の変更が原因なら即座に修正
+  3. **どんな理由でも必ず修正する** - 言い訳は一切禁止
   4. 修正が困難なら変更を元に戻す
+  5. **全テストが通るまで絶対にプッシュしない**
 
 ### 1. 既存のマイグレーションファイルの削除・変更 / Never Delete or Modify Existing Migration Files
 
@@ -141,6 +155,19 @@ provides guidance for Claude Code when working with this repository.
   cautious expressions
 - 実装完了後も潜在的な問題の可能性を常に意識する / Always be aware of potential
   issues
+
+### 6. 責任逃れの禁止 / Never Evade Responsibility
+
+- **❌ 「私が触っていないから関係ない」という言い訳は絶対禁止** / NEVER say
+  "it's not related because I didn't touch it"
+- **❌ 「元々壊れていた」という責任転嫁は禁止** / Don't blame pre-existing
+  issues
+- **❌ 「今回の修正とは無関係」という逃げ口上は禁止** / Don't dismiss as
+  "unrelated to current changes"
+- **✅ 全ての問題に対して責任を持つ** / Take responsibility for ALL issues
+- **✅ 作業中に発見した全ての問題を修正する** / Fix ALL issues discovered during
+  work
+- **✅ 言い訳せずに行動で示す** / Show through actions, not excuses
 
 ## 🛠️ 必須開発コマンド
 
@@ -424,12 +451,17 @@ frontend/src/
 - ❌ **悪い例 / Bad**:
   SQLxの型エラーを場当たり的に修正して更なる問題を引き起こす
 - ❌ **悪い例 / Bad**: テストが失敗しても「私の変更が原因ではない」と軽視する
+- ❌ **最悪の言い訳 / WORST
+  EXCUSE**: 「今回の修正とは関係ない別の問題」と片付ける
+- ❌ **無責任の極み / PEAK
+  IRRESPONSIBILITY**: 「並行実行時の問題で、AIの破壊とは無関係」と逃げる
 - ✅ **良い例 / Good**:
   1. 新機能は独立したモジュールとして実装
   2. 既存モジュールへの変更は最小限に留める
   3. 変更前に全テストが通ることを確認
   4. 変更後も全テストが通ることを確認
   5. 問題があれば即座に変更を元に戻す
+  6. **全てのテストが通るまで絶対に諦めない**
 
 ### 1. テストを通すためにロジックを変更する / Changing Logic to Pass Tests
 
