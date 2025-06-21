@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            id, name, display_name, description, price, billing_interval,\n            contact_limit, monthly_email_limit, campaign_limit, template_limit,\n            sequence_limit, sequence_step_limit, form_limit, form_submission_limit,\n            user_limit, webhook_limit, custom_markdown_components, ai_features, \n            advanced_analytics, ab_testing, api_access, priority_support, \n            custom_domain, white_label, sort_order, is_active, \n            features as \"features: Option<serde_json::Value>\", \n            stripe_price_id, stripe_product_id,\n            created_at, updated_at\n        FROM subscription_plans\n        WHERE name = $1\n        ",
+  "query": "\n        SELECT \n            id, name, display_name, description, price, billing_interval,\n            contact_limit, monthly_email_limit, campaign_limit, template_limit,\n            sequence_limit, sequence_step_limit, form_limit, form_submission_limit,\n            user_limit, webhook_limit, custom_markdown_components, ai_features, \n            advanced_analytics, ab_testing, api_access, priority_support, \n            custom_domain, white_label, sort_order, is_active, \n            features as \"features: serde_json::Value\", \n            stripe_price_id, stripe_product_id,\n            created_at, updated_at\n        FROM subscription_plans\n        WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -135,7 +135,7 @@
       },
       {
         "ordinal": 26,
-        "name": "features: Option<serde_json::Value>",
+        "name": "features: serde_json::Value",
         "type_info": "Jsonb"
       },
       {
@@ -160,7 +160,7 @@
       }
     ],
     "parameters": {
-      "Left": ["Text"]
+      "Left": ["Uuid"]
     },
     "nullable": [
       false,
@@ -189,12 +189,12 @@
       false,
       false,
       false,
-      false,
+      true,
       true,
       true,
       false,
       false
     ]
   },
-  "hash": "8af45a45bb804d4455d393738a27067edefa13820754a3a0ea1173e9ae327c89"
+  "hash": "e62adf63944b965791ed16820bba7a6c4c896b70e49711ffc7d7e6793029669e"
 }

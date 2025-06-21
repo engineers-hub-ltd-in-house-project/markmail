@@ -26,7 +26,7 @@
       {
         "ordinal": 4,
         "name": "ip_address",
-        "type_info": "Text"
+        "type_info": "Varchar"
       },
       {
         "ordinal": 5,

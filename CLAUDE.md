@@ -113,6 +113,16 @@ provides guidance for Claude Code when working with this repository.
   NEVER execute destructive operations (except test DB)
 - データベーススキーマの変更は必ずマイグレーションファイル経由で行う / Always
   use migration files for schema changes
+- **🚨 マイグレーションファイルとデータベースの整合性を必ず保つ** / **ALWAYS
+  maintain consistency between migration files and database**
+  - ❌
+    **絶対にやってはいけないこと**: マイグレーションファイルを削除してデータベースの状態を放置
+  - ❌
+    **絶対にやってはいけないこと**: データベースに直接テーブルを作成してマイグレーションファイルを作らない
+  - ✅
+    **必ず守ること**: マイグレーションファイルを削除する場合は、対応するデータベースの変更も必ず元に戻す
+  - ✅ **必ず守ること**:
+    `_sqlx_migrations`テーブルとmigrationsディレクトリの内容は常に一致させる
 
 ### 4. 環境変数・シークレットの露出 / Never Expose Secrets
 
@@ -285,6 +295,52 @@ frontend/src/
 - **既存のマイグレーションファイルは絶対に変更しない** - 一度適用されたら不変
 - 新規マイグレーションは常にタイムスタンプ付き: `sqlx migrate add description`
 - マイグレーション後は`cargo sqlx prepare`でオフラインコンパイルデータを更新
+
+#### 🚨 マイグレーション整合性チェックリスト
+
+新機能でデータベース変更を行う場合、**必ず以下の手順を守る**：
+
+1. **実装前の確認**
+
+   ```bash
+   # マイグレーションファイル数とDBの記録が一致するか確認
+   ls -1 migrations/*.sql | wc -l
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT COUNT(*) FROM _sqlx_migrations;"
+   ```
+
+2. **新規マイグレーション作成時**
+
+   ```bash
+   # 正しい手順
+   sqlx migrate add your_feature_description
+   # SQLを記述
+   sqlx migrate run
+   cargo sqlx prepare
+   ```
+
+3. **機能削除・ロールバック時**
+
+   ```bash
+   # ❌ 絶対にやってはいけないこと
+   rm migrations/20250621_your_feature.sql  # ファイルだけ削除してDB放置
+
+   # ✅ 正しい手順
+   # 1. まずDBの状態を元に戻す
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DROP TABLE your_table CASCADE;"
+   # 2. マイグレーション記録を削除
+   docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DELETE FROM _sqlx_migrations WHERE version = 'your_version';"
+   # 3. ファイルを削除
+   rm migrations/20250621_your_feature.sql
+   # 4. SQLxメタデータを再生成
+   cargo sqlx prepare
+   ```
+
+4. **整合性が崩れた場合の修復**
+   ```bash
+   # 現状確認
+   diff <(ls -1 migrations/*.sql | sed 's/.*\///' | sed 's/_.*$//' | sort) \
+        <(docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -t -c "SELECT version FROM _sqlx_migrations ORDER BY version;" | grep -v '^$' | tr -d ' ')
+   ```
 
 ### テスト哲学
 

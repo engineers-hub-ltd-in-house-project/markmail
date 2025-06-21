@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        UPDATE user_subscriptions\n        SET \n            plan_id = COALESCE($2, plan_id),\n            status = COALESCE($3, status),\n            stripe_subscription_id = COALESCE($4, stripe_subscription_id),\n            stripe_customer_id = COALESCE($5, stripe_customer_id),\n            updated_at = CURRENT_TIMESTAMP\n        WHERE id = $1\n        RETURNING \n            id, user_id, plan_id, status, current_period_start, \n            current_period_end, cancel_at, canceled_at, trial_end,\n            metadata as \"metadata: Option<serde_json::Value>\", \n            stripe_subscription_id, stripe_customer_id,\n            created_at, updated_at\n        ",
+  "query": "\n        UPDATE user_subscriptions\n        SET \n            plan_id = COALESCE($2, plan_id),\n            status = COALESCE($3, status),\n            stripe_subscription_id = COALESCE($4, stripe_subscription_id),\n            stripe_customer_id = COALESCE($5, stripe_customer_id),\n            updated_at = CURRENT_TIMESTAMP\n        WHERE id = $1\n        RETURNING \n            id, user_id, plan_id, status, current_period_start, \n            current_period_end, cancel_at, canceled_at, trial_end,\n            metadata as \"metadata: serde_json::Value\", \n            stripe_subscription_id, stripe_customer_id,\n            created_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
@@ -50,7 +50,7 @@
       },
       {
         "ordinal": 9,
-        "name": "metadata: Option<serde_json::Value>",
+        "name": "metadata: serde_json::Value",
         "type_info": "Jsonb"
       },
       {
@@ -77,7 +77,7 @@
     "parameters": {
       "Left": ["Uuid", "Uuid", "Varchar", "Varchar", "Varchar"]
     },
-    "nullable": [false, false, false, false, false, false, true, true, true, false, true, true, false, false]
+    "nullable": [false, false, false, false, false, false, true, true, true, true, true, true, false, false]
   },
-  "hash": "ef47c54bf86d2303f4d096ef4c4f65db124941d8b61e867971be73c44204e28a"
+  "hash": "3d175015878c5913337a9e4680c7c19643bb0599ec5b4c695810c85eba4d99e1"
 }

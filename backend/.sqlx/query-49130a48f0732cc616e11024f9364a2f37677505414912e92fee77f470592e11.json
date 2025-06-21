@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE user_subscriptions\n            SET \n                cancel_at = current_period_end,\n                canceled_at = CURRENT_TIMESTAMP,\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = $1\n            RETURNING \n                id, user_id, plan_id, status, current_period_start, \n                current_period_end, cancel_at, canceled_at, trial_end,\n                metadata as \"metadata: Option<serde_json::Value>\", \n                stripe_subscription_id, stripe_customer_id,\n                created_at, updated_at\n            ",
+  "query": "\n            UPDATE user_subscriptions\n            SET \n                status = 'canceled',\n                cancel_at = CURRENT_TIMESTAMP,\n                canceled_at = CURRENT_TIMESTAMP,\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = $1\n            RETURNING \n                id, user_id, plan_id, status, current_period_start, \n                current_period_end, cancel_at, canceled_at, trial_end,\n                metadata as \"metadata: serde_json::Value\", \n                stripe_subscription_id, stripe_customer_id,\n                created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -50,7 +50,7 @@
       },
       {
         "ordinal": 9,
-        "name": "metadata: Option<serde_json::Value>",
+        "name": "metadata: serde_json::Value",
         "type_info": "Jsonb"
       },
       {
@@ -77,7 +77,7 @@
     "parameters": {
       "Left": ["Uuid"]
     },
-    "nullable": [false, false, false, false, false, false, true, true, true, false, true, true, false, false]
+    "nullable": [false, false, false, false, false, false, true, true, true, true, true, true, false, false]
   },
-  "hash": "01b54620f08179531eea7659fe3e71df7c9b08f53fe48dc66f480e55dc263077"
+  "hash": "49130a48f0732cc616e11024f9364a2f37677505414912e92fee77f470592e11"
 }

@@ -18,7 +18,7 @@ pub async fn get_active_plans(pool: &PgPool) -> Result<Vec<SubscriptionPlan>> {
             user_limit, webhook_limit, custom_markdown_components, ai_features, 
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
-            features as "features: Option<serde_json::Value>", 
+            features as "features: serde_json::Value", 
             stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
@@ -44,7 +44,7 @@ pub async fn get_plan_by_id(pool: &PgPool, plan_id: Uuid) -> Result<Subscription
             user_limit, webhook_limit, custom_markdown_components, ai_features, 
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
-            features as "features: Option<serde_json::Value>", 
+            features as "features: serde_json::Value", 
             stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
@@ -71,7 +71,7 @@ pub async fn get_plan_by_name(pool: &PgPool, name: &str) -> Result<SubscriptionP
             user_limit, webhook_limit, custom_markdown_components, ai_features, 
             advanced_analytics, ab_testing, api_access, priority_support, 
             custom_domain, white_label, sort_order, is_active, 
-            features as "features: Option<serde_json::Value>", 
+            features as "features: serde_json::Value", 
             stripe_price_id, stripe_product_id,
             created_at, updated_at
         FROM subscription_plans
@@ -96,7 +96,7 @@ pub async fn get_user_subscription(
         SELECT 
             id, user_id, plan_id, status, current_period_start, 
             current_period_end, cancel_at, canceled_at, trial_end,
-            metadata as "metadata: Option<serde_json::Value>", 
+            metadata as "metadata: serde_json::Value", 
             stripe_subscription_id, stripe_customer_id,
             created_at, updated_at
         FROM user_subscriptions
@@ -129,7 +129,7 @@ pub async fn create_subscription(
         RETURNING 
             id, user_id, plan_id, status, current_period_start, 
             current_period_end, cancel_at, canceled_at, trial_end,
-            metadata as "metadata: Option<serde_json::Value>", 
+            metadata as "metadata: serde_json::Value", 
             stripe_subscription_id, stripe_customer_id,
             created_at, updated_at
         "#,
@@ -197,7 +197,7 @@ pub async fn update_subscription(
         RETURNING 
             id, user_id, plan_id, status, current_period_start, 
             current_period_end, cancel_at, canceled_at, trial_end,
-            metadata as "metadata: Option<serde_json::Value>", 
+            metadata as "metadata: serde_json::Value", 
             stripe_subscription_id, stripe_customer_id,
             created_at, updated_at
         "#,
@@ -233,7 +233,7 @@ pub async fn cancel_subscription(
             RETURNING 
                 id, user_id, plan_id, status, current_period_start, 
                 current_period_end, cancel_at, canceled_at, trial_end,
-                metadata as "metadata: Option<serde_json::Value>", 
+                metadata as "metadata: serde_json::Value", 
                 stripe_subscription_id, stripe_customer_id,
                 created_at, updated_at
             "#,
@@ -256,7 +256,7 @@ pub async fn cancel_subscription(
             RETURNING 
                 id, user_id, plan_id, status, current_period_start, 
                 current_period_end, cancel_at, canceled_at, trial_end,
-                metadata as "metadata: Option<serde_json::Value>", 
+                metadata as "metadata: serde_json::Value", 
                 stripe_subscription_id, stripe_customer_id,
                 created_at, updated_at
             "#,
