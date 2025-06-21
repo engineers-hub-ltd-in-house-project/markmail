@@ -16,6 +16,11 @@ export interface SubscriptionPlan {
   form_submission_limit: number;
   user_limit: number;
   webhook_limit: number;
+  // AI制限
+  ai_monthly_limit?: number | null;
+  ai_scenario_limit?: number | null;
+  ai_content_limit?: number | null;
+  ai_subject_limit?: number | null;
   // 機能フラグ
   custom_markdown_components: boolean;
   ai_features: boolean;
