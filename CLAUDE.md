@@ -171,6 +171,15 @@ provides guidance for Claude Code when working with this repository.
 
 ## 🛠️ 必須開発コマンド
 
+### ⚠️ 重要：開発サーバーの制御について
+
+**絶対に守るべきルール**：
+
+- ❌ **開発サーバーを勝手に起動・停止しない** - サーバーの制御は開発者が行います
+- ❌ `cargo run`、`npm run dev`などのサーバー起動コマンドを自動実行しない
+- ✅ サーバー起動が必要な場合は、コマンドを提示するのみに留める
+- ✅ 「以下のコマンドでサーバーを起動してください」という形で案内する
+
 ### バックエンド (Rust)
 
 ```bash
@@ -179,8 +188,11 @@ cd backend
 cargo run                          # 開発サーバー起動 (ポート3000)
 cargo watch -c -w src -w .env -x run  # 自動リロード開発サーバー起動 ⭐ 推奨
 ./watch.sh                         # 上記と同じ（スクリプト版）
-cargo test                         # 全テスト実行
-cargo test test_name               # 特定のテスト実行
+
+# テスト実行（重要：並行実行すると失敗するため1スレッドで実行）
+cargo test -- --test-threads=1     # 全テストを1スレッドで実行 ⭐ 必須
+cargo test test_name -- --test-threads=1  # 特定のテストを1スレッドで実行
+
 cargo clippy -- -D warnings        # リンター実行
 cargo fmt                          # コードフォーマット
 
@@ -1051,6 +1063,34 @@ aws secretsmanager update-secret \
   development
 
 ## 🔧 トラブルシューティング
+
+### バックエンドテストの失敗
+
+**重要：並行実行によるテスト失敗を防ぐ**
+
+```bash
+# ❌ 悪い例：並行実行でテストが失敗する可能性
+cargo test
+
+# ✅ 良い例：1スレッドで確実に実行
+cargo test -- --test-threads=1
+
+# 特定のテストを1スレッドで実行
+cargo test test_create_campaign -- --test-threads=1
+
+# より詳細なログを見たい場合
+RUST_LOG=debug cargo test -- --test-threads=1 --nocapture
+```
+
+**テスト失敗時の対処法**：
+
+1. データベース接続の問題の場合
+   - `docker-compose ps`でPostgreSQLの状態を確認
+   - テストDBを一度削除して再作成
+2. 並行実行の問題の場合
+   - 必ず`--test-threads=1`を使用
+3. マイグレーションの問題の場合
+   - `sqlx migrate run`を実行
 
 ### データベース接続エラー
 
