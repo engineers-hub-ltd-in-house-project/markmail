@@ -109,13 +109,26 @@ export interface SequenceWithSteps extends Sequence {
   steps: SequenceStep[];
 }
 
-export interface SequenceStepWithTemplate extends SequenceStep {
+// バックエンドの#[serde(flatten)]により、Sequenceのフィールドがトップレベルに展開される
+export type SequenceWithStepsAndTemplates = Sequence & {
+  steps: SequenceStepWithTemplate[];
+};
+
+// バックエンドの#[serde(flatten)]により、SequenceStepのフィールドがトップレベルに展開される
+export type SequenceStepWithTemplate = SequenceStep & {
   template?: {
     id: string;
+    user_id: string;
     name: string;
-    subject: string;
+    subject_template: string;
+    markdown_content: string;
+    html_content?: string;
+    variables: any;
+    is_public: boolean;
+    created_at: string;
+    updated_at: string;
   };
-}
+};
 
 // ビジュアルエディタ用の型
 

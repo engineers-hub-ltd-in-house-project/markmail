@@ -3,12 +3,9 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { sequenceService } from "$lib/services/sequenceService";
-  import type {
-    SequenceWithSteps,
-    SequenceStepWithTemplate,
-  } from "$lib/types/sequence";
+  import type { SequenceWithStepsAndTemplates } from "$lib/types/sequence";
 
-  let sequence: SequenceWithSteps | null = null;
+  let sequence: SequenceWithStepsAndTemplates | null = null;
   let loading = true;
   let error = "";
 
@@ -199,7 +196,32 @@
                     </h3>
                   </div>
 
-                  {#if step.step_type === "email" && step.template_id}
+                  {#if step.step_type === "email" && step.template}
+                    <div class="text-sm text-gray-600 space-y-2">
+                      <div>
+                        <span class="font-medium">テンプレート:</span>
+                        {step.template.name}
+                      </div>
+                      <div>
+                        <span class="font-medium">件名:</span>
+                        {step.template.subject_template}
+                      </div>
+                      {#if step.template.markdown_content}
+                        <div
+                          class="mt-2 p-3 bg-white rounded border border-gray-200"
+                        >
+                          <div class="text-xs text-gray-500 mb-1">
+                            プレビュー:
+                          </div>
+                          <div
+                            class="text-sm prose prose-sm max-w-none line-clamp-3"
+                          >
+                            {step.template.markdown_content}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {:else if step.step_type === "email" && step.template_id}
                     <div class="text-sm text-gray-600">
                       <p>テンプレート: #{step.template_id}</p>
                     </div>

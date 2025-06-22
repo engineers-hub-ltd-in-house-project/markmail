@@ -438,7 +438,7 @@ async fn test_sequence_with_steps() {
     let sequence_with_steps = get_with_steps_result.unwrap().0;
     assert_eq!(sequence_with_steps.sequence.name, "ステップ付きシーケンス");
     assert_eq!(sequence_with_steps.steps.len(), 1);
-    assert_eq!(sequence_with_steps.steps[0].name, "ウェルカムメール");
+    assert_eq!(sequence_with_steps.steps[0].step.name, "ウェルカムメール");
 
     // クリーンアップ
     sqlx::query!(

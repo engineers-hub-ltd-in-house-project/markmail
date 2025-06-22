@@ -102,6 +102,20 @@ pub struct SequenceWithSteps {
     pub steps: Vec<SequenceStep>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SequenceStepWithTemplate {
+    #[serde(flatten)]
+    pub step: SequenceStep,
+    pub template: Option<crate::models::template::Template>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SequenceWithStepsAndTemplates {
+    #[serde(flatten)]
+    pub sequence: Sequence,
+    pub steps: Vec<SequenceStepWithTemplate>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct SequenceStepLog {
     pub id: Uuid,
