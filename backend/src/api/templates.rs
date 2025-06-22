@@ -14,8 +14,8 @@ use crate::{
     database::templates,
     middleware::auth::AuthUser,
     models::template::{
-        CreateTemplateRequest, PreviewTemplateRequest, PreviewTemplateResponse,
-        TemplateListResponse, TemplateResponse, UpdateTemplateRequest,
+        AnalyzeTemplateResponse, CreateTemplateRequest, PreviewTemplateRequest,
+        PreviewTemplateResponse, TemplateListResponse, TemplateResponse, UpdateTemplateRequest,
     },
     services::markdown_service::MarkdownService,
     AppState,
@@ -69,7 +69,7 @@ pub async fn list_templates(
 pub async fn create_template(
     Extension(auth_user): Extension<AuthUser>,
     State(state): State<AppState>,
-    Json(payload): Json<CreateTemplateRequest>,
+    Json(mut payload): Json<CreateTemplateRequest>,
 ) -> Result<Json<TemplateResponse>, (StatusCode, Json<Value>)> {
     // バリデーション
     if let Err(errors) = payload.validate() {
@@ -81,6 +81,45 @@ pub async fn create_template(
             })),
         ));
     }
+
+    // マークダウンサービスを使用して変数を抽出
+    let markdown_service = MarkdownService::new();
+    let content_vars = markdown_service.extract_variables(&payload.markdown_content);
+    let subject_vars = markdown_service.extract_variables(&payload.subject_template);
+
+    // 全ての変数をマージ
+    let mut all_vars: Vec<String> = content_vars;
+    for var in subject_vars {
+        if !all_vars.contains(&var) {
+            all_vars.push(var);
+        }
+    }
+
+    // デフォルト値のマップを作成
+    let default_values = get_default_variable_values();
+
+    // variablesフィールドを構築（既存の値とマージ）
+    let mut variables = if let Some(existing_vars) = &payload.variables {
+        existing_vars.clone()
+    } else {
+        json!({})
+    };
+
+    if let Value::Object(ref mut map) = variables {
+        // 使用されている全ての変数に対してデフォルト値を設定（既存の値がない場合）
+        for var in all_vars {
+            if !map.contains_key(&var) {
+                if let Some(default_value) = default_values.get(&var) {
+                    map.insert(var, default_value.clone());
+                } else {
+                    // カスタム変数のデフォルト値
+                    map.insert(var.clone(), json!(format!("[{}]", var)));
+                }
+            }
+        }
+    }
+
+    payload.variables = Some(variables);
 
     match templates::create_template(&state.db, auth_user.user_id, &payload).await {
         Ok(template) => {
@@ -97,6 +136,26 @@ pub async fn create_template(
             ))
         }
     }
+}
+
+/// 標準変数のデフォルト値を定義
+fn get_default_variable_values() -> std::collections::HashMap<String, Value> {
+    let mut defaults = std::collections::HashMap::new();
+
+    // 標準変数のデフォルト値
+    defaults.insert("name".to_string(), json!("お客様"));
+    defaults.insert("first_name".to_string(), json!("お客様"));
+    defaults.insert("email".to_string(), json!("example@example.com"));
+    defaults.insert("company_name".to_string(), json!("貴社"));
+    defaults.insert("product_name".to_string(), json!("製品"));
+    defaults.insert("service_name".to_string(), json!("サービス"));
+    defaults.insert("sender_name".to_string(), json!("送信者"));
+    defaults.insert(
+        "unsubscribe_url".to_string(),
+        json!("https://example.com/unsubscribe"),
+    );
+
+    defaults
 }
 
 /// テンプレート取得
@@ -130,7 +189,7 @@ pub async fn update_template(
     Extension(auth_user): Extension<AuthUser>,
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-    Json(payload): Json<UpdateTemplateRequest>,
+    Json(mut payload): Json<UpdateTemplateRequest>,
 ) -> Result<Json<TemplateResponse>, (StatusCode, Json<Value>)> {
     // バリデーション
     if let Err(errors) = payload.validate() {
@@ -142,6 +201,77 @@ pub async fn update_template(
             })),
         ));
     }
+
+    // 既存のテンプレートを取得
+    let existing_template =
+        match templates::find_template_by_id(&state.db, id, Some(auth_user.user_id)).await {
+            Ok(Some(template)) => template,
+            Ok(None) => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    Json(json!({
+                        "error": "テンプレートが見つかりません"
+                    })),
+                ))
+            }
+            Err(e) => {
+                tracing::error!("テンプレート取得エラー: {:?}", e);
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "テンプレートの取得に失敗しました"
+                    })),
+                ));
+            }
+        };
+
+    // 更新されるコンテンツから変数を抽出
+    let markdown_service = MarkdownService::new();
+    let markdown_content = payload
+        .markdown_content
+        .as_ref()
+        .unwrap_or(&existing_template.markdown_content);
+    let subject_template = payload
+        .subject_template
+        .as_ref()
+        .unwrap_or(&existing_template.subject_template);
+
+    let content_vars = markdown_service.extract_variables(markdown_content);
+    let subject_vars = markdown_service.extract_variables(subject_template);
+
+    // 全ての変数をマージ
+    let mut all_vars: Vec<String> = content_vars;
+    for var in subject_vars {
+        if !all_vars.contains(&var) {
+            all_vars.push(var);
+        }
+    }
+
+    // デフォルト値のマップを作成
+    let default_values = get_default_variable_values();
+
+    // 既存のvariablesと新しいvariablesをマージ
+    let mut variables = if let Some(new_vars) = &payload.variables {
+        new_vars.clone()
+    } else {
+        existing_template.variables.clone()
+    };
+
+    if let Value::Object(ref mut map) = variables {
+        // 使用されている全ての変数に対してデフォルト値を設定（既存の値がない場合）
+        for var in all_vars {
+            if !map.contains_key(&var) {
+                if let Some(default_value) = default_values.get(&var) {
+                    map.insert(var, default_value.clone());
+                } else {
+                    // カスタム変数のデフォルト値
+                    map.insert(var.clone(), json!(format!("[{}]", var)));
+                }
+            }
+        }
+    }
+
+    payload.variables = Some(variables);
 
     match templates::update_template(&state.db, id, auth_user.user_id, &payload).await {
         Ok(Some(template)) => {
@@ -266,6 +396,88 @@ pub async fn preview_template(
     Ok(Json(PreviewTemplateResponse { html, subject }))
 }
 
+/// テンプレート変数分析
+pub async fn analyze_template_variables(
+    Extension(auth_user): Extension<AuthUser>,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<AnalyzeTemplateResponse>, (StatusCode, Json<Value>)> {
+    // テンプレートを取得
+    let template =
+        match templates::find_template_by_id(&state.db, id, Some(auth_user.user_id)).await {
+            Ok(Some(template)) => template,
+            Ok(None) => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    Json(json!({
+                        "error": "テンプレートが見つかりません"
+                    })),
+                ))
+            }
+            Err(e) => {
+                tracing::error!("テンプレート取得エラー: {:?}", e);
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "テンプレートの取得に失敗しました"
+                    })),
+                ));
+            }
+        };
+
+    // マークダウンサービスを初期化
+    let markdown_service = MarkdownService::new();
+
+    // テンプレートから変数を抽出
+    let used_variables = markdown_service.extract_variables(&template.markdown_content);
+    let subject_variables = markdown_service.extract_variables(&template.subject_template);
+
+    // 全ての使用変数をマージ（重複除去）
+    let mut all_variables: Vec<String> = used_variables;
+    for var in subject_variables {
+        if !all_variables.contains(&var) {
+            all_variables.push(var);
+        }
+    }
+
+    // システムで自動的に提供される標準変数
+    let standard_variables = vec![
+        "name".to_string(),
+        "first_name".to_string(),
+        "email".to_string(),
+        "unsubscribe_url".to_string(),
+    ];
+
+    // カスタム変数（標準変数以外）を特定
+    let custom_variables: Vec<String> = all_variables
+        .iter()
+        .filter(|var| !standard_variables.contains(var))
+        .cloned()
+        .collect();
+
+    // テンプレートに定義されている変数
+    let defined_variables: Vec<String> = if let Value::Object(vars) = &template.variables {
+        vars.keys().cloned().collect()
+    } else {
+        vec![]
+    };
+
+    // 不足している変数（カスタム変数のうち定義されていないもの）
+    let missing_variables: Vec<String> = custom_variables
+        .iter()
+        .filter(|var| !defined_variables.contains(var))
+        .cloned()
+        .collect();
+
+    Ok(Json(AnalyzeTemplateResponse {
+        used_variables: all_variables,
+        standard_variables,
+        custom_variables,
+        defined_variables,
+        missing_variables,
+    }))
+}
+
 /// テンプレート関連のルーターを構築
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -277,4 +489,5 @@ pub fn router() -> Router<AppState> {
                 .delete(delete_template),
         )
         .route("/:id/preview", post(preview_template))
+        .route("/:id/analyze", get(analyze_template_variables))
 }

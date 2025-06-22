@@ -287,13 +287,14 @@ impl SequenceService {
 
         // 変数にマージ
         if let Value::Object(ref mut map) = variables {
-            map.insert(
-                "name".to_string(),
-                json!(subscriber
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| "お客様".to_string())),
-            );
+            let name = subscriber
+                .name
+                .clone()
+                .unwrap_or_else(|| "お客様".to_string());
+
+            // name と first_name の両方を設定（互換性のため）
+            map.insert("name".to_string(), json!(name.clone()));
+            map.insert("first_name".to_string(), json!(name));
             map.insert("email".to_string(), json!(subscriber.email.clone()));
 
             // カスタムフィールドを追加
