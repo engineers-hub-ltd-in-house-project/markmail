@@ -16,6 +16,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly dbSecret: cdk.aws_secretsmanager.Secret;
   public readonly cacheCluster: cdk.aws_elasticache.CfnCacheCluster;
   public readonly aiSecret: cdk.aws_secretsmanager.Secret;
+  public readonly stripeSecret: cdk.aws_secretsmanager.Secret;
 
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
@@ -56,6 +57,17 @@ export class DatabaseStack extends cdk.Stack {
       },
     });
 
+    // Stripe関連のシークレット
+    this.stripeSecret = new cdk.aws_secretsmanager.Secret(this, 'StripeSecret', {
+      secretName: `markmail-${environmentName}-stripe-secret`,
+      description: 'Stripe API keys and webhook secrets',
+      secretObjectValue: {
+        STRIPE_SECRET_KEY: cdk.SecretValue.unsafePlainText('your-stripe-secret-key-here'),
+        STRIPE_PUBLISHABLE_KEY: cdk.SecretValue.unsafePlainText('your-stripe-publishable-key-here'),
+        STRIPE_WEBHOOK_SECRET: cdk.SecretValue.unsafePlainText('your-stripe-webhook-secret-here'),
+      },
+    });
+
     // Export values for cross-stack references
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.database.dbInstanceEndpointAddress,
@@ -80,6 +92,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'AISecretArn', {
       value: this.aiSecret.secretArn,
       exportName: `${this.stackName}-AISecretArn`,
+    });
+
+    new cdk.CfnOutput(this, 'StripeSecretArn', {
+      value: this.stripeSecret.secretArn,
+      exportName: `${this.stackName}-StripeSecretArn`,
     });
 
     // Stack tags

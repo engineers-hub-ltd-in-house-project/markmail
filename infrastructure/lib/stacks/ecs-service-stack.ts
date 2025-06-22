@@ -23,6 +23,7 @@ export interface ECSServiceStackProps extends cdk.StackProps {
   database: rds.DatabaseInstance;
   dbSecret: secretsmanager.Secret;
   aiSecret?: secretsmanager.Secret;
+  stripeSecret?: secretsmanager.Secret;
   cacheCluster: elasticache.CfnCacheCluster;
   loadBalancer: elbv2.ApplicationLoadBalancer;
   httpsListener?: elbv2.ApplicationListener;
@@ -58,6 +59,7 @@ export class ECSServiceStack extends cdk.Stack {
       database,
       dbSecret,
       aiSecret,
+      stripeSecret,
       cacheCluster,
       httpsListener,
       httpListener,
@@ -98,6 +100,17 @@ export class ECSServiceStack extends cdk.Stack {
           AI_PROVIDER: ecs.Secret.fromSecretsManager(aiSecret, 'AI_PROVIDER'),
           OPENAI_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'OPENAI_MODEL'),
           ANTHROPIC_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'ANTHROPIC_MODEL'),
+        }),
+        ...(stripeSecret && {
+          STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(stripeSecret, 'STRIPE_SECRET_KEY'),
+          STRIPE_PUBLISHABLE_KEY: ecs.Secret.fromSecretsManager(
+            stripeSecret,
+            'STRIPE_PUBLISHABLE_KEY'
+          ),
+          STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(
+            stripeSecret,
+            'STRIPE_WEBHOOK_SECRET'
+          ),
         }),
       },
       logging: ecs.LogDrivers.awsLogs({
