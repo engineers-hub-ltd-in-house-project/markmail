@@ -191,8 +191,9 @@ pub async fn get_sequence_with_steps(
     State(state): State<AppState>,
     Extension(user): Extension<AuthUser>,
     Path(sequence_id): Path<Uuid>,
-) -> Result<Json<crate::models::sequence::SequenceWithSteps>, (StatusCode, Json<Value>)> {
-    match db::get_sequence_with_steps(&state.db, sequence_id).await {
+) -> Result<Json<crate::models::sequence::SequenceWithStepsAndTemplates>, (StatusCode, Json<Value>)>
+{
+    match db::get_sequence_with_steps_and_templates(&state.db, sequence_id).await {
         Ok(Some(sequence_data)) => {
             if sequence_data.sequence.user_id == user.user_id {
                 Ok(Json(sequence_data))

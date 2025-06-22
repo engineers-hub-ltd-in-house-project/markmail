@@ -5,8 +5,8 @@ use uuid::Uuid;
 
 use crate::models::sequence::{
     CreateSequenceEnrollmentRequest, CreateSequenceRequest, CreateSequenceStepRequest, Sequence,
-    SequenceEnrollment, SequenceStep, SequenceStepLog, SequenceWithSteps, TriggerType,
-    UpdateSequenceRequest, UpdateSequenceStepRequest,
+    SequenceEnrollment, SequenceStep, SequenceStepLog, SequenceStepWithTemplate, SequenceWithSteps,
+    SequenceWithStepsAndTemplates, TriggerType, UpdateSequenceRequest, UpdateSequenceStepRequest,
 };
 
 pub async fn create_sequence(
@@ -536,4 +536,44 @@ pub async fn create_sequence_enrollment(
     .await?;
 
     Ok(enrollment)
+}
+
+pub async fn get_sequence_with_steps_and_templates(
+    pool: &PgPool,
+    sequence_id: Uuid,
+) -> Result<Option<SequenceWithStepsAndTemplates>> {
+    let sequence = get_sequence_by_id(pool, sequence_id).await?;
+
+    match sequence {
+        Some(sequence) => {
+            let user_id = sequence.user_id; // シーケンス所有者のユーザーIDを保存
+            let steps = get_sequence_steps(pool, sequence_id).await?;
+            let mut steps_with_templates = Vec::new();
+
+            for step in steps {
+                let template = if let Some(template_id) = step.template_id {
+                    // シーケンス所有者のユーザーIDを使用してテンプレートを取得
+                    crate::database::templates::find_template_by_id(
+                        pool,
+                        template_id,
+                        Some(user_id),
+                    )
+                    .await?
+                } else {
+                    None
+                };
+
+                steps_with_templates.push(SequenceStepWithTemplate {
+                    step: step.clone(),
+                    template,
+                });
+            }
+
+            Ok(Some(SequenceWithStepsAndTemplates {
+                sequence,
+                steps: steps_with_templates,
+            }))
+        }
+        None => Ok(None),
+    }
 }

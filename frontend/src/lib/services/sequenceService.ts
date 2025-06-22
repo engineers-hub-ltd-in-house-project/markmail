@@ -4,6 +4,7 @@ import type {
   Sequence,
   SequenceStep,
   SequenceWithSteps,
+  SequenceWithStepsAndTemplates,
   CreateSequenceRequest,
   UpdateSequenceRequest,
   CreateSequenceStepRequest,
@@ -58,8 +59,8 @@ class SequenceService {
     return this.request<Sequence[]>("/sequences");
   }
 
-  async getSequence(id: string): Promise<SequenceWithSteps> {
-    return this.request<SequenceWithSteps>(`/sequences/${id}/full`);
+  async getSequence(id: string): Promise<SequenceWithStepsAndTemplates> {
+    return this.request<SequenceWithStepsAndTemplates>(`/sequences/${id}/full`);
   }
 
   async createSequence(data: CreateSequenceRequest): Promise<Sequence> {
