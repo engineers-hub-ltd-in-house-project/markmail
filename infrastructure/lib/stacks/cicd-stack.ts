@@ -39,14 +39,25 @@ export class CICDStack extends cdk.Stack {
     } = props;
 
     // GitHub Connection
-    this.githubConnection = new cdk.aws_codestarconnections.CfnConnection(
-      this,
-      'GitHubConnection',
-      {
-        connectionName: `markmail-${environmentName}-github`,
-        providerType: 'GitHub',
-      }
-    );
+    // Use environment variable if set (for existing connections), otherwise create new
+    const existingConnectionArn = process.env.GITHUB_CONNECTION_ARN;
+
+    if (existingConnectionArn) {
+      // Use existing connection (for private repositories)
+      this.githubConnection = {
+        attrConnectionArn: existingConnectionArn,
+      } as any;
+    } else {
+      // Create new connection (original behavior)
+      this.githubConnection = new cdk.aws_codestarconnections.CfnConnection(
+        this,
+        'GitHubConnection',
+        {
+          connectionName: `markmail-${environmentName}-github`,
+          providerType: 'GitHub',
+        }
+      );
+    }
 
     // Source Output
     const sourceOutput = new codepipeline.Artifact();
@@ -63,7 +74,7 @@ export class CICDStack extends cdk.Stack {
       projectName: `markmail-${environmentName}-backend-build`,
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
-        computeType: codebuild.ComputeType.SMALL,
+        computeType: codebuild.ComputeType.LARGE,
         privileged: true,
       },
       environmentVariables: {
@@ -123,7 +134,7 @@ export class CICDStack extends cdk.Stack {
       projectName: `markmail-${environmentName}-frontend-build`,
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
-        computeType: codebuild.ComputeType.SMALL,
+        computeType: codebuild.ComputeType.LARGE,
         privileged: true,
       },
       environmentVariables: {

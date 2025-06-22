@@ -96,6 +96,8 @@ const ecsClusterStack = new ECSClusterStack(app, `MarkMail-${environmentName}-EC
   environmentName: config.environmentName,
   vpc: networkStack.vpc,
   dbSecret: databaseStack.dbSecret,
+  aiSecret: databaseStack.aiSecret,
+  stripeSecret: databaseStack.stripeSecret,
   description: `MarkMail ECS Cluster Stack for ${environmentName} environment`,
 });
 ecsClusterStack.addDependency(networkStack);
@@ -142,6 +144,7 @@ const ecsServiceStack = new ECSServiceStack(app, `MarkMail-${environmentName}-EC
   database: databaseStack.database,
   dbSecret: databaseStack.dbSecret,
   aiSecret: databaseStack.aiSecret,
+  stripeSecret: databaseStack.stripeSecret,
   cacheCluster: databaseStack.cacheCluster,
   loadBalancer: albStack.loadBalancer,
   httpsListener: albStack.httpsListener,

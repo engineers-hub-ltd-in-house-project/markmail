@@ -264,12 +264,333 @@ JOIN users u ON u.id = us.user_id
 JOIN subscription_plans sp ON sp.id = us.plan_id;"
 ```
 
+## AWS環境でのセットアップ（開発環境）
+
+### 前提条件
+
+- AWS CLIがインストール・設定済み
+- AWS環境がCDKでデプロイ済み
+- 踏み台ホスト（Bastion Host）が作成済み
+- Route 53でドメインが設定済み（dev.markmail.engineers-hub.ltd）
+- Stripe CLIがインストール済み
+
+### 1. Stripe APIキーの設定
+
+#### AWS Secrets Managerでの管理
+
+Stripe APIキーはAWS Secrets Managerで安全に管理されます。
+
+```bash
+# Stripeシークレットの更新
+aws secretsmanager update-secret \
+  --secret-id markmail-dev-stripe-secret \
+  --secret-string '{
+    "STRIPE_SECRET_KEY": "sk_test_xxxxxxxxxxxxxxxx",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_xxxxxxxxxxxxxxxx",
+    "STRIPE_WEBHOOK_SECRET": "whsec_xxxxxxxxxxxxxxxx"
+  }' \
+  --profile your-profile
+```
+
+#### ECSサービスの再デプロイ
+
+シークレット更新後、変更を反映させるためECSサービスを再デプロイします：
+
+```bash
+aws ecs update-service \
+  --cluster markmail-dev \
+  --service markmail-dev-backend \
+  --force-new-deployment \
+  --profile your-profile
+```
+
+### 2. データベースの更新
+
+#### 踏み台ホスト経由でのアクセス
+
+AWS RDSへは踏み台ホスト経由でアクセスします。
+
+##### 方法1: SSM Session Manager経由で直接接続
+
+```bash
+# 踏み台ホストのインスタンスIDを取得
+INSTANCE_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=markmail-dev-bastion" \
+  --query 'Reservations[*].Instances[*].[InstanceId]' \
+  --output text \
+  --profile your-profile)
+
+# SSM Session Manager経由で接続
+aws ssm start-session --target $INSTANCE_ID --profile your-profile
+
+# 踏み台ホスト内でRDSに接続
+PGPASSWORD=your-password psql \
+  -h markmail-dev-db.xxxxx.region.rds.amazonaws.com \
+  -U markmail \
+  -d markmail
+```
+
+##### 方法2: SSM Send Command経由でコマンド実行（推奨）
+
+```bash
+# RDSエンドポイントを取得
+RDS_ENDPOINT=$(aws rds describe-db-instances \
+  --query 'DBInstances[?contains(DBInstanceIdentifier, `markmail-dev`)].Endpoint.Address' \
+  --output text \
+  --profile your-profile)
+
+# データベースパスワードを取得
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id markmail-dev-db-secret \
+  --query 'SecretString' \
+  --output text \
+  --profile your-profile | jq -r '.password')
+
+# ローカル環境からStripe Product/Price IDを確認
+docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT name, stripe_product_id, stripe_price_id FROM subscription_plans ORDER BY id;"
+```
+
+#### Stripe Product/Price IDの更新
+
+踏み台ホストのインスタンスIDを確認後、以下のコマンドでRDSのデータを更新します：
+
+```bash
+# 踏み台ホストのインスタンスIDを確認
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=markmail-dev-bastion" \
+  "Name=instance-state-name,Values=running" \
+  --query 'Reservations[*].Instances[*].[InstanceId,State.Name]' \
+  --output table \
+  --profile your-profile
+
+# Stripe Product/Price IDを更新（実際のIDに置き換えてください）
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "export PGPASSWORD=\"your-database-password\"",
+    "psql -h markmail-dev-db.cdkcmikuab4d.ap-northeast-1.rds.amazonaws.com -U markmail -d markmail -c \"UPDATE subscription_plans SET stripe_product_id = '"'"'prod_SWyCui2xJbDuJq'"'"', stripe_price_id = '"'"'price_1RbuGGGf4OK1sM7g1lyAE3yi'"'"' WHERE name = '"'"'pro'"'"';\"",
+    "psql -h markmail-dev-db.cdkcmikuab4d.ap-northeast-1.rds.amazonaws.com -U markmail -d markmail -c \"UPDATE subscription_plans SET stripe_product_id = '"'"'prod_SX1g8ARlwQ5lDL'"'"', stripe_price_id = '"'"'price_1RbxckGf4OK1sM7gGWmThB6S'"'"' WHERE name = '"'"'business'"'"';\"",
+    "psql -h markmail-dev-db.cdkcmikuab4d.ap-northeast-1.rds.amazonaws.com -U markmail -d markmail -c \"UPDATE subscription_plans SET stripe_product_id = '"'"'prod_SX1hkJ0kOqKujs'"'"', stripe_price_id = '"'"'price_1RbxeOGf4OK1sM7gitDS8jZ8'"'"' WHERE name = '"'"'free'"'"';\""
+  ]' \
+  --profile your-profile \
+  --query 'Command.CommandId' \
+  --output text
+
+# コマンドの実行結果を確認
+aws ssm get-command-invocation \
+  --command-id <上記で出力されたCommandId> \
+  --instance-id i-xxxxxxxxxxxxxxxxx \
+  --profile your-profile | jq '{Status: .Status, StandardOutput: .StandardOutputContent}'
+
+# 設定が正しく反映されたか確認
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "export PGPASSWORD=\"your-database-password\"",
+    "psql -h markmail-dev-db.cdkcmikuab4d.ap-northeast-1.rds.amazonaws.com -U markmail -d markmail -c \"SELECT name, stripe_product_id, stripe_price_id FROM subscription_plans ORDER BY id;\""
+  ]' \
+  --profile your-profile \
+  --query 'Command.CommandId' \
+  --output text
+```
+
+### 3. Webhookエンドポイントの設定
+
+#### Route 53ドメインを使用した設定（推奨）
+
+AWS環境ではRoute
+53で設定されたドメインが利用可能です。SSL付きのドメインを使用することで、より安全な通信が可能になります。
+
+```bash
+# 開発環境のドメイン
+WEBHOOK_URL="https://dev.markmail.engineers-hub.ltd/api/stripe/webhook"
+```
+
+#### Stripe CLIを使用したWebhookエンドポイントの作成
+
+```bash
+# Stripe CLIを使用してWebhookエンドポイントを作成
+stripe webhook_endpoints create \
+  --url https://dev.markmail.engineers-hub.ltd/api/stripe/webhook \
+  --enabled-events checkout.session.completed \
+  --enabled-events customer.subscription.created \
+  --enabled-events customer.subscription.updated \
+  --enabled-events customer.subscription.deleted \
+  --api-key sk_test_xxxxxxxxxxxxxxxx
+
+# 出力例：
+# {
+#   "id": "we_1RcbtqGf4OK1sM7gdCklXdOw",
+#   "object": "webhook_endpoint",
+#   "enabled_events": [
+#     "checkout.session.completed",
+#     "customer.subscription.created",
+#     "customer.subscription.updated",
+#     "customer.subscription.deleted"
+#   ],
+#   "livemode": false,
+#   "secret": "whsec_IpLMMBQw5wM4wMzo9ttBOdUl7XA6oDtY",
+#   "status": "enabled",
+#   "url": "https://dev.markmail.engineers-hub.ltd/api/stripe/webhook"
+# }
+```
+
+#### 新しい署名シークレットでAWS Secrets Managerを更新
+
+```bash
+# Webhookエンドポイント作成時に生成された署名シークレットを使用
+aws secretsmanager update-secret \
+  --secret-id markmail-dev-stripe-secret \
+  --secret-string '{
+    "STRIPE_SECRET_KEY": "sk_test_xxxxxxxxxxxxxxxx",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_xxxxxxxxxxxxxxxx",
+    "STRIPE_WEBHOOK_SECRET": "whsec_新しく生成された署名シークレット"
+  }' \
+  --profile your-profile
+
+# ECSサービスを再デプロイして新しいシークレットを反映
+aws ecs update-service \
+  --cluster markmail-dev \
+  --service markmail-dev-backend \
+  --force-new-deployment \
+  --profile your-profile
+```
+
+#### ALBのエンドポイントURL確認（ドメインを使用しない場合）
+
+```bash
+# ALBのDNS名を取得
+ALB_DNS=$(aws elbv2 describe-load-balancers \
+  --names markmail-dev-alb \
+  --query 'LoadBalancers[0].DNSName' \
+  --output text \
+  --profile your-profile)
+
+echo "Webhook URL (HTTP): http://$ALB_DNS/api/stripe/webhook"
+```
+
+**注意**:
+HTTPを使用する場合、セキュリティリスクがあるため、本番環境では必ずHTTPS（ドメイン経由）を使用してください。
+
+### 4. テストと検証
+
+#### ログの確認
+
+```bash
+# バックエンドログの監視
+aws logs tail /ecs/markmail-dev-backend --follow --profile your-profile
+
+# Stripeイベントに絞って確認
+aws logs filter-log-events \
+  --log-group-name /ecs/markmail-dev-backend \
+  --filter-pattern "stripe" \
+  --start-time $(date -u -d '5 minutes ago' +%s)000 \
+  --profile your-profile
+```
+
+#### エンドツーエンドテスト
+
+1. アプリケーションにアクセス
+   - SSL付きドメイン（推奨）: https://dev.markmail.engineers-hub.ltd
+   - ALB DNS名:
+     http://markmail-dev-alb-xxxxxxxxx.ap-northeast-1.elb.amazonaws.com
+2. テストユーザーでログイン
+3. サブスクリプションページ（`/subscriptions`）へ移動
+4. アップグレードしたいプランを選択
+5. 「アップグレード」ボタンをクリック
+6. Stripe Checkoutページでテストカード情報を入力：
+   - カード番号: `4242 4242 4242 4242`
+   - 有効期限: 12/34
+   - CVC: 123
+   - 郵便番号: 12345
+7. 決済完了後、以下を確認：
+   - `/subscriptions/success` ページが表示される
+   - `/subscriptions` ページに戻ると、プランが更新されている
+   - バックエンドログでWebhookイベントの処理を確認
+
+### 5. トラブルシューティング（AWS環境）
+
+#### ECSタスクが起動しない
+
+```bash
+# タスクの状態を確認
+aws ecs describe-tasks \
+  --cluster markmail-dev \
+  --tasks $(aws ecs list-tasks --cluster markmail-dev --service-name markmail-dev-backend --query 'taskArns[0]' --output text --profile your-profile) \
+  --profile your-profile
+```
+
+#### Secrets Managerの値を確認
+
+```bash
+# 現在の値を確認（注意：APIキーが表示されます）
+aws secretsmanager get-secret-value \
+  --secret-id markmail-dev-stripe-secret \
+  --query 'SecretString' \
+  --output text \
+  --profile your-profile | jq '.'
+```
+
+#### RDS接続情報の取得
+
+```bash
+# RDSエンドポイント
+aws rds describe-db-instances \
+  --query 'DBInstances[?contains(DBInstanceIdentifier, `markmail-dev`)].Endpoint.Address' \
+  --output text \
+  --profile your-profile
+
+# データベースパスワード
+aws secretsmanager get-secret-value \
+  --secret-id markmail-dev-db-secret \
+  --query 'SecretString' \
+  --output text \
+  --profile your-profile | jq -r '.password'
+```
+
+#### Webhookエンドポイントの管理
+
+```bash
+# 作成されたWebhookエンドポイントの一覧を確認
+stripe webhook_endpoints list --api-key sk_test_xxxxxxxxxxxxxxxx
+
+# 特定のWebhookエンドポイントの詳細を確認
+stripe webhook_endpoints retrieve we_xxxxxxxxxxxxx --api-key sk_test_xxxxxxxxxxxxxxxx
+
+# Webhookエンドポイントを削除（必要な場合）
+stripe webhook_endpoints delete we_xxxxxxxxxxxxx --api-key sk_test_xxxxxxxxxxxxxxxx
+
+# 最近のStripeイベントを確認
+stripe events list --limit 5 --api-key sk_test_xxxxxxxxxxxxxxxx
+
+# 特定のイベントの詳細を確認
+stripe events retrieve evt_xxxxxxxxxxxxx --api-key sk_test_xxxxxxxxxxxxxxxx
+```
+
+#### データベースでサブスクリプション状態を確認
+
+```bash
+# 踏み台ホスト経由でRDSのサブスクリプションデータを確認
+aws ssm send-command \
+  --instance-ids i-xxxxxxxxxxxxxxxxx \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "export PGPASSWORD=\"your-database-password\"",
+    "psql -h markmail-dev-db.cdkcmikuab4d.ap-northeast-1.rds.amazonaws.com -U markmail -d markmail -c \"SELECT u.email, sp.name as plan_name, us.status, us.stripe_subscription_id FROM user_subscriptions us JOIN users u ON u.id = us.user_id JOIN subscription_plans sp ON sp.id = us.plan_id;\""
+  ]' \
+  --profile your-profile \
+  --query 'Command.CommandId' \
+  --output text
+```
+
 ## 本番環境への移行
 
 ### 1. 環境変数の更新
 
 ```bash
-# 本番用の.env
+# 本番用の.env（ローカル開発用）
 STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxxxxx  # 本番APIキー
 STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxx  # 本番公開可能キー
 STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxx  # 本番Webhookシークレット
