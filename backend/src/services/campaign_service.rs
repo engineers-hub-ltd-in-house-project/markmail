@@ -202,6 +202,36 @@ impl CampaignService {
         campaign_id: Uuid,
         user_id: Uuid,
     ) -> Result<(), String> {
+        // エラーが発生した場合にステータスをerrorに更新するためのガード
+        let result = self
+            .process_campaign_sending_internal(pool, campaign_id, user_id)
+            .await;
+
+        if let Err(ref e) = result {
+            tracing::error!("キャンペーン送信処理でエラー: {}", e);
+            // エラーステータスに更新
+            if let Err(update_err) = campaigns::update_campaign_status(
+                pool,
+                campaign_id,
+                user_id,
+                crate::models::campaign::CampaignStatus::Error,
+            )
+            .await
+            {
+                tracing::error!("エラーステータスへの更新に失敗: {}", update_err);
+            }
+        }
+
+        result
+    }
+
+    // 実際の送信処理
+    async fn process_campaign_sending_internal(
+        &self,
+        pool: &PgPool,
+        campaign_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<(), String> {
         // キャンペーン情報を取得
         let campaign = campaigns::find_campaign_by_id(pool, campaign_id, user_id)
             .await
@@ -243,13 +273,14 @@ impl CampaignService {
 
             // variablesをオブジェクトとして扱う
             if let serde_json::Value::Object(ref mut map) = variables {
-                map.insert(
-                    "name".to_string(),
-                    serde_json::json!(subscriber
-                        .name
-                        .clone()
-                        .unwrap_or_else(|| "お客様".to_string())),
-                );
+                let name = subscriber
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| "お客様".to_string());
+
+                // name と first_name の両方を設定（互換性のため）
+                map.insert("name".to_string(), serde_json::json!(name.clone()));
+                map.insert("first_name".to_string(), serde_json::json!(name));
                 map.insert(
                     "email".to_string(),
                     serde_json::json!(subscriber.email.clone()),
@@ -333,8 +364,24 @@ impl CampaignService {
         .await
         .map_err(|e| format!("統計情報の更新に失敗しました: {}", e))?;
 
-        // 送信完了状態に更新
-        if failed_count == 0 {
+        // 送信結果に応じてステータスを更新
+        if failed_count == 0 && sent_count > 0 {
+            // 全て成功した場合
+            campaigns::complete_campaign_sending(pool, campaign_id)
+                .await
+                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+        } else if sent_count == 0 && failed_count > 0 {
+            // 全て失敗した場合
+            campaigns::update_campaign_status(
+                pool,
+                campaign_id,
+                user_id,
+                crate::models::campaign::CampaignStatus::Error,
+            )
+            .await
+            .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+        } else if failed_count > 0 {
+            // 一部失敗した場合も送信完了とする（部分的成功）
             campaigns::complete_campaign_sending(pool, campaign_id)
                 .await
                 .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;

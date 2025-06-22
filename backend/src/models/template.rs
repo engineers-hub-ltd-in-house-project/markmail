@@ -123,3 +123,12 @@ pub struct PreviewTemplateResponse {
     pub html: String,
     pub subject: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct AnalyzeTemplateResponse {
+    pub used_variables: Vec<String>,
+    pub standard_variables: Vec<String>,
+    pub custom_variables: Vec<String>,
+    pub defined_variables: Vec<String>,
+    pub missing_variables: Vec<String>,
+}

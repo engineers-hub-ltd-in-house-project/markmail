@@ -53,6 +53,10 @@ pub fn create_routes() -> Router<AppState> {
             "/api/templates/:id/preview",
             post(templates::preview_template),
         )
+        .route(
+            "/api/templates/:id/analyze",
+            get(templates::analyze_template_variables),
+        )
         // キャンペーン管理
         .route("/api/campaigns", get(campaigns::list_campaigns))
         .route("/api/campaigns", post(campaigns::create_campaign))
@@ -60,6 +64,14 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/campaigns/:id", put(campaigns::update_campaign))
         .route("/api/campaigns/:id", delete(campaigns::delete_campaign))
         .route("/api/campaigns/:id/send", post(campaigns::send_campaign))
+        .route(
+            "/api/campaigns/:id/resend",
+            post(campaigns::resend_campaign),
+        )
+        .route(
+            "/api/campaigns/:id/validate",
+            get(campaigns::validate_campaign_before_send),
+        )
         .route(
             "/api/campaigns/:id/schedule",
             post(campaigns::schedule_campaign),

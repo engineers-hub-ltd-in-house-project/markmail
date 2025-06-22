@@ -9,6 +9,7 @@ export enum CampaignStatus {
   SENDING = "sending",
   SENT = "sent",
   CANCELED = "canceled",
+  ERROR = "error",
 }
 
 /**
