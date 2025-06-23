@@ -203,7 +203,12 @@ cargo install cargo-watch
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/markmail"
 sqlx migrate run                   # マイグレーション実行
 sqlx migrate add migration_name    # 新規マイグレーション作成
-cargo sqlx prepare                 # オフラインコンパイル用のsqlx-data.json更新
+cargo sqlx prepare                 # オフラインコンパイル用のsqlx-data.json更新 ⭐ データベーススキーマ変更後は必須
+
+# SQLxオフラインキャッシュ更新（重要）
+# データベーススキーマや新しいクエリを追加した後は必ず実行
+cargo sqlx prepare                 # .sqlxディレクトリを更新
+git add backend/.sqlx              # 必ず変更をコミットに含める
 ```
 
 ### フロントエンド (SvelteKit)
