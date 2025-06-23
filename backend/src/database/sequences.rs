@@ -98,15 +98,79 @@ pub async fn update_sequence(
 }
 
 pub async fn delete_sequence(pool: &PgPool, sequence_id: Uuid) -> Result<()> {
-    sqlx::query!(
-        r#"
-        DELETE FROM sequences
-        WHERE id = $1
-        "#,
-        sequence_id
-    )
-    .execute(pool)
-    .await?;
+    // まずシーケンスの情報を取得（trigger_configからform_idを取得するため）
+    let sequence = get_sequence_by_id(pool, sequence_id).await?;
+
+    if let Some(seq) = sequence {
+        // フォームの削除（trigger_typeがform_submissionの場合）
+        if seq.trigger_type == TriggerType::FormSubmission.as_str() {
+            if let Some(form_id) = seq.trigger_config.get("form_id").and_then(|v| v.as_str()) {
+                if let Ok(form_uuid) = Uuid::parse_str(form_id) {
+                    // フォームの削除を試みる（失敗しても続行）
+                    if let Err(e) = crate::database::forms::delete_form(pool, form_uuid).await {
+                        tracing::warn!("フォーム削除中にエラーが発生しました: {:?}", e);
+                    }
+                }
+            }
+        }
+
+        // シーケンスステップからテンプレートIDを取得
+        let steps = get_sequence_steps(pool, sequence_id).await?;
+        let mut template_ids = std::collections::HashSet::new();
+
+        for step in steps {
+            if let Some(template_id) = step.template_id {
+                template_ids.insert(template_id);
+            }
+        }
+
+        // シーケンスを削除（外部キー制約のため、テンプレート削除前に実行）
+        sqlx::query!(
+            r#"
+            DELETE FROM sequences
+            WHERE id = $1
+            "#,
+            sequence_id
+        )
+        .execute(pool)
+        .await?;
+
+        // 参照されていないテンプレートの削除（失敗しても続行）
+        for template_id in template_ids {
+            match crate::database::templates::delete_unreferenced_template(
+                pool,
+                template_id,
+                seq.user_id,
+            )
+            .await
+            {
+                Ok(deleted) => {
+                    if deleted {
+                        tracing::info!("テンプレート {} を削除しました", template_id);
+                    } else {
+                        tracing::info!(
+                            "テンプレート {} は他から参照されているため削除をスキップしました",
+                            template_id
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("テンプレート削除中にエラーが発生しました: {:?}", e);
+                }
+            }
+        }
+    } else {
+        // シーケンスが見つからない場合でも削除を試みる
+        sqlx::query!(
+            r#"
+            DELETE FROM sequences
+            WHERE id = $1
+            "#,
+            sequence_id
+        )
+        .execute(pool)
+        .await?;
+    }
 
     Ok(())
 }
