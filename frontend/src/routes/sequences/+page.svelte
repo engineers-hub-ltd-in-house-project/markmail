@@ -51,7 +51,15 @@
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("このシーケンスを削除してもよろしいですか？")) {
+    const confirmMessage =
+      "このシーケンスを削除すると、関連するフォームとテンプレートも削除されます。\n\n" +
+      "削除されるもの：\n" +
+      "• シーケンス本体\n" +
+      "• 紐づけられたフォーム（存在する場合）\n" +
+      "• シーケンスで使用しているメールテンプレート\n\n" +
+      "この操作は取り消すことができません。本当に削除してもよろしいですか？";
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
