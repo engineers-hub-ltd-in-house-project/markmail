@@ -80,7 +80,7 @@ async fn get_ai_provider(
         api_key,
         model,
         max_retries: 3,
-        timeout_seconds: 60,
+        timeout_seconds: 180,
     };
 
     create_ai_provider(config).map_err(|e| {
