@@ -166,13 +166,11 @@ pub enum CrmFeature {
 }
 
 /// CRM統合設定（データベース保存用）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CrmIntegrationSettings {
     pub sync_enabled: bool,
-    pub sync_contacts: bool,
-    pub sync_campaigns: bool,
     pub sync_interval_minutes: i32,
-    pub batch_size: i32,
+    pub batch_size: usize,
     pub field_mappings: Vec<CrmFieldMapping>,
 }
 
