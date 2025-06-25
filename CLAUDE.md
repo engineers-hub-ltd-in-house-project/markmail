@@ -1,644 +1,611 @@
 # CLAUDE.md
 
-このファイルはClaude Code
-(claude.ai/code)がこのリポジトリで作業する際のガイダンスを提供します。This file
-provides guidance for Claude Code when working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
-## 🔴 絶対に守るべき責任感 / ABSOLUTE RESPONSIBILITY
+## 🔴 ABSOLUTE RESPONSIBILITY AS AI
 
-**AIとして作業する際の絶対的な責任**：
+**Your absolute responsibility when working as AI:**
 
-- **全ての問題は自分の責任** - 言い訳は一切禁止
-- **「関係ない」「別の問題」という逃げ口上は絶対禁止**
-- **全てのテストが通るまで作業は完了しない**
-- **問題を発見したら必ず修正する** - 見て見ぬふりは禁止
-- **「元々壊れていた」は言い訳にならない** - 修正するのが責任
+- **MANDATORY: All issues are your responsibility** - No excuses allowed
+- **MANDATORY: Never say "it's not related" or "it's a different issue"** -
+  These escape clauses are absolutely forbidden
+- **MANDATORY: Work is not complete until all tests pass**
+- **MANDATORY: Fix every issue you discover** - Ignoring problems is forbidden
+- **MANDATORY: "It was already broken" is not an excuse** - Fix it, that's your
+  responsibility
 
-## 🔴 エラー発生時は必ずこのセクションを確認すること / ALWAYS CHECK THIS SECTION WHEN ERRORS OCCUR
+## 🔴 CRITICAL RULES - MANDATORY WHEN ERRORS OCCUR
 
-### テストが失敗した場合の対処法 / How to Handle Test Failures
+### How to Handle Test Failures
 
-1. **絶対にやってはいけないこと / NEVER DO THESE**
+1. **MANDATORY: NEVER DO THESE**
 
-   - ❌ `git push --no-verify` でテストをスキップ / Skip tests with
-     `git push --no-verify`
-   - ❌ `#[ignore]` でテストを無効化 / Disable tests with `#[ignore]`
-   - ❌ テストに合わせてビジネスロジックを変更 / Change business logic to pass
-     tests
+   - ❌ Skip tests with `git push --no-verify`
+   - ❌ Disable tests with `#[ignore]`
+   - ❌ Change business logic to make tests pass
+   - ❌ Delete working tests
 
-2. **必ず行うこと / ALWAYS DO THESE**
-   - ✅ エラーメッセージを読んで原因を特定 / Read error messages and identify
-     the cause
-   - ✅ テストDBの問題なら / If it's a test DB issue: `DROP DATABASE` →
-     `CREATE DATABASE` → `sqlx migrate run`
-   - ✅ コードの問題なら: バグを修正 / If it's a code issue: Fix the bug
-   - ✅ 全てのテストが通ることを確認してからプッシュ / Ensure all tests pass
-     before pushing
+2. **MANDATORY: ALWAYS DO THESE**
+   - ✅ Read error messages and identify the root cause
+   - ✅ If it's a test DB issue: `DROP DATABASE` → `CREATE DATABASE` →
+     `sqlx migrate run`
+   - ✅ If it's a code issue: Fix the bug
+   - ✅ Ensure all tests pass before pushing
+   - ✅ Fix ALL issues discovered during work
 
-### プッシュ時にエラーが発生した場合 / When Push Errors Occur
+### When Push Errors Occur
 
-1. **pre-pushフックでテストが失敗 / pre-push hook test failures**
+1. **Pre-push hook test failures**
 
-   - ❌ 絶対に `--no-verify` を使わない / NEVER use `--no-verify`
-   - ✅ 上記の「テストが失敗した場合の対処法」を実行 / Follow the test failure
-     handling above
+   - **MANDATORY: NEVER use `--no-verify`**
+   - Follow the test failure handling steps above
 
-2. **権限エラー / Permission errors**
-   - ✅ `gh auth login` で認証を更新 / Update authentication with
-     `gh auth login`
+2. **Permission errors**
+   - Update authentication with `gh auth login`
 
-## ⚡ 最重要事項 - 絶対に行ってはいけないこと / CRITICAL - NEVER DO THESE
+## ⚡ CRITICAL - MANDATORY RULES
 
-### 0. 【最重要】実装前の徹底的な検証 / THOROUGH VERIFICATION BEFORE IMPLEMENTATION
+### 0. **MANDATORY: Thorough Verification Before Implementation**
 
-- **❌ 行き当たりばったりの実装は禁止** / No ad-hoc implementations
-- **❌ SQLxの型エラーを場当たり的に修正しない** / Don't fix SQLx type errors on
-  the spot
-- **❌ テストを実行せずに進めない** / Don't proceed without running tests
-- **✅ 実装前に必ず以下を確認:**
-  1. 既存のコードパターンを調査
-  2. 影響範囲を特定
-  3. テストを実行して現状を把握
-  4. 小さな変更で検証
-  5. 問題があれば即座に元に戻す
+- **MANDATORY: No ad-hoc implementations**
+- **MANDATORY: Don't fix SQLx type errors on the spot**
+- **MANDATORY: Don't proceed without running tests**
+- **MANDATORY: Before implementation, always:**
+  1. Research existing code patterns
+  2. Identify impact scope
+  3. Run tests to understand current state
+  4. Verify with small changes
+  5. Immediately revert if issues arise
 
-### 0.1. SQLx関連の作業時の鉄則 / Iron Rules for SQLx Work
+### 0.1. **MANDATORY: SQLx Work Rules**
 
-- **❌ 型キャストを安易に変更しない** / Don't carelessly change type casts
-- **❌ Option<Option<T>>エラーを見たら一旦停止** / Stop when you see
-  Option<Option<T>> errors
-- **❌ .sqlxファイルの大量変更は危険信号** / Mass changes to .sqlx files are
-  danger signs
-- **✅ SQLxの型エラーが出た場合:**
-  1. まず原因を理解する
-  2. 既存の同様のパターンを確認
-  3. 最小限の変更で対応
-  4. `cargo sqlx prepare`後は必ずテスト実行
+- **MANDATORY: Don't carelessly change type casts**
+- **MANDATORY: Stop when you see `Option<Option<T>>` errors**
+- **MANDATORY: Mass changes to .sqlx files are danger signs**
+- **MANDATORY: When SQLx type errors occur:**
+  1. First understand the cause
+  2. Check existing similar patterns
+  3. Respond with minimal changes
+  4. Always run tests after `cargo sqlx prepare`
 
-### 0.2. 関連ファイルを触る際の注意 / Caution When Touching Related Files
+### 0.2. **MANDATORY: Caution When Modifying Shared Modules**
 
-- **❌ 新機能実装時に既存の共通モジュールを安易に変更しない** / Don't carelessly
-  modify shared modules
-- **❌ subscriptions.rs, users.rs等の基幹モジュールは特に注意** / Be extra
-  careful with core modules
-- **✅ 共通モジュールを変更する場合:**
-  1. 変更の影響を受ける全テストを特定
-  2. 変更前にテストが通ることを確認
-  3. 変更は最小限に留める
-  4. 変更後は全テストを実行
+- **MANDATORY: Don't carelessly modify shared modules when implementing new
+  features**
+- **MANDATORY: Be extra careful with core modules like subscriptions.rs,
+  users.rs**
+- **MANDATORY: When modifying shared modules:**
+  1. Identify all tests affected by changes
+  2. Confirm tests pass before changes
+  3. Keep changes minimal
+  4. Run all tests after changes
 
-### 0.3. テスト失敗時の対応 / Handling Test Failures
+### 0.3. **MANDATORY: Handling Test Failures**
 
-- **❌ テストの失敗を無視して進めない** / Don't ignore test failures
-- **❌ 「私の変更が原因ではない」と考えない** / Don't think "it's not my fault"
-- **❌ デグレッションを軽視しない** / Don't downplay regressions
-- **❌ 「今回の文脈に関係ない」と言い訳しない** / Don't make excuses like "not
-  related to current context"
-- **❌ 「別の問題」として片付けない** / Don't dismiss as "a different issue"
-- **✅ テストが失敗したら:**
-  1. 即座に作業を停止
-  2. 失敗の原因を特定
-  3. **どんな理由でも必ず修正する** - 言い訳は一切禁止
-  4. 修正が困難なら変更を元に戻す
-  5. **全テストが通るまで絶対にプッシュしない**
+- **MANDATORY: Don't ignore test failures and proceed**
+- **MANDATORY: Don't think "it's not my fault"**
+- **MANDATORY: Don't downplay regressions**
+- **MANDATORY: Don't make excuses like "not related to current context"**
+- **MANDATORY: Don't dismiss as "a different issue"**
+- **MANDATORY: When tests fail:**
+  1. Stop work immediately
+  2. Identify the cause of failure
+  3. **Fix it regardless of the reason - no excuses**
+  4. If fix is difficult, revert changes
+  5. **NEVER push until all tests pass**
 
-### 1. 既存のマイグレーションファイルの削除・変更 / Never Delete or Modify Existing Migration Files
+### 1. **MANDATORY: Never Delete or Modify Existing Migration Files**
 
-- データベースマイグレーションファイル（`backend/migrations/*.sql`）は絶対に削除・変更しない /
-  NEVER delete or modify database migration files
-- 新しいマイグレーションが必要な場合は、新しいタイムスタンプで追加ファイルを作成する /
-  Create new migration files with new timestamps
-- 既に適用されたマイグレーションは変更不可能 / Applied migrations are immutable
+- **MANDATORY: NEVER delete or modify database migration files
+  (`backend/migrations/*.sql`)**
+- Create new migration files with new timestamps when changes are needed
+- Applied migrations are immutable
 
-### 2. テストの無効化 / Never Disable Tests
+### 2. **MANDATORY: Never Disable Tests**
 
-- テストが失敗する場合は、テストを削除・無効化せず、コードを修正する / Fix code
-  instead of disabling tests
-- `#[ignore]`や`skip`の使用は禁止 / Using `#[ignore]` or `skip` is forbidden
-- **テストを通すためにロジックを変更する愚行は絶対に禁止** / **NEVER change
-  business logic to make tests pass**
-- テストは既存のロジックを検証するものであり、テストに合わせてロジックを変更してはならない /
-  Tests verify existing logic, don't change logic to fit tests
-- **既存の正常に動いているテストを消すな！** / **NEVER delete working tests!**
+- **MANDATORY: When tests fail, fix the code, not the test**
+- Using `#[ignore]` or `skip` is forbidden
+- **MANDATORY: NEVER change business logic to make tests pass**
+- Tests verify existing logic; don't change logic to fit tests
+- **MANDATORY: NEVER delete working tests!**
 
-### 3. 直接的なデータベース操作 / Never Manipulate Database Directly
+### 3. **MANDATORY: Never Manipulate Database Directly**
 
-- `DROP TABLE`、`DROP DATABASE`などの破壊的操作は絶対に実行しない（テストDB除く） /
-  NEVER execute destructive operations (except test DB)
-- データベーススキーマの変更は必ずマイグレーションファイル経由で行う / Always
-  use migration files for schema changes
-- **🚨 マイグレーションファイルとデータベースの整合性を必ず保つ** / **ALWAYS
-  maintain consistency between migration files and database**
-  - ❌
-    **絶対にやってはいけないこと**: マイグレーションファイルを削除してデータベースの状態を放置
-  - ❌
-    **絶対にやってはいけないこと**: データベースに直接テーブルを作成してマイグレーションファイルを作らない
-  - ✅
-    **必ず守ること**: マイグレーションファイルを削除する場合は、対応するデータベースの変更も必ず元に戻す
-  - ✅ **必ず守ること**:
-    `_sqlx_migrations`テーブルとmigrationsディレクトリの内容は常に一致させる
+- **MANDATORY: NEVER execute destructive operations like `DROP TABLE`,
+  `DROP DATABASE` (except test DB)**
+- Always use migration files for schema changes
+- **MANDATORY: Always maintain consistency between migration files and
+  database**
+  - ❌ NEVER: Delete migration files and leave database state unchanged
+  - ❌ NEVER: Create tables directly in database without migration files
+  - ✅ ALWAYS: When deleting migration files, revert corresponding database
+    changes
+  - ✅ ALWAYS: Keep `_sqlx_migrations` table and migrations directory in sync
 
-### 4. 環境変数・シークレットの露出 / Never Expose Secrets
+### 4. **MANDATORY: Never Expose Secrets**
 
-- `.env`ファイルの内容をコミット・表示しない / Never commit or display `.env`
-  contents
-- APIキーやパスワードをハードコーディングしない / Never hardcode API keys or
-  passwords
+- Never commit or display `.env` file contents
+- Never hardcode API keys or passwords
 
-### 5. 過信を招く表現の使用禁止 / Never Use Overconfident Language
+### 5. **MANDATORY: Never Use Overconfident Language**
 
-- **「完璧」という言葉を絶対に使わない** - 実装後に必ず問題が発生する / **NEVER
-  use the word "perfect"** - issues always arise after implementation
-- 「問題ありません」「大丈夫です」などの断定的な表現を避ける / Avoid definitive
-  expressions like "no problem"
-- 常に「～と思われます」「～はずです」のような慎重な表現を使う / Always use
-  cautious expressions
-- 実装完了後も潜在的な問題の可能性を常に意識する / Always be aware of potential
-  issues
+- **MANDATORY: NEVER use the word "perfect"** - Issues always arise after
+  implementation
+- Avoid definitive expressions like "no problem" or "it's fine"
+- Always use cautious expressions like "it seems" or "it should"
+- Always be aware of potential issues even after implementation
 
-### 6. 責任逃れの禁止 / Never Evade Responsibility
+### 6. **MANDATORY: Never Evade Responsibility**
 
-- **❌ 「私が触っていないから関係ない」という言い訳は絶対禁止** / NEVER say
-  "it's not related because I didn't touch it"
-- **❌ 「元々壊れていた」という責任転嫁は禁止** / Don't blame pre-existing
-  issues
-- **❌ 「今回の修正とは無関係」という逃げ口上は禁止** / Don't dismiss as
-  "unrelated to current changes"
-- **✅ 全ての問題に対して責任を持つ** / Take responsibility for ALL issues
-- **✅ 作業中に発見した全ての問題を修正する** / Fix ALL issues discovered during
-  work
-- **✅ 言い訳せずに行動で示す** / Show through actions, not excuses
+- **MANDATORY: NEVER say "it's not related because I didn't touch it"**
+- **MANDATORY: Don't blame pre-existing issues**
+- **MANDATORY: Don't dismiss as "unrelated to current changes"**
+- **MANDATORY: Take responsibility for ALL issues**
+- **MANDATORY: Fix ALL issues discovered during work**
+- **MANDATORY: Show through actions, not excuses**
 
-## 🛠️ 必須開発コマンド
+## 🛠️ Common Development Commands
 
-### ⚠️ 重要：開発サーバーの制御について
+### ⚠️ IMPORTANT: Development Server Control
 
-**絶対に守るべきルール**：
+**MANDATORY Rules:**
 
-- ❌ **開発サーバーを勝手に起動・停止しない** - サーバーの制御は開発者が行います
-- ❌ `cargo run`、`npm run dev`などのサーバー起動コマンドを自動実行しない
-- ✅ サーバー起動が必要な場合は、コマンドを提示するのみに留める
-- ✅ 「以下のコマンドでサーバーを起動してください」という形で案内する
+- ❌ **MANDATORY: Never start/stop dev servers automatically** - Server control
+  is managed by developers
+- ❌ Don't auto-execute server startup commands like `cargo run`, `npm run dev`
+- ✅ Only present the commands when server startup is needed
+- ✅ Guide with "Please start the server with the following command"
 
-### バックエンド (Rust)
+### Backend (Rust)
 
 ```bash
-# 開発
 cd backend
-cargo run                          # 開発サーバー起動 (ポート3000)
-cargo watch -c -w src -w .env -x run  # 自動リロード開発サーバー起動 ⭐ 推奨
-./watch.sh                         # 上記と同じ（スクリプト版）
 
-# テスト実行（重要：並行実行すると失敗するため1スレッドで実行）
-cargo test -- --test-threads=1     # 全テストを1スレッドで実行 ⭐ 必須
-cargo test test_name -- --test-threads=1  # 特定のテストを1スレッドで実行
+# Development
+cargo run                          # Start dev server (port 3000)
+cargo watch -c -w src -w .env -x run  # Auto-reload dev server ⭐ RECOMMENDED
+./watch.sh                         # Same as above (script version)
 
-cargo clippy -- -D warnings        # リンター実行
-cargo fmt                          # コードフォーマット
+# Testing (IMPORTANT: Run in single thread to avoid failures)
+cargo test -- --test-threads=1     # Run all tests in single thread ⭐ MANDATORY
+cargo test test_name -- --test-threads=1  # Run specific test in single thread
 
-# cargo-watchのインストール（初回のみ）
+cargo clippy -- -D warnings        # Run linter
+cargo fmt                          # Format code
+
+# Install cargo-watch (first time only)
 cargo install cargo-watch
 
-# データベース
+# Database
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/markmail"
-sqlx migrate run                   # マイグレーション実行
-sqlx migrate add migration_name    # 新規マイグレーション作成
-cargo sqlx prepare                 # オフラインコンパイル用のsqlx-data.json更新 ⭐ データベーススキーマ変更後は必須
+sqlx migrate run                   # Run migrations
+sqlx migrate add migration_name    # Create new migration
+cargo sqlx prepare                 # Update sqlx-data.json for offline compilation ⭐ MANDATORY after schema changes
 
-# SQLxオフラインキャッシュ更新（重要）
-# データベーススキーマや新しいクエリを追加した後は必ず実行
-cargo sqlx prepare                 # .sqlxディレクトリを更新
-git add backend/.sqlx              # 必ず変更をコミットに含める
+# SQLx Offline Cache Update (IMPORTANT)
+# MANDATORY: Run after database schema changes or adding new queries
+cargo sqlx prepare                 # Update .sqlx directory
+git add backend/.sqlx              # MANDATORY: Include changes in commit
 ```
 
-### フロントエンド (SvelteKit)
+### Frontend (SvelteKit)
 
 ```bash
-# 開発
 cd frontend
-npm run dev                        # 開発サーバー起動 (ポート5173)
-npm run build                      # 本番ビルド
-npm test                          # 全テスト実行
-npm test -- --run                  # テストを一度だけ実行
-npm run check                      # 型チェック
-npm run lint                       # ESLint実行
-npm run format                     # コードフォーマット
+
+# Development
+npm run dev                        # Start dev server (port 5173)
+npm run build                      # Production build
+npm test                          # Run all tests
+npm test -- --run                  # Run tests once
+npm run check                      # Type checking
+npm run lint                       # ESLint
+npm run format                     # Format code
 ```
 
-### インフラストラクチャ (AWS CDK)
+### Infrastructure (AWS CDK)
 
 ```bash
 cd infrastructure
-npm test                           # インフラテスト実行
-npm run build                      # TypeScriptコンパイル
-npm run deploy                     # AWSへデプロイ
-cdk synth                         # CloudFormationテンプレート生成
+npm test                           # Run infrastructure tests
+npm run build                      # Compile TypeScript
+npm run deploy                     # Deploy to AWS
+cdk synth                         # Generate CloudFormation template
 ```
 
-### プロジェクト全体のコマンド
+### Project-wide Commands
 
 ```bash
-# プロジェクトルートから
-docker-compose up -d               # 全サービス起動 (PostgreSQL, Redis, MailHog)
-npm run format                     # コードベース全体をフォーマット
-npm run lint                      # コードベース全体をリント
-./scripts/setup-lefthook.sh       # Gitフックのセットアップ
+# From project root
+docker-compose up -d               # Start all services (PostgreSQL, Redis, MailHog)
+npm run format                     # Format entire codebase
+npm run lint                      # Lint entire codebase
+./scripts/setup-lefthook.sh       # Setup Git hooks
 ```
 
-### AI機能の設定
+### AI Feature Configuration
 
 ```bash
-# .envファイルに以下を追加
-AI_PROVIDER=openai                 # または 'anthropic'
-OPENAI_API_KEY=sk-xxxx            # OpenAI APIキー
-ANTHROPIC_API_KEY=sk-ant-xxxx     # Anthropic APIキー
+# Add to .env file
+AI_PROVIDER=openai                 # or 'anthropic'
+OPENAI_API_KEY=sk-xxxx            # OpenAI API key
+ANTHROPIC_API_KEY=sk-ant-xxxx     # Anthropic API key
 
-# AI機能へのアクセス
-# 1. ナビゲーションメニューの「AI機能」をクリック
-# 2. 以下の3つの機能が利用可能：
-#    - マーケティングシナリオ生成
-#    - コンテンツ生成
-#    - 件名最適化
+# Access AI features:
+# 1. Click "AI Features" in navigation menu
+# 2. Three features available:
+#    - Marketing scenario generation
+#    - Content generation
+#    - Subject line optimization
 ```
 
-## 🏗️ アーキテクチャ概要
+## 🏗️ High-Level Architecture
 
-### システム全体の構成
+### System Overview
 
-アプリケーションは関心の分離を明確にした設計：
+Application designed with clear separation of concerns:
 
-- **フロントエンド**: SvelteKit SPAでクライアントサイドルーティング（SSR無効）
-- **バックエンド**: Rust/Axum REST APIでJWT認証
-- **データベース**: PostgreSQLとSQLxでコンパイル時クエリ検証
-- **インフラ**: AWS CDKでInfrastructure as Code
-- **バックグラウンド処理**: Tokioによる非同期ワーカー
+- **Frontend**: SvelteKit SPA with client-side routing (SSR disabled)
+- **Backend**: Rust/Axum REST API with JWT authentication
+- **Database**: PostgreSQL with SQLx for compile-time query verification
+- **Infrastructure**: AWS CDK for Infrastructure as Code
+- **Background Processing**: Tokio-based async workers
 
-### バックエンドアーキテクチャ (Rust)
+### Backend Architecture (Rust)
 
 ```
 backend/src/
-├── api/           # HTTPエンドポイントハンドラー（ルート定義）
-├── database/      # データベースクエリ関数（リポジトリ層）
-├── models/        # ドメインモデルとリクエスト/レスポンス型
-├── services/      # ビジネスロジック層
-├── workers/       # バックグラウンドワーカー
-├── middleware/    # 認証、CORS、ロギングミドルウェア
-├── utils/         # 共有ユーティリティ（JWT、パスワードハッシュ、バリデーション）
-└── ai/            # AI機能モジュール ⭐ NEW
-    ├── providers/ # プロバイダー実装（OpenAI、Anthropic）
-    ├── services/  # AIサービス（シナリオビルダー、コンテンツ生成）
-    └── models/    # AI関連のデータモデルとプロンプト
+├── api/           # HTTP endpoint handlers (route definitions)
+├── database/      # Database query functions (repository layer)
+├── models/        # Domain models and request/response types
+├── services/      # Business logic layer
+├── workers/       # Background workers
+├── middleware/    # Auth, CORS, logging middleware
+├── utils/         # Shared utilities (JWT, password hashing, validation)
+└── ai/            # AI features module ⭐ NEW
+    ├── providers/ # Provider implementations (OpenAI, Anthropic)
+    ├── services/  # AI services (scenario builder, content generation)
+    └── models/    # AI-related data models and prompts
 ```
 
-**主要パターン**:
+**Key Patterns**:
 
-- 全APIルートはAxumの`from_fn`ミドルウェアで認証
-- データベースクエリはSQLxでコンパイル時検証
-- サービス層がビジネスロジックを処理、ハンドラーは薄く保つ
-- モデルはデータベースエンティティとAPIコントラクトの両方を定義
-- エラーハンドリングはカスタムエラー型で適切なHTTPステータスコード
-- バックグラウンドワーカーは独立したTokioタスクで実行
+- All API routes use Axum's `from_fn` middleware for authentication
+- Database queries verified at compile time with SQLx
+- Service layer handles business logic, handlers stay thin
+- Models define both database entities and API contracts
+- Error handling with custom error types for proper HTTP status codes
+- Background workers run as independent Tokio tasks
 
-### フロントエンドアーキテクチャ (SvelteKit)
+### Frontend Architecture (SvelteKit)
 
 ```
 frontend/src/
-├── routes/        # SvelteKitページとAPIルート
+├── routes/        # SvelteKit pages and API routes
 ├── lib/
-│   ├── services/  # APIクライアントサービス
-│   ├── stores/    # Svelteストア（認証、グローバル状態）
-│   └── types/     # TypeScript型定義
-└── tests/         # srcの構造をミラーリングしたテストファイル
+│   ├── services/  # API client services
+│   ├── stores/    # Svelte stores (auth, global state)
+│   └── types/     # TypeScript type definitions
+└── tests/         # Test files mirroring src structure
 ```
 
-**主要パターン**:
+**Key Patterns**:
 
-- `+layout.js`で`ssr = false`と`prerender = false`によるSPAモード
-- 全APIコールはサービス層経由で適切なエラーハンドリング
-- 認証状態は`authStore`でlocalStorageに永続化
-- フォームコンポーネントは作成と編集で共通ロジック
-- TypeScript型はバックエンドAPIコントラクトと一致
+- SPA mode via `ssr = false` and `prerender = false` in `+layout.js`
+- All API calls go through service layer with proper error handling
+- Auth state persisted in `authStore` with localStorage
+- Form components share logic between create and edit modes
+- TypeScript types match backend API contracts
 
-### データベーススキーマ
+### Database Schema
 
-主要テーブルと関係:
+Key tables and relationships:
 
 - `users` → `templates`, `campaigns`, `subscribers`, `forms`, `sequences`
-- `campaigns` → `templates` (多対一)
-- `forms` → `form_fields` (一対多)
-- `sequences` → `sequence_steps` (一対多)
-- `sequence_steps` → `templates` (多対一)
-- `form_submissions` → `forms` (多対一)
-- `sequence_enrollments` → `sequences`, `subscribers` (多対一)
-- `sequence_step_logs` → `sequence_enrollments`, `sequence_steps` (多対一)
+- `campaigns` → `templates` (many-to-one)
+- `forms` → `form_fields` (one-to-many)
+- `sequences` → `sequence_steps` (one-to-many)
+- `sequence_steps` → `templates` (many-to-one)
+- `form_submissions` → `forms` (many-to-one)
+- `sequence_enrollments` → `sequences`, `subscribers` (many-to-one)
+- `sequence_step_logs` → `sequence_enrollments`, `sequence_steps` (many-to-one)
 
-## 📋 重要な開発上の注意事項
+## 📋 Important Development Considerations
 
-### データベースマイグレーション
+### Database Migrations
 
-- **既存のマイグレーションファイルは絶対に変更しない** - 一度適用されたら不変
-- 新規マイグレーションは常にタイムスタンプ付き: `sqlx migrate add description`
-- マイグレーション後は`cargo sqlx prepare`でオフラインコンパイルデータを更新
+- **MANDATORY: Never modify existing migration files** - Once applied, they're
+  immutable
+- Always create new migrations with timestamps: `sqlx migrate add description`
+- After migration, run `cargo sqlx prepare` to update offline compilation data
 
-#### 🚨 マイグレーション整合性チェックリスト
+#### 🚨 Migration Consistency Checklist
 
-新機能でデータベース変更を行う場合、**必ず以下の手順を守る**：
+**MANDATORY: Follow these steps when making database changes:**
 
-1. **実装前の確認**
+1. **Pre-implementation Check**
 
    ```bash
-   # マイグレーションファイル数とDBの記録が一致するか確認
+   # Verify migration file count matches DB records
    ls -1 migrations/*.sql | wc -l
    docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT COUNT(*) FROM _sqlx_migrations;"
    ```
 
-2. **新規マイグレーション作成時**
+2. **Creating New Migration**
 
    ```bash
-   # 正しい手順
+   # Correct procedure
    sqlx migrate add your_feature_description
-   # SQLを記述
+   # Write SQL
    sqlx migrate run
    cargo sqlx prepare
    ```
 
-3. **機能削除・ロールバック時**
+3. **Feature Removal/Rollback**
 
    ```bash
-   # ❌ 絶対にやってはいけないこと
-   rm migrations/20250621_your_feature.sql  # ファイルだけ削除してDB放置
+   # ❌ MANDATORY: NEVER DO THIS
+   rm migrations/20250621_your_feature.sql  # Deleting file only, leaving DB unchanged
 
-   # ✅ 正しい手順
-   # 1. まずDBの状態を元に戻す
+   # ✅ MANDATORY: Correct procedure
+   # 1. First revert DB state
    docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DROP TABLE your_table CASCADE;"
-   # 2. マイグレーション記録を削除
+   # 2. Delete migration record
    docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "DELETE FROM _sqlx_migrations WHERE version = 'your_version';"
-   # 3. ファイルを削除
+   # 3. Delete file
    rm migrations/20250621_your_feature.sql
-   # 4. SQLxメタデータを再生成
+   # 4. Regenerate SQLx metadata
    cargo sqlx prepare
    ```
 
-4. **整合性が崩れた場合の修復**
+4. **Consistency Repair**
    ```bash
-   # 現状確認
+   # Check current state
    diff <(ls -1 migrations/*.sql | sed 's/.*\///' | sed 's/_.*$//' | sort) \
         <(docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -t -c "SELECT version FROM _sqlx_migrations ORDER BY version;" | grep -v '^$' | tr -d ' ')
    ```
 
-### テスト哲学
+### Testing Philosophy
 
-- **失敗するテストを無効化しない** - 根本原因を修正する
-- テスト命名: `test_feature_scenario` (例:
+- **MANDATORY: Never disable failing tests** - Fix the root cause
+- Test naming: `test_feature_scenario` (e.g.,
   `test_create_campaign_with_invalid_template`)
-- バックエンドテストは自動クリーンアップ付きの分離されたテストデータベース使用
-- フロントエンドテストはAPIへの依存を避けるためモックサービス使用
+- Backend tests use isolated test database with automatic cleanup
+- Frontend tests use mock services to avoid API dependencies
 
-### 認証フロー
+### Authentication Flow
 
-1. ログインでJWT（24時間）+リフレッシュトークン（30日）を返す
-2. フロントエンドはauthStore経由でlocalStorageにトークン保存
-3. APIリクエストは`Authorization: Bearer <token>`ヘッダーを含む
-4. 401レスポンスで自動ログアウト
-5. 保護されたルートはレンダリング前に認証状態をチェック
+1. Login returns JWT (24h) + refresh token (30d)
+2. Frontend stores tokens in localStorage via authStore
+3. API requests include `Authorization: Bearer <token>` header
+4. 401 response triggers automatic logout
+5. Protected routes check auth state before rendering
 
-### フォームビルダーシステム
+### Form Builder System
 
-フォームは複雑なフィールド構造を持つ:
+Forms have complex field structure:
 
-- バックエンドは`form_fields`（スネークケース）を使用
-- フロントエンドコンポーネントは`form.form_fields`を使用（`form.fields`ではない）
-- フィールドタイプ: text, email, textarea, select, radio, checkbox等
-- 公開フォームは認証なしで`/forms/[id]/public`でアクセス可能
+- Backend uses `form_fields` (snake_case)
+- Frontend components use `form.form_fields` (NOT `form.fields`)
+- Field types: text, email, textarea, select, radio, checkbox, etc.
+- Public forms accessible without auth at `/forms/[id]/public`
 
-### メールサービスアーキテクチャ
+### Email Service Architecture
 
-- プロバイダー抽象化traitでMailHog（開発）とAWS SES（本番）を切り替え
-- 環境変数`EMAIL_PROVIDER`でプロバイダーを制御
-- 本番用のレート制限付きバッチ送信
-- テンプレート変数は`{{variable_name}}`構文を使用
+- Provider abstraction trait switches between MailHog (dev) and AWS SES (prod)
+- Environment variable `EMAIL_PROVIDER` controls provider
+- Rate limiting for batch sending in production
+- Template variables use `{{variable_name}}` syntax
 
-### シーケンス自動化システム
+### Sequence Automation System
 
-- バックグラウンドワーカーが60秒間隔で実行待ちステップを処理
-- トリガーベースの自動エンロールメント（フォーム送信、購読者作成等）
-- ステップタイプ:
-  email（メール送信）、wait（待機）、condition（条件分岐）、tag（タグ付け）
-- フォーム送信から購読者作成・シーケンス登録まで完全自動化
+- Background worker runs every 60 seconds to process pending steps
+- Trigger-based auto-enrollment (form submission, subscriber creation, etc.)
+- Step types: email (send email), wait (delay), condition (branching), tag
+  (tagging)
+- Full automation from form submission to subscriber creation and sequence
+  enrollment
 
-### よくある落とし穴
+### Common Pitfalls
 
-1. **SvelteKitの動的ルート**: プリレンダリングできない、SPAモードを使用
-2. **開発時のCORS**: バックエンドはlocalhost:5173を許可、本番は同一ドメイン
-3. **SQLxオフラインモード**: スキーマ変更後は`cargo sqlx prepare`を実行
-4. **Lefthookフォーマット**: コミット時に自動実行、`--no-verify`でバイパスしない
+1. **SvelteKit Dynamic Routes**: Can't be prerendered, use SPA mode
+2. **CORS in Development**: Backend allows localhost:5173, production uses same
+   domain
+3. **SQLx Offline Mode**: Run `cargo sqlx prepare` after schema changes
+4. **Lefthook Formatting**: Runs on commit, don't bypass with `--no-verify`
 
-## 🚀 AWSデプロイメントノート
+## 🚀 AWS Deployment Notes
 
-### ビルド設定
+### Build Configuration
 
-- フロントエンドはSPA用の`fallback: "index.html"`でstatic adapterを使用
-- Dockerfileは`.svelte-kit/output`ではなく`/app/build`からコピー
-- VITE_API_URL環境変数はAPIエンドポイント用にビルド時に設定
+- Frontend uses static adapter with `fallback: "index.html"` for SPA
+- Dockerfile copies from `/app/build`, not `.svelte-kit/output`
+- VITE_API_URL environment variable set at build time for API endpoint
 
-### インフラストラクチャスタック
+### Infrastructure Stacks
 
-- コンテナ化されたサービス用のECS Fargate
+- ECS Fargate for containerized services
 - RDS Aurora PostgreSQL Serverless v2
-- パスベースルーティング付きApplication Load Balancer
-- ロギングとモニタリング用のCloudWatch
-- GitHubからのCI/CD用CodePipeline
+- Application Load Balancer with path-based routing
+- CloudWatch for logging and monitoring
+- CodePipeline for CI/CD from GitHub
 
-### 環境変数
+### Environment Variables
 
-設定必須の重要な変数:
+Required production variables:
 
-- `DATABASE_URL`: PostgreSQL接続文字列
-- `JWT_SECRET`: JWT署名用シークレット
-- `VITE_API_URL`: フロントエンドAPIエンドポイント（ビルド時）
-- `EMAIL_PROVIDER`: mailhogまたはaws_ses
-- `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: SES用
+- `DATABASE_URL`: PostgreSQL connection string
+- `JWT_SECRET`: Secret for JWT signing
+- `VITE_API_URL`: Frontend API endpoint (build time)
+- `EMAIL_PROVIDER`: mailhog or aws_ses
+- `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: For SES
 
-## 🚫 よくある愚行と防止策 / Common Mistakes and Prevention
+## 🚫 Common Mistakes and Prevention
 
-### 0. 【今回の大失態】新機能実装時の既存機能破壊 / Breaking Existing Features During New Feature Implementation
+### 0. **Breaking Existing Features During New Feature Implementation**
 
-- ❌ **最悪の例 / WORST**:
-  AI使用量トラッキング実装時にsubscriptions.rsを変更してテストを破壊
-- ❌ **悪い例 / Bad**:
-  SQLxの型エラーを場当たり的に修正して更なる問題を引き起こす
-- ❌ **悪い例 / Bad**: テストが失敗しても「私の変更が原因ではない」と軽視する
-- ❌ **最悪の言い訳 / WORST
-  EXCUSE**: 「今回の修正とは関係ない別の問題」と片付ける
-- ❌ **無責任の極み / PEAK
-  IRRESPONSIBILITY**: 「並行実行時の問題で、AIの破壊とは無関係」と逃げる
-- ✅ **良い例 / Good**:
-  1. 新機能は独立したモジュールとして実装
-  2. 既存モジュールへの変更は最小限に留める
-  3. 変更前に全テストが通ることを確認
-  4. 変更後も全テストが通ることを確認
-  5. 問題があれば即座に変更を元に戻す
-  6. **全てのテストが通るまで絶対に諦めない**
+- ❌ **WORST**: Modifying subscriptions.rs for AI usage tracking and breaking
+  tests
+- ❌ **Bad**: Fixing SQLx type errors ad-hoc causing more issues
+- ❌ **Bad**: Dismissing test failures as "not caused by my changes"
+- ❌ **WORST EXCUSE**: "It's a different issue unrelated to current fix"
+- ❌ **PEAK IRRESPONSIBILITY**: "It's a parallel execution issue, unrelated to
+  AI destruction"
+- ✅ **Good**:
+  1. Implement new features as independent modules
+  2. Keep changes to existing modules minimal
+  3. Confirm all tests pass before changes
+  4. Confirm all tests pass after changes
+  5. Immediately revert if issues arise
+  6. **NEVER give up until all tests pass**
 
-### 1. テストを通すためにロジックを変更する / Changing Logic to Pass Tests
+### 1. **Changing Logic to Pass Tests**
 
-- ❌ 悪い例 /
-  Bad: テストが失敗したので、テストに合わせてビジネスロジックを変更 / Change
-  business logic to match tests
-- ✅ 良い例 /
-  Good: ロジックが正しい場合はテストを修正、バグがある場合はロジックを修正 / Fix
-  tests if logic is correct, fix logic if it has bugs
+- ❌ Bad: Change business logic to match failing tests
+- ✅ Good: Fix tests if logic is correct, fix logic if it has bugs
 
-### 2. テストをスキップしてプッシュ / Skipping Tests to Push
+### 2. **Skipping Tests to Push**
 
-- ❌ **最悪の例 / WORST**: `git push --no-verify` でテストをスキップ / Skip
-  tests with `git push --no-verify`
-- ❌ 悪い例 / Bad: テストが失敗したので `#[ignore]` を追加 / Add `#[ignore]`
-  when tests fail
-- ✅ 良い例 / Good: テストが失敗した原因を調査し、問題を解決してからプッシュ /
-  Investigate failure cause and fix before pushing
+- ❌ **WORST**: Skip tests with `git push --no-verify`
+- ❌ Bad: Add `#[ignore]` when tests fail
+- ✅ Good: Investigate failure cause and fix before pushing
 
-### 3. マイグレーションファイルの削除・変更 / Deleting or Modifying Migration Files
+### 3. **Deleting or Modifying Migration Files**
 
-- ❌ 悪い例 / Bad: エラーが出たので既存のマイグレーションファイルを削除 / Delete
-  existing migration files when errors occur
-- ❌ 悪い例 / Bad: 既存のマイグレーションファイルを直接編集 / Edit existing
-  migration files directly
-- ✅ 良い例 / Good: 新しいタイムスタンプで修正用のマイグレーションを追加 / Add
-  new migration with new timestamp
+- ❌ Bad: Delete existing migration files when errors occur
+- ❌ Bad: Edit existing migration files directly
+- ✅ Good: Add new migration with new timestamp for fixes
 
-### 4. エラーを握りつぶす / Suppressing Errors
+### 4. **Suppressing Errors**
 
-- ❌ 悪い例 / Bad: `unwrap()`でエラーが出たので`.unwrap_or_default()`に変更 /
-  Change to `.unwrap_or_default()` when `unwrap()` fails
-- ✅ 良い例 / Good: エラーの原因を調査し、適切なエラーハンドリングを実装 /
-  Investigate error cause and implement proper handling
+- ❌ Bad: Change `unwrap()` to `.unwrap_or_default()` when it fails
+- ✅ Good: Investigate error cause and implement proper handling
 
-### 5. 作業ディレクトリの混乱 / Working Directory Confusion
+### 5. **Working Directory Confusion**
 
-- ❌ 悪い例 / Bad: 現在のディレクトリを確認せずにコマンド実行 / Execute commands
-  without checking current directory
-- ✅ 良い例 / Good:
-  `pwd`で常に現在位置を確認、適切なディレクトリに移動してから作業 / Always check
-  with `pwd` and navigate to correct directory
+- ❌ Bad: Execute commands without checking current directory
+- ✅ Good: Always check with `pwd` and navigate to correct directory
 
-## 🚨 外部ライブラリ・SDK導入時の必須確認事項
+## 🚨 External Library/SDK Integration Requirements
 
-### 1. 公式ドキュメントの確認を最優先
+### 1. **MANDATORY: Prioritize Official Documentation**
 
-新しいライブラリやSDKを導入する前に、**必ず以下の手順で公式情報を確認**してください：
+**MANDATORY: Before introducing new libraries or SDKs, always follow these
+steps:**
 
-1. **公式サイトの確認**
+1. **Check Official Site**
 
    ```bash
-   # 例：Stripeの場合
-   # 1. https://docs.stripe.com/sdks で公式SDKを確認
-   # 2. コミュニティSDKセクションを確認
-   # 3. 推奨されているライブラリを使用
+   # Example: For Stripe
+   # 1. Check https://docs.stripe.com/sdks for official SDKs
+   # 2. Check community SDK section
+   # 3. Use recommended libraries
    ```
 
-2. **最新情報の取得**
+2. **Get Latest Information**
 
-   - 現在の年（2025年）の情報を検索
-   - ライブラリの最新バージョンを確認
-   - GitHubリポジトリで最新リリースを確認
+   - Search for current year (2025) information
+   - Check library's latest version
+   - Check latest releases on GitHub
 
-3. **実装前の検証**
+3. **Pre-implementation Verification**
 
-   - 公式の実装例を確認
-   - 依存関係の互換性を確認
-   - 既存コードとの整合性を確認
+   - Check official implementation examples
+   - Verify dependency compatibility
+   - Check consistency with existing code
 
-4. **決定プロセスの記録**
-   - なぜそのライブラリを選んだかを明確に記録
-   - 検討した他の選択肢とその却下理由
-   - 公式ドキュメントのURLを保存
+4. **Record Decision Process**
+   - Clearly record why you chose that library
+   - Other options considered and rejection reasons
+   - Save official documentation URLs
 
-### 2. ロールバック作業の禁止
+### 2. **MANDATORY: No Rollback Work**
 
-**絶対にやってはいけないこと**：
+**MANDATORY: Never do these:**
 
-- ❌ 一度決定したライブラリを何度も変更する
-- ❌ 「試してみてダメだったら別のものに変える」アプローチ
-- ❌ 公式情報を確認せずに推測で進める
+- ❌ Repeatedly change libraries once decided
+- ❌ "Try and switch if it doesn't work" approach
+- ❌ Proceed based on guesses without official info
 
-**正しいアプローチ**：
+**Correct Approach:**
 
-- ✅ 最初に十分な調査を行う
-- ✅ 公式推奨の方法を採用する
-- ✅ 実装前に方針を明確にする
+- ✅ Conduct thorough research first
+- ✅ Adopt officially recommended methods
+- ✅ Clarify approach before implementation
 
-### 3. 具体例：Stripe SDK導入の正しい手順
+### 3. **Example: Correct Stripe SDK Integration**
 
 ```bash
-# 1. 公式ドキュメントを確認
+# 1. Check official documentation
 WebFetch: https://docs.stripe.com/sdks
-# → コミュニティSDKセクションを確認
+# → Check community SDK section
 
-# 2. 推奨ライブラリを特定
+# 2. Identify recommended library
 WebFetch: https://docs.stripe.com/sdks/community
-# → Rustの場合：async-stripe by Alex Lyon
+# → For Rust: async-stripe by Alex Lyon
 
-# 3. 最新バージョンと使用方法を確認
+# 3. Check latest version and usage
 WebSearch: "async-stripe arlyon GitHub latest version 2025"
 WebFetch: https://github.com/arlyon/async-stripe
-# → バージョン0.31、featuresの確認
+# → Version 0.31, check features
 
-# 4. 実装例を確認してから実装開始
+# 4. Check implementation examples before starting
 WebFetch: https://github.com/arlyon/async-stripe/blob/master/examples/
 ```
 
-## 🚨 新規サービス実装時の必須チェックリスト
+## 🚨 New Service Implementation Checklist
 
-新しいサービスファイルを作成する際は、**必ず既存のサービスファイルのパターンを参照**してください。
+**MANDATORY: When creating new service files, always refer to existing service
+file patterns.**
 
-### 1. API URLの構築パターンを統一する
+### 1. **Unify API URL Construction Patterns**
 
 ```typescript
-// ❌ 悪い例：独自のパターンを作る
+// ❌ Bad: Creating your own pattern
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const response = await fetch(`${API_BASE}/api${path}`, ...);
 
-// ✅ 良い例：既存のパターンに従う
+// ✅ Good: Follow existing patterns
 const API_BASE_URL = "/api";
 const response = await fetch(`${API_BASE_URL}${path}`, ...);
 ```
 
-### 2. 新規ファイル作成前の確認手順
+### 2. **Pre-creation Verification Steps**
 
-1. **既存の類似ファイルを検索**
+1. **Search for existing similar files**
 
    ```bash
-   # 例：新しいサービスを作る前に
+   # Example: Before creating new service
    find . -name "*Service.ts" -o -name "*service.ts"
    ```
 
-2. **既存のパターンを確認**
+2. **Check existing patterns**
 
    ```bash
-   # 例：API呼び出しパターンを確認
+   # Example: Check API call patterns
    grep -r "fetch.*api" --include="*.ts"
    ```
 
-3. **最も類似したファイルをベースにする**
-   - `api.ts` のような基本的なサービスファイルを参考にする
-   - 独自のパターンを発明しない
+3. **Base on most similar file**
+   - Reference basic service files like `api.ts`
+   - Don't invent your own patterns
 
-### 3. 環境変数の使用を避ける
+### 3. **Avoid Environment Variables**
 
-- フロントエンドでは相対パスを使用（`/api`）
-- 環境依存の設定は最小限に
-- 既存のサービスが環境変数を使っていない場合は使わない
+- Use relative paths (`/api`) in frontend
+- Keep environment-dependent settings minimal
+- Don't use env vars if existing services don't
 
-### 4. コードレビューチェックリスト
+### 4. **Code Review Checklist**
 
-- [ ] 既存のサービスファイルと同じパターンを使用しているか
-- [ ] API URLの構築方法が統一されているか
-- [ ] エラーハンドリングが一貫しているか
-- [ ] 認証トークンの扱いが統一されているか
-- [ ] TypeScriptの型定義が適切か
+- [ ] Using same patterns as existing service files
+- [ ] Unified API URL construction
+- [ ] Consistent error handling
+- [ ] Unified auth token handling
+- [ ] Proper TypeScript type definitions
 
-## 📝 コミットメッセージ規約
+## 📝 Commit Message Convention
 
 ```
 <type>: <subject>
@@ -646,220 +613,221 @@ const response = await fetch(`${API_BASE_URL}${path}`, ...);
 <body>
 ```
 
-タイプ:
+Types:
 
-- `feat`: 新機能
-- `fix`: バグ修正
-- `docs`: ドキュメントのみの変更
-- `style`: コードの意味に影響しない変更
-- `refactor`: リファクタリング
-- `test`: テストの追加・修正
-- `chore`: ビルドプロセスやツールの変更
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that don't affect code meaning
+- `refactor`: Refactoring
+- `test`: Adding/modifying tests
+- `chore`: Build process or tool changes
 
-## 🔧 新機能実装の推奨手順
+## 🔧 Recommended New Feature Implementation Process
 
-### 1. データベース制約の事前確認
+### 1. **Pre-verify Database Constraints**
 
-新機能を実装する前に、必ずデータベースの制約を確認する：
+Before implementing new features, always check database constraints:
 
 ```bash
-# テーブル構造と制約の確認
-docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "\d テーブル名"
+# Check table structure and constraints
+docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "\d table_name"
 
-# 特に以下を確認
-# - CHECK制約（許可される値）
-# - UNIQUE制約（重複を許さないカラム）
-# - 外部キー制約
-# - データ型（特にUUID vs INTEGER）
+# Especially check:
+# - CHECK constraints (allowed values)
+# - UNIQUE constraints (columns that don't allow duplicates)
+# - Foreign key constraints
+# - Data types (especially UUID vs INTEGER)
 ```
 
-### 2. バックエンドとフロントエンドの型整合性
+### 2. **Backend and Frontend Type Consistency**
 
-実装前に以下を確認：
+Before implementation, verify:
 
-1. **バックエンドのモデル定義** (`backend/src/models/`)
+1. **Backend Model Definitions** (`backend/src/models/`)
 
-   - フィールド名（snake_case）
-   - データ型（UUID、String、i32等）
-   - 必須/オプショナルフィールド
+   - Field names (snake_case)
+   - Data types (UUID, String, i32, etc.)
+   - Required/optional fields
 
-2. **データベーススキーマ** (`backend/migrations/`)
+2. **Database Schema** (`backend/migrations/`)
 
-   - カラム名と型
-   - 制約（CHECK、UNIQUE等）
-   - デフォルト値
+   - Column names and types
+   - Constraints (CHECK, UNIQUE, etc.)
+   - Default values
 
-3. **フロントエンドの型定義** (`frontend/src/lib/types/`)
-   - バックエンドと一致する型定義
-   - IDは通常`string`（UUID）
-   - ステータスやタイプのenum値が一致
+3. **Frontend Type Definitions** (`frontend/src/lib/types/`)
+   - Type definitions matching backend
+   - IDs are usually `string` (UUID)
+   - Enum values for status/type match
 
-### 3. API実装時の確認事項
+### 3. **API Implementation Checklist**
 
-1. **エンドポイントの確認**
+1. **Verify Endpoints**
 
    ```bash
-   # backend/src/api/mod.rs でルーティングを確認
+   # Check routing in backend/src/api/mod.rs
    grep -n "route.*api" backend/src/api/mod.rs
    ```
 
-2. **特殊なエンドポイントの把握**
+2. **Understand Special Endpoints**
 
-   - 詳細取得: `/api/resources/:id` vs `/api/resources/:id/full`
-   - ネストしたリソース: `/api/resources/:id/sub-resources`
+   - Detail fetch: `/api/resources/:id` vs `/api/resources/:id/full`
+   - Nested resources: `/api/resources/:id/sub-resources`
 
-3. **レスポンス形式の確認**
-   - 単一オブジェクト vs ラッパーオブジェクト
-   - ページネーション形式
+3. **Verify Response Format**
+   - Single object vs wrapper object
+   - Pagination format
 
-### 4. よくある実装ミスと対策
+### 4. **Common Implementation Mistakes and Solutions**
 
-#### ❌ 型の不一致
+#### ❌ Type Mismatch
 
 ```typescript
-// 悪い例
-type Status = 'active' | 'inactive'; // DBは 'draft' も含む
+// Bad
+type Status = 'active' | 'inactive'; // DB includes 'draft' too
 
-// 良い例 - DBの制約を先に確認
+// Good - Check DB constraints first
 type Status = 'draft' | 'active' | 'inactive';
 ```
 
-#### ❌ フィールド名の不一致
+#### ❌ Field Name Mismatch
 
 ```typescript
-// 悪い例
-trigger_conditions?: Record<string, any>;  // DBは trigger_config
+// Bad
+trigger_conditions?: Record<string, any>;  // DB uses trigger_config
 
-// 良い例 - バックエンドのモデルと一致
+// Good - Match backend model
 trigger_config?: Record<string, any>;
 ```
 
-#### ❌ 重複エラーの未考慮
+#### ❌ Not Considering Duplicates
 
 ```typescript
-// 悪い例
-step_order: steps.length + 1; // 削除後に重複する可能性
+// Bad
+step_order: steps.length + 1; // Can duplicate after deletion
 
-// 良い例
+// Good
 step_order: Math.max(...steps.map(s => s.step_order)) + 1;
 ```
 
-#### ❌ Enum型の文字列比較
+#### ❌ Enum Type String Comparison
 
 ```rust
-// 悪い例
+// Bad
 if sequence.trigger_type == TriggerType::FormSubmission {
-    // 型エラー: String != TriggerType
+    // Type error: String != TriggerType
 }
 
-// 良い例 - as_str()メソッドを使用
+// Good - Use as_str() method
 if sequence.trigger_type == TriggerType::FormSubmission.as_str() {
-    // 正常に動作
+    // Works correctly
 }
 ```
 
-#### ❌ 非同期タスクのエラーハンドリング
+#### ❌ Async Task Error Handling
 
 ```rust
-// 悪い例
+// Bad
 tokio::spawn(async move {
-    process_sequences().await; // エラーが握りつぶされる
+    process_sequences().await; // Errors are swallowed
 });
 
-// 良い例 - エラーをログ出力
+// Good - Log errors
 tokio::spawn(async move {
     if let Err(e) = process_sequences().await {
-        error!("シーケンス処理エラー: {}", e);
+        error!("Sequence processing error: {}", e);
     }
 });
 ```
 
-### 5. デバッグ手順
+### 5. **Debugging Steps**
 
-1. **エラー発生時はまずログを確認**
+1. **First check logs when errors occur**
 
-   - ブラウザのコンソール
-   - バックエンドのターミナル出力
+   - Browser console
+   - Backend terminal output
 
-2. **データベースの実データ確認**
+2. **Verify actual database data**
 
    ```bash
    docker exec markmail-postgres-1 psql -U markmail -d markmail_dev -c "SELECT * FROM table_name;"
    ```
 
-3. **API通信の確認**
-   - ブラウザの開発者ツール > Network タブ
-   - リクエスト/レスポンスのペイロード確認
+3. **Check API communication**
+   - Browser DevTools > Network tab
+   - Verify request/response payloads
 
-## ⚠️ AWS CDKデプロイ時の必須事項 / Critical Requirements for AWS CDK Deployment
+## ⚠️ AWS CDK Deployment Critical Requirements
 
-### ドメイン環境変数の設定が必須 / Domain Environment Variables are REQUIRED
+### **MANDATORY: Domain Environment Variables Required**
 
-**問題**: ドメイン環境変数が設定されていない場合、以下の深刻な問題が発生します：
+**Problem**: Without domain environment variables, these severe issues occur:
 
-1. ALBStackがHTTPSリスナーを作成しない
-2. ECSServiceStackがHTTPSリスナーを参照しようとして失敗
-3. 両スタックが相互依存でUPDATE_ROLLBACK_COMPLETE状態になる
-4. MonitoringStackなど依存スタックもデプロイできなくなる
+1. ALBStack won't create HTTPS listener
+2. ECSServiceStack tries to reference HTTPS listener and fails
+3. Both stacks get stuck in UPDATE_ROLLBACK_COMPLETE state
+4. Dependent stacks like MonitoringStack can't deploy
 
-**解決策**: CDKデプロイ前に必ず環境変数を設定
+**Solution**: Set environment variables before CDK deployment
 
 ```bash
-# 開発環境の場合
+# For development
 export DEV_DOMAIN=dev.markmail.engineers-hub.ltd
 
-# ステージング環境の場合
+# For staging
 export STAGING_DOMAIN=staging.markmail.engineers-hub.ltd
 
-# 本番環境の場合
+# For production
 export PROD_DOMAIN=markmail.engineers-hub.ltd
 
-# デプロイコマンド実行
+# Run deployment
 npm run cdk -- deploy StackName --profile your-profile
 ```
 
-**絶対にやってはいけないこと**:
+**MANDATORY: Never do these:**
 
-- ❌ 環境変数なしでCDKデプロイを実行
-- ❌ AWS CLIで手動でリソースを作成・修正
-- ❌ スタック間の依存関係を無視した操作
+- ❌ Run CDK deploy without environment variables
+- ❌ Manually create/modify resources with AWS CLI
+- ❌ Ignore inter-stack dependencies
 
-## 🔧 AWS RDS操作方法 / How to Operate AWS RDS
+## 🔧 AWS RDS Operations
 
-### RDSへの接続方法 / How to Connect to RDS
+### Connecting to RDS
 
-AWS環境のRDSはセキュリティ要件により直接接続できません。以下の方法で接続します：
+AWS RDS cannot be directly connected due to security requirements. Use these
+methods:
 
-#### 1. 踏み台ホスト（Bastion Host）経由での接続 / Connection via Bastion Host
+#### 1. Connection via Bastion Host
 
 ```bash
-# 踏み台ホストの作成 / Create bastion host
+# Create bastion host
 cd infrastructure
 CREATE_BASTION=true npm run cdk -- deploy MarkMail-dev-BastionStack --profile your-profile
 
-# 踏み台ホストのインスタンスIDを取得 / Get bastion host instance ID
+# Get bastion host instance ID
 aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=markmail-dev-bastion" \
   --query 'Reservations[*].Instances[*].[InstanceId]' \
   --output text \
   --profile your-profile
 
-# SSM Session Manager経由で接続 / Connect via SSM Session Manager
+# Connect via SSM Session Manager
 aws ssm start-session \
   --target i-xxxxxxxxxxxxx \
   --profile your-profile
 
-# 踏み台ホスト内からRDSに接続 / Connect to RDS from bastion host
+# Connect to RDS from bastion host
 PGPASSWORD=your-password psql \
   -h your-rds-endpoint.rds.amazonaws.com \
   -U markmail \
   -d markmail
 ```
 
-#### 2. SSM Send Commandでのリモート実行 / Remote Execution via SSM Send Command
+#### 2. Remote Execution via SSM Send Command
 
 ```bash
-# コマンドを実行 / Execute command
+# Execute command
 aws ssm send-command \
   --instance-ids i-xxxxxxxxxxxxx \
   --document-name "AWS-RunShellScript" \
@@ -868,21 +836,21 @@ aws ssm send-command \
   --query 'Command.CommandId' \
   --output text
 
-# 実行結果を確認 / Check execution result
+# Check execution result
 aws ssm get-command-invocation \
   --command-id command-id-here \
   --instance-id i-xxxxxxxxxxxxx \
   --profile your-profile
 ```
 
-### データベースマイグレーション / Database Migration
+### Database Migration
 
-#### ECS経由での自動マイグレーション / Automatic Migration via ECS
+#### Automatic Migration via ECS
 
-アプリケーション起動時に自動的にマイグレーションが実行されます：
+Migrations run automatically on application startup:
 
 ```bash
-# ECSサービスを強制的に再デプロイ / Force redeploy ECS service
+# Force redeploy ECS service
 aws ecs update-service \
   --cluster markmail-dev \
   --service markmail-dev-backend \
@@ -890,12 +858,12 @@ aws ecs update-service \
   --profile your-profile
 ```
 
-#### 手動マイグレーション / Manual Migration
+#### Manual Migration
 
-踏み台ホスト経由で手動実行する場合：
+Via bastion host:
 
 ```bash
-# 踏み台ホストでマイグレーションを実行 / Run migration on bastion host
+# Run migration on bastion host
 aws ssm send-command \
   --instance-ids i-xxxxxxxxxxxxx \
   --document-name "AWS-RunShellScript" \
@@ -908,13 +876,12 @@ aws ssm send-command \
   --profile your-profile
 ```
 
-### データベースのリセット / Database Reset
+### Database Reset
 
-⚠️ **警告 / WARNING**: 本番環境では絶対に実行しないでください / NEVER execute in
-production
+⚠️ **WARNING**: NEVER execute in production
 
 ```bash
-# 接続を強制終了してデータベースを再作成 / Terminate connections and recreate database
+# Terminate connections and recreate database
 aws ssm send-command \
   --instance-ids i-xxxxxxxxxxxxx \
   --document-name "AWS-RunShellScript" \
@@ -927,17 +894,17 @@ aws ssm send-command \
   --profile your-profile
 ```
 
-### マイグレーションバージョンの不一致を解決 / Resolve Migration Version Mismatch
+### Resolve Migration Version Mismatch
 
-ローカルとAWS環境でマイグレーションのチェックサムが異なる場合：
+When migration checksums differ between local and AWS:
 
-1. **マイグレーション履歴を確認 / Check migration history**
+1. **Check migration history**
 
    ```sql
    SELECT version, checksum FROM _sqlx_migrations ORDER BY version;
    ```
 
-2. **チェックサムを更新 / Update checksum**
+2. **Update checksum**
 
    ```sql
    UPDATE _sqlx_migrations
@@ -945,18 +912,17 @@ aws ssm send-command \
    WHERE version = 'version-number';
    ```
 
-3. **特定のマイグレーションを削除して再実行 / Delete and rerun specific
-   migration**
+3. **Delete and rerun specific migration**
    ```sql
    DELETE FROM _sqlx_migrations WHERE version = 'version-number';
    ```
 
-### トラブルシューティング / Troubleshooting
+### Troubleshooting
 
-#### 踏み台ホストが見つからない / Bastion host not found
+#### Bastion host not found
 
 ```bash
-# インスタンスの状態を確認 / Check instance status
+# Check instance status
 aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=markmail-dev-bastion" \
   "Name=instance-state-name,Values=running,stopped" \
@@ -965,7 +931,7 @@ aws ec2 describe-instances \
   --profile your-profile
 ```
 
-#### RDSエンドポイントの確認 / Check RDS endpoint
+#### Check RDS endpoint
 
 ```bash
 aws rds describe-db-instances \
@@ -974,7 +940,7 @@ aws rds describe-db-instances \
   --profile your-profile
 ```
 
-#### データベースパスワードの取得 / Get database password
+#### Get database password
 
 ```bash
 aws secretsmanager get-secret-value \
@@ -984,24 +950,23 @@ aws secretsmanager get-secret-value \
   --profile your-profile | jq -r '.password'
 ```
 
-### 重要な注意事項 / Important Notes
+### Important Notes
 
-- **踏み台ホストは一時的なリソース** / Bastion host is a temporary resource
-- **使用後は削除を検討** / Consider deletion after use
-- **本番環境では特に慎重に操作** / Be extra careful in production
-- **データベースのバックアップを確認** / Verify database backups exist
+- **Bastion host is temporary resource** - Consider deletion after use
+- **Be extra careful in production**
+- **Verify database backups exist**
 
-## 🔐 AWS Secrets Manager でのAI API キー管理 / Managing AI API Keys with AWS Secrets Manager
+## 🔐 Managing AI API Keys with AWS Secrets Manager
 
-### AI用シークレットの初期設定 / Initial Setup for AI Secrets
+### Initial Setup for AI Secrets
 
-AWS環境では、AI関連のAPIキー（OPENAI_API_KEY、ANTHROPIC_API_KEY等）はSecrets
-Managerで管理されます。
+In AWS environments, AI API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) are
+managed via Secrets Manager.
 
-#### 1. シークレットの更新 / Update Secrets
+#### 1. Update Secrets
 
 ```bash
-# シークレットの内容を更新 / Update secret values
+# Update secret values
 aws secretsmanager update-secret \
   --secret-id markmail-dev-ai-secret \
   --secret-string '{
@@ -1014,10 +979,10 @@ aws secretsmanager update-secret \
   --profile your-profile
 ```
 
-#### 2. シークレットの確認 / Verify Secrets
+#### 2. Verify Secrets
 
 ```bash
-# 現在の値を確認（注意：実際のAPIキーが表示されます） / Verify current values (WARNING: displays actual API keys)
+# Verify current values (WARNING: displays actual API keys)
 aws secretsmanager get-secret-value \
   --secret-id markmail-dev-ai-secret \
   --query 'SecretString' \
@@ -1025,12 +990,12 @@ aws secretsmanager get-secret-value \
   --profile your-profile | jq '.'
 ```
 
-#### 3. ECSサービスの再デプロイ / Redeploy ECS Service
+#### 3. Redeploy ECS Service
 
-シークレットを更新した後は、ECSサービスを再デプロイして新しい値を反映させます：
+After updating secrets, redeploy ECS service to reflect new values:
 
 ```bash
-# バックエンドサービスを強制的に再デプロイ / Force redeploy backend service
+# Force redeploy backend service
 aws ecs update-service \
   --cluster markmail-dev \
   --service markmail-dev-backend \
@@ -1038,12 +1003,12 @@ aws ecs update-service \
   --profile your-profile
 ```
 
-#### 4. シークレットのローテーション / Secret Rotation
+#### 4. Secret Rotation
 
-定期的にAPIキーをローテーションすることを推奨します：
+Regularly rotate API keys:
 
 ```bash
-# 新しいAPIキーでシークレットを更新 / Update secret with new API key
+# Update secret with new API key
 aws secretsmanager update-secret \
   --secret-id markmail-dev-ai-secret \
   --secret-string '{
@@ -1056,62 +1021,58 @@ aws secretsmanager update-secret \
   --profile your-profile
 ```
 
-### 注意事項 / Important Notes
+### Important Notes
 
-- **環境ごとにシークレットは分離** / Secrets are separated by environment (dev,
-  staging, prod)
-- **シークレット名の規則** / Secret naming convention:
-  `markmail-{environment}-ai-secret`
-- **ECSタスクは自動的に最新のシークレットを取得** / ECS tasks automatically
-  fetch the latest secrets
-- **ローカル開発では`.env`ファイルを使用** / Use `.env` file for local
-  development
+- **Secrets are separated by environment** (dev, staging, prod)
+- **Secret naming convention**: `markmail-{environment}-ai-secret`
+- **ECS tasks automatically fetch latest secrets**
+- **Use `.env` file for local development**
 
-## 🔧 トラブルシューティング
+## 🔧 Troubleshooting
 
-### バックエンドテストの失敗
+### Backend Test Failures
 
-**重要：並行実行によるテスト失敗を防ぐ**
+**IMPORTANT: Prevent test failures from parallel execution**
 
 ```bash
-# ❌ 悪い例：並行実行でテストが失敗する可能性
+# ❌ Bad: Tests may fail due to parallel execution
 cargo test
 
-# ✅ 良い例：1スレッドで確実に実行
+# ✅ Good: Run in single thread for reliability
 cargo test -- --test-threads=1
 
-# 特定のテストを1スレッドで実行
+# Run specific test in single thread
 cargo test test_create_campaign -- --test-threads=1
 
-# より詳細なログを見たい場合
+# For more detailed logs
 RUST_LOG=debug cargo test -- --test-threads=1 --nocapture
 ```
 
-**テスト失敗時の対処法**：
+**Handling test failures**:
 
-1. データベース接続の問題の場合
-   - `docker-compose ps`でPostgreSQLの状態を確認
-   - テストDBを一度削除して再作成
-2. 並行実行の問題の場合
-   - 必ず`--test-threads=1`を使用
-3. マイグレーションの問題の場合
-   - `sqlx migrate run`を実行
+1. For database connection issues
+   - Check PostgreSQL status with `docker-compose ps`
+   - Drop and recreate test DB if needed
+2. For parallel execution issues
+   - Always use `--test-threads=1`
+3. For migration issues
+   - Run `sqlx migrate run`
 
-### データベース接続エラー
+### Database Connection Errors
 
 ```bash
-# PostgreSQLが起動しているか確認
+# Check if PostgreSQL is running
 docker-compose ps
 
-# 起動していない場合
+# If not running
 docker-compose up -d postgres
 
-# マイグレーションの実行
+# Run migrations
 cd backend
 sqlx migrate run
 ```
 
-### ビルドエラー
+### Build Errors
 
 ```bash
 # Rust
@@ -1124,14 +1085,14 @@ rm -rf node_modules .svelte-kit
 npm install
 ```
 
-### 不要ファイルのクリーンアップ
+### Cleaning Untracked Files
 
 ```bash
-# 未追跡ファイルの確認
+# Check untracked files
 git clean -n
 
-# 未追跡ファイルとディレクトリの削除
+# Delete untracked files and directories
 git clean -fd
 ```
 
-このファイルの指示に従い、安全で高品質なコード開発を行ってください。
+Follow these guidelines for safe and high-quality code development.
