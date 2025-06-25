@@ -2486,6 +2486,7 @@ dependencies = [
  "redis",
  "regex",
  "reqwest",
+ "rustforce",
  "serde",
  "serde_json",
  "sqlx",
@@ -3480,6 +3481,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
+]
+
+[[package]]
+name = "rustforce"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "742f441b5005f8b38c5430e1bc15e37ea96ed1de10fdb3dfa625e68add265f3d"
+dependencies = [
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

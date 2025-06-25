@@ -10,6 +10,7 @@ pub mod ai;
 pub mod ai_usage;
 pub mod auth;
 pub mod campaigns;
+pub mod crm;
 pub mod email;
 pub mod forms;
 pub mod integrations;
@@ -170,6 +171,23 @@ pub fn create_routes() -> Router<AppState> {
         // AI使用量
         .route("/api/ai/usage/stats", get(ai_usage::get_ai_usage_stats))
         .route("/api/ai/usage/history", get(ai_usage::get_ai_usage_history))
+        // CRM統合
+        .route(
+            "/api/crm/auth/salesforce",
+            post(crm::authenticate_salesforce),
+        )
+        .route("/api/crm/salesforce/orgs", get(crm::list_salesforce_orgs))
+        .route("/api/crm/integrations", post(crm::create_crm_integration))
+        .route(
+            "/api/crm/integrations/current",
+            get(crm::get_crm_integration),
+        )
+        .route(
+            "/api/crm/integrations/:id",
+            delete(crm::delete_crm_integration),
+        )
+        .route("/api/crm/sync/contacts", post(crm::sync_contacts))
+        .route("/api/crm/sync/campaigns", post(crm::sync_campaigns))
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 
