@@ -1,6 +1,7 @@
 pub mod ai_usage_service;
 pub mod auth_service;
 pub mod campaign_service;
+pub mod crm_service;
 pub mod email_service;
 pub mod markdown_service;
 pub mod sequence_service;

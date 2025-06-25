@@ -1,5 +1,6 @@
 pub mod ai_usage;
 pub mod campaign;
+pub mod crm;
 pub mod form;
 pub mod sequence;
 pub mod subscriber;

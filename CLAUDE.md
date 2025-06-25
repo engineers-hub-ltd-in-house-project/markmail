@@ -123,6 +123,22 @@ code in this repository.
     changes
   - ✅ ALWAYS: Keep `_sqlx_migrations` table and migrations directory in sync
 
+### 3.1. **MANDATORY: Migration File is the ONLY Source of Truth**
+
+- **MANDATORY: NEVER manually fix SQLx compile errors by modifying database
+  schema directly**
+- **MANDATORY: DDL defined in migration files is ABSOLUTE - NEVER bypass it**
+- **MANDATORY: When SQLx compile errors occur due to schema mismatch:**
+  1. Check the migration file for the intended schema
+  2. Run `sqlx migrate run` to apply migrations
+  3. Run `cargo sqlx prepare` to update offline cache
+  4. NEVER manually alter tables to "fix" compile errors
+- **MANDATORY: Design database schemas carefully BEFORE creating migration
+  files**
+- **MANDATORY: Review migration SQL thoroughly - it cannot be changed after
+  creation**
+- **MANDATORY: Small, incremental migrations are better than large changes**
+
 ### 4. **MANDATORY: Never Expose Secrets**
 
 - Never commit or display `.env` file contents
@@ -144,6 +160,70 @@ code in this repository.
 - **MANDATORY: Take responsibility for ALL issues**
 - **MANDATORY: Fix ALL issues discovered during work**
 - **MANDATORY: Show through actions, not excuses**
+
+### 7. **MANDATORY: Careful and Deliberate Development**
+
+- **MANDATORY: Design types, interfaces, and structs carefully - NO sloppy
+  implementations**
+- **MANDATORY: Small, incremental changes are better than large, risky changes**
+- **MANDATORY: Always consider the impact on existing code before making
+  changes**
+- **MANDATORY: Review your changes thoroughly before committing**
+- **MANDATORY: When in doubt, research existing patterns in the codebase**
+- **MANDATORY: Never rush implementation - correctness over speed**
+
+### 8. **MANDATORY: Best Practice Development Process**
+
+When implementing new features, follow this proven approach:
+
+1. **MANDATORY: Create clear task list with TodoWrite tool**
+
+   - Break down the work into specific, manageable tasks
+   - Track progress systematically
+   - Mark tasks as completed immediately when done
+
+2. **MANDATORY: Study existing patterns BEFORE implementation**
+
+   - Use Task tool to research similar code patterns
+   - Understand how existing services are structured
+   - Follow established conventions religiously
+
+3. **MANDATORY: Start with data models**
+
+   - Design your types and structs carefully
+   - Consider all fields and their relationships
+   - Use appropriate derives (Debug, Clone, Serialize, Deserialize)
+
+4. **MANDATORY: Design database schema with extreme care**
+
+   - Create migration files with descriptive names
+   - Include appropriate constraints and indexes
+   - NEVER modify migration files after creation
+   - Run migrations and `cargo sqlx prepare` immediately
+
+5. **MANDATORY: Implement services following provider pattern**
+
+   - Create trait definitions for abstraction
+   - Implement concrete providers
+   - Use proper error handling with custom error types
+   - Add #[allow(dead_code)] for WIP code to avoid warnings
+
+6. **MANDATORY: Update module declarations**
+
+   - Add new modules to mod.rs files
+   - Maintain alphabetical order
+   - Check compilation frequently with `cargo check`
+
+7. **MANDATORY: Test continuously**
+
+   - Run tests after each significant change
+   - All tests must pass before committing
+   - Use `cargo test -- --test-threads=1` to avoid flaky tests
+
+8. **MANDATORY: Commit incrementally**
+   - Make small, focused commits
+   - Write clear commit messages
+   - Never commit broken code
 
 ## 🛠️ Common Development Commands
 
