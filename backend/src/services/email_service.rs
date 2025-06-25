@@ -624,7 +624,7 @@ mod tests {
 
     #[test]
     fn test_email_config_from_env() {
-        std::env::set_var("MAIL_PROVIDER", "mailhog");
+        std::env::set_var("EMAIL_PROVIDER", "mailhog");
         std::env::set_var("SMTP_FROM", "test@example.com");
         std::env::set_var("SMTP_HOST", "localhost");
         std::env::set_var("SMTP_PORT", "1025");
