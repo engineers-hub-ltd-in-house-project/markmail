@@ -10,6 +10,7 @@ use crate::models::crm::{
 };
 
 pub mod salesforce;
+pub mod salesforce_auth;
 
 /// CRMプロバイダーのエラー型
 #[derive(Error, Debug)]
