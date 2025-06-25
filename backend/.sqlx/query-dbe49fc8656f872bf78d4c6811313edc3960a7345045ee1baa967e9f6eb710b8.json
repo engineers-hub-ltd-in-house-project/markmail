@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO crm_integrations (\n            user_id, provider, org_id, instance_url,\n            credentials, settings, salesforce_settings,\n            field_mappings\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n        ON CONFLICT (user_id, provider) \n        DO UPDATE SET\n            org_id = EXCLUDED.org_id,\n            instance_url = EXCLUDED.instance_url,\n            credentials = EXCLUDED.credentials,\n            settings = EXCLUDED.settings,\n            salesforce_settings = EXCLUDED.salesforce_settings,\n            field_mappings = EXCLUDED.field_mappings,\n            sync_enabled = true,\n            updated_at = NOW()\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Varchar", "Varchar", "Jsonb", "Jsonb", "Jsonb", "Jsonb"]
+    },
+    "nullable": [false]
+  },
+  "hash": "dbe49fc8656f872bf78d4c6811313edc3960a7345045ee1baa967e9f6eb710b8"
+}

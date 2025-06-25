@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE crm_integrations\n        SET \n            last_sync_at = $2,\n            updated_at = NOW()\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Timestamptz"]
+    },
+    "nullable": []
+  },
+  "hash": "17b67aab72a89a1efe50e768b95e70e15e63c17f24fbaaf4d2fa0bc7a666903d"
+}

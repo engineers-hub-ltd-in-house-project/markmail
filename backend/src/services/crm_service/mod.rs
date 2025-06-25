@@ -4,9 +4,14 @@ use std::sync::Arc;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::models::crm::{
-    CrmBulkSyncResult, CrmCampaign, CrmContact, CrmCustomField, CrmEmailActivity, CrmFeature,
-    CrmFieldMapping, CrmList, CrmProviderType, CrmSyncResult,
+use crate::{
+    database::crm_integrations::{
+        self, CreateCrmIntegrationParams, CreateSyncLogParams, CrmIntegration,
+    },
+    models::crm::{
+        CrmBulkSyncResult, CrmCampaign, CrmContact, CrmCustomField, CrmEmailActivity, CrmFeature,
+        CrmFieldMapping, CrmIntegrationSettings, CrmList, CrmProviderType, CrmSyncResult,
+    },
 };
 
 pub mod salesforce;
@@ -89,6 +94,17 @@ pub struct SalesforceConfig {
     pub refresh_token: Option<String>,
 }
 
+/// 統合設定保存パラメータ
+pub struct SaveIntegrationParams<'a> {
+    pub user_id: Uuid,
+    pub provider: CrmProviderType,
+    pub org_id: &'a str,
+    pub instance_url: &'a str,
+    pub access_token: &'a str,
+    pub refresh_token: Option<&'a str>,
+    pub settings: &'a CrmIntegrationSettings,
+}
+
 /// CRMサービス
 pub struct CrmService {
     provider: Arc<Box<dyn CrmProvider>>,
@@ -114,12 +130,54 @@ impl CrmService {
     }
 
     /// データベースから設定を読み込む
-    async fn load_config_from_db(_pool: &PgPool, _user_id: Uuid) -> Result<CrmConfig, CrmError> {
-        // TODO: 実際のデータベースクエリを実装
-        // 現在は仮の実装
-        Err(CrmError::Configuration(
-            "CRM統合が設定されていません".to_string(),
-        ))
+    async fn load_config_from_db(pool: &PgPool, user_id: Uuid) -> Result<CrmConfig, CrmError> {
+        // Salesforce統合を取得（現在はSalesforceのみサポート）
+        let integration =
+            crm_integrations::get_user_crm_integration(pool, user_id, CrmProviderType::Salesforce)
+                .await?
+                .ok_or_else(|| {
+                    CrmError::Configuration("CRM統合が設定されていません".to_string())
+                })?;
+
+        if !integration.is_active() {
+            return Err(CrmError::Configuration(
+                "CRM統合が無効化されています".to_string(),
+            ));
+        }
+
+        // Salesforce設定を構築
+        let api_version = integration
+            .salesforce_settings
+            .as_ref()
+            .and_then(|s| s.get("api_version"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("v60.0")
+            .to_string();
+
+        let instance_url = integration.instance_url.clone().ok_or_else(|| {
+            CrmError::Configuration("インスタンスURLが設定されていません".to_string())
+        })?;
+
+        let access_token = integration.get_access_token().ok_or_else(|| {
+            CrmError::Configuration("アクセストークンが設定されていません".to_string())
+        })?;
+
+        let refresh_token = integration.get_refresh_token();
+
+        let salesforce_config = SalesforceConfig {
+            org_alias: integration.org_id.unwrap_or_default(),
+            api_version,
+            instance_url,
+            access_token,
+            refresh_token,
+        };
+
+        Ok(CrmConfig {
+            provider: CrmProviderType::Salesforce,
+            salesforce_config: Some(salesforce_config),
+            sync_enabled: true,
+            batch_size: 100,
+        })
     }
 
     /// プロバイダーを作成
@@ -145,24 +203,94 @@ impl CrmService {
 
     /// 統合設定を保存
     pub async fn save_integration(
-        &self,
-        _user_id: Uuid,
-        _config: CrmConfig,
-        _credentials: serde_json::Value,
+        pool: &PgPool,
+        params: SaveIntegrationParams<'_>,
     ) -> Result<Uuid, CrmError> {
-        // TODO: データベースに統合設定を保存
-        Err(CrmError::Unknown("未実装".to_string()))
+        let integration_params = CreateCrmIntegrationParams {
+            user_id: params.user_id,
+            provider: params.provider,
+            org_id: params.org_id,
+            instance_url: params.instance_url,
+            access_token: params.access_token,
+            refresh_token: params.refresh_token,
+            settings: params.settings,
+        };
+
+        let integration_id =
+            crm_integrations::create_crm_integration(pool, integration_params).await?;
+
+        Ok(integration_id)
     }
 
     /// 同期ログを記録
     pub async fn log_sync_activity(
-        &self,
-        _integration_id: Uuid,
-        _sync_type: &str,
-        _entity_type: &str,
-        _result: &CrmBulkSyncResult,
+        pool: &PgPool,
+        integration_id: Uuid,
+        entity_type: &str,
+        results: &[CrmSyncResult],
     ) -> Result<(), CrmError> {
-        // TODO: 同期ログをデータベースに記録
+        let entity_count = results.len() as i32;
+        let success_count = results.iter().filter(|r| r.success).count() as i32;
+        let error_count = entity_count - success_count;
+
+        let error_details = if error_count > 0 {
+            let errors: Vec<_> = results
+                .iter()
+                .filter(|r| !r.success)
+                .filter_map(|r| r.error_message.as_ref())
+                .map(|e| e.as_str())
+                .collect();
+            Some(serde_json::json!({"errors": errors}))
+        } else {
+            None
+        };
+
+        let params = CreateSyncLogParams {
+            integration_id,
+            sync_type: "manual", // TODO: 同期タイプをパラメータ化
+            entity_type,
+            entity_count,
+            success_count,
+            error_count,
+            error_details,
+        };
+
+        crm_integrations::create_sync_log(pool, params).await?;
+
+        // 個別の同期ステータスを記録
+        for result in results {
+            if result.success {
+                crm_integrations::upsert_sync_status(
+                    pool,
+                    integration_id,
+                    entity_type,
+                    result.markmail_id,
+                    &result.crm_id,
+                    "synced",
+                )
+                .await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 統合設定を取得
+    pub async fn get_integration(
+        pool: &PgPool,
+        user_id: Uuid,
+        provider: CrmProviderType,
+    ) -> Result<Option<CrmIntegration>, CrmError> {
+        Ok(crm_integrations::get_user_crm_integration(pool, user_id, provider).await?)
+    }
+
+    /// 統合を無効化
+    pub async fn deactivate_integration(
+        pool: &PgPool,
+        integration_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<(), CrmError> {
+        crm_integrations::deactivate_crm_integration(pool, integration_id, user_id).await?;
         Ok(())
     }
 }
