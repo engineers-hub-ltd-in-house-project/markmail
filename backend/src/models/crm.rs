@@ -4,6 +4,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::models::subscriber::Subscriber;
+
 /// CRMプロバイダーの種類
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -35,6 +37,49 @@ pub struct CrmContact {
     pub tags: Vec<String>,
     pub custom_fields: HashMap<String, Value>,
     pub last_sync_at: Option<DateTime<Utc>>,
+}
+
+impl CrmContact {
+    /// SubscriberからCrmContactを作成
+    pub fn from_subscriber(subscriber: &Subscriber) -> Self {
+        // 名前を分割（簡易版）
+        let (first_name, last_name) = if let Some(full_name) = &subscriber.name {
+            let parts: Vec<&str> = full_name.splitn(2, ' ').collect();
+            match parts.len() {
+                0 => (None, None),
+                1 => (Some(parts[0].to_string()), None),
+                _ => (Some(parts[0].to_string()), Some(parts[1].to_string())),
+            }
+        } else {
+            (None, None)
+        };
+
+        // カスタムフィールドの変換
+        let custom_fields = if subscriber.custom_fields.is_object() {
+            subscriber
+                .custom_fields
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
+        Self {
+            id: None, // CRM側のIDはまだない
+            markmail_id: subscriber.id,
+            email: subscriber.email.clone(),
+            first_name,
+            last_name,
+            company: None, // 購読者モデルには会社情報がない
+            phone: None,   // 購読者モデルには電話番号がない
+            tags: subscriber.tags.clone(),
+            custom_fields,
+            last_sync_at: None,
+        }
+    }
 }
 
 /// CRMキャンペーンデータ
