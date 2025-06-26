@@ -1,0 +1,51 @@
+[package]
+name = "salesforce-bulk-api"
+version = "0.1.0"
+edition = "2021"
+authors = ["MarkMail Team"]
+description = "Rust client for Salesforce Bulk API 2.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/engineers-hub-ltd-in-house-project/markmail"
+keywords = ["salesforce", "bulk-api", "crm", "api-client"]
+categories = ["api-bindings", "asynchronous"]
+
+[dependencies]
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "stream", "multipart"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CSV handling
+csv = "1.3"
+
+# Error handling
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+
+# URL handling
+url = "2.5"
+
+# Base64 encoding
+base64 = "0.22"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+mockito = "1.0"
+pretty_assertions = "1.0"
+
+# Environment variables for tests
+dotenv = "0.15"

@@ -8,8 +8,9 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
+    database::subscribers::find_subscriber_by_id,
     middleware::auth::AuthUser,
-    models::crm::{CrmIntegrationSettings, CrmProviderType},
+    models::crm::{CrmContact, CrmIntegrationSettings, CrmProviderType},
     services::crm_service::{salesforce_auth::SalesforceAuth, CrmService, SaveIntegrationParams},
     AppState,
 };
@@ -279,23 +280,37 @@ pub async fn sync_contacts(
     let mut failed = 0;
 
     for entity_id in req.entity_ids {
-        // TODO: 実際の連絡先データを取得して同期
-        // 現在は仮の実装
-        let sync_result = crm_service
-            .provider()
-            .sync_contact(&crate::models::crm::CrmContact {
-                id: None,
-                markmail_id: entity_id,
-                email: "test@example.com".to_string(),
-                first_name: Some("Test".to_string()),
-                last_name: Some("User".to_string()),
-                company: None,
-                phone: None,
-                tags: vec![],
-                custom_fields: Default::default(),
-                last_sync_at: None,
-            })
-            .await;
+        // 購読者データを取得
+        let subscriber = match find_subscriber_by_id(&state.db, entity_id, auth_user.user_id).await
+        {
+            Ok(Some(sub)) => sub,
+            Ok(None) => {
+                failed += 1;
+                results.push(SyncResultItem {
+                    entity_id,
+                    crm_id: None,
+                    success: false,
+                    error: Some("購読者が見つかりません".to_string()),
+                });
+                continue;
+            }
+            Err(e) => {
+                failed += 1;
+                results.push(SyncResultItem {
+                    entity_id,
+                    crm_id: None,
+                    success: false,
+                    error: Some(format!("購読者の取得に失敗: {}", e)),
+                });
+                continue;
+            }
+        };
+
+        // 購読者をCRMコンタクトに変換
+        let crm_contact = CrmContact::from_subscriber(&subscriber);
+
+        // CRMに同期
+        let sync_result = crm_service.provider().sync_contact(&crm_contact).await;
 
         match sync_result {
             Ok(result) => {
@@ -348,6 +363,111 @@ pub async fn sync_contacts(
         success,
         failed,
         results,
+    };
+
+    Ok(Json(response))
+}
+
+/// すべての購読者を一括同期
+pub async fn bulk_sync_subscribers(
+    State(state): State<AppState>,
+    Extension(auth_user): Extension<AuthUser>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    use crate::database::subscribers::list_subscribers;
+    use crate::models::subscriber::SubscriberStatus;
+
+    // CRMサービスを初期化
+    let crm_service = match CrmService::new(state.db.clone(), auth_user.user_id).await {
+        Ok(service) => service,
+        Err(e) => {
+            return Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                format!("CRMサービスの初期化に失敗: {}", e),
+            ));
+        }
+    };
+
+    // 統合情報を取得
+    let integration = match CrmService::get_integration(
+        &state.db,
+        auth_user.user_id,
+        CrmProviderType::Salesforce,
+    )
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("統合設定の取得に失敗: {}", e),
+        )
+    })? {
+        Some(integration) => integration,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "CRM統合が設定されていません".to_string(),
+            ));
+        }
+    };
+
+    // すべてのアクティブな購読者を取得
+    let subscribers = list_subscribers(
+        &state.db,
+        auth_user.user_id,
+        Some(10000), // 大量データ処理のため上限を設定
+        Some(0),
+        Some(SubscriberStatus::Active),
+        None, // search
+        None, // tag
+    )
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("購読者の取得に失敗: {}", e),
+        )
+    })?;
+
+    // 購読者をCRMコンタクトに変換
+    let crm_contacts: Vec<CrmContact> = subscribers
+        .iter()
+        .map(CrmContact::from_subscriber)
+        .collect();
+
+    // Bulk API 2.0を使用して一括同期
+    let bulk_result = crm_service
+        .provider()
+        .bulk_sync_contacts(crm_contacts)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("一括同期に失敗: {}", e),
+            )
+        })?;
+
+    // 同期結果をログに記録
+    if let Err(e) =
+        CrmService::log_sync_activity(&state.db, integration.id, "contact", &bulk_result.results)
+            .await
+    {
+        eprintln!("同期ログの記録に失敗: {}", e);
+    }
+
+    // レスポンスを構築
+    let response = CrmSyncResponse {
+        total: bulk_result.total,
+        success: bulk_result.success,
+        failed: bulk_result.failed,
+        results: bulk_result
+            .results
+            .into_iter()
+            .map(|r| SyncResultItem {
+                entity_id: r.markmail_id,
+                crm_id: Some(r.crm_id),
+                success: r.success,
+                error: r.error_message,
+            })
+            .collect(),
     };
 
     Ok(Json(response))

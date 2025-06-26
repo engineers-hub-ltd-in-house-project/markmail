@@ -188,6 +188,10 @@ pub fn create_routes() -> Router<AppState> {
         )
         .route("/api/crm/sync/contacts", post(crm::sync_contacts))
         .route("/api/crm/sync/campaigns", post(crm::sync_campaigns))
+        .route(
+            "/api/crm/sync/subscribers/bulk",
+            post(crm::bulk_sync_subscribers),
+        )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));
 
