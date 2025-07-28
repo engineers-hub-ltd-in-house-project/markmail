@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::models::crm::{
     CrmBulkSyncResult, CrmCampaign, CrmContact, CrmCustomField, CrmEmailActivity, CrmFeature,
-    CrmFieldMapping, CrmList, CrmSyncResult, EmailActivityType,
+    CrmFieldMapping, CrmLead, CrmList, CrmSyncResult, EmailActivityType,
 };
 
 use super::{CrmError, CrmProvider, SalesforceConfig};
@@ -41,6 +41,30 @@ pub struct SalesforceContact {
     pub mailing_country: Option<String>,
     #[serde(rename = "MarkMail_ID__c")]
     pub markmail_id: Option<String>,
+}
+
+/// Salesforce Lead オブジェクト
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct SalesforceLead {
+    #[serde(rename = "attributes")]
+    pub attributes: Option<SalesforceAttributes>,
+    #[serde(rename = "Id")]
+    pub id: Option<String>,
+    pub email: String,
+    pub first_name: Option<String>,
+    pub last_name: String, // Required in Salesforce
+    pub company: String,   // Required in Salesforce
+    pub phone: Option<String>,
+    pub title: Option<String>,
+    pub website: Option<String>,
+    pub lead_source: Option<String>,
+    pub status: Option<String>,
+    // pub description: Option<String>, // Not available in this Salesforce org
+    #[serde(rename = "MarkMail_Form_ID__c")]
+    pub markmail_form_id: Option<String>,
+    #[serde(rename = "MarkMail_Submission_ID__c")]
+    pub markmail_submission_id: Option<String>,
 }
 
 /// Salesforce Campaign オブジェクト
@@ -162,6 +186,34 @@ impl SalesforceProvider {
             mailing_postal_code: None,
             mailing_country: None,
             markmail_id: Some(contact.markmail_id.to_string()),
+        }
+    }
+
+    /// CrmLeadをSalesforceLeadに変換
+    fn to_salesforce_lead(&self, lead: &CrmLead) -> SalesforceLead {
+        SalesforceLead {
+            attributes: None, // 作成/更新時は不要
+            id: lead.id.clone(),
+            email: lead.email.clone(),
+            first_name: lead.first_name.clone(),
+            // Salesforceでは姓は必須なので、なければ"Unknown"を設定
+            last_name: lead
+                .last_name
+                .clone()
+                .unwrap_or_else(|| "Unknown".to_string()),
+            // Salesforceでは会社名は必須なので、なければ"Unknown"を設定
+            company: lead
+                .company
+                .clone()
+                .unwrap_or_else(|| "Unknown Company".to_string()),
+            phone: lead.phone.clone(),
+            title: lead.title.clone(),
+            website: lead.website.clone(),
+            lead_source: Some(lead.lead_source.clone()),
+            status: lead.status.clone(),
+            // description: lead.description.clone(), // Not available in this Salesforce org
+            markmail_form_id: Some(lead.markmail_form_id.to_string()),
+            markmail_submission_id: lead.markmail_submission_id.map(|id| id.to_string()),
         }
     }
 
@@ -442,6 +494,111 @@ impl CrmProvider for SalesforceProvider {
         Err(CrmError::Unknown(
             "リストメンバーシップ同期は未実装です".to_string(),
         ))
+    }
+
+    async fn create_lead(&self, lead: &CrmLead) -> Result<CrmSyncResult, CrmError> {
+        let client = self.get_client()?;
+
+        // 既存のリードを確認（重複防止）
+        let query = format!(
+            "SELECT Id, Email FROM Lead WHERE Email = '{}' LIMIT 1",
+            lead.email
+        );
+
+        let existing_lead: QueryResponse<SalesforceLead> = client
+            .query(&query)
+            .await
+            .map_err(|e| CrmError::ApiError(format!("リード検索エラー: {}", e)))?;
+
+        let (crm_id, _created) = if let Some(existing) = existing_lead.records.first() {
+            // 既存のリードがある場合は更新
+            if let Some(id) = &existing.id {
+                let sf_lead = self.to_salesforce_lead(lead);
+                let params = serde_json::to_value(&sf_lead)
+                    .map_err(|e| CrmError::DataConversion(e.to_string()))?;
+
+                client
+                    .update("Lead", id, params)
+                    .await
+                    .map_err(|e| CrmError::ApiError(format!("リード更新エラー: {}", e)))?;
+
+                (id.clone(), false)
+            } else {
+                return Err(CrmError::ApiError(
+                    "既存リードのIDが取得できません".to_string(),
+                ));
+            }
+        } else {
+            // 新規リードを作成
+            let sf_lead = self.to_salesforce_lead(lead);
+            let params = serde_json::to_value(&sf_lead)
+                .map_err(|e| CrmError::DataConversion(e.to_string()))?;
+
+            let result = client
+                .create("Lead", params)
+                .await
+                .map_err(|e| CrmError::ApiError(format!("リード作成エラー: {}", e)))?;
+
+            (result.id, true)
+        };
+
+        Ok(CrmSyncResult {
+            entity_type: "Lead".to_string(),
+            markmail_id: lead.markmail_form_id,
+            crm_id,
+            success: true,
+            error_message: None,
+            synced_at: Utc::now(),
+        })
+    }
+
+    async fn get_lead(&self, email: &str) -> Result<Option<CrmLead>, CrmError> {
+        let client = self.get_client()?;
+        let query = format!(
+            "SELECT Id, Email, FirstName, LastName, Company, Phone, Title, Website, \
+             LeadSource, Status, MarkMail_Form_ID__c, MarkMail_Submission_ID__c \
+             FROM Lead WHERE Email = '{}' LIMIT 1",
+            email
+        );
+
+        let response: QueryResponse<SalesforceLead> = client
+            .query(&query)
+            .await
+            .map_err(|e| CrmError::ApiError(format!("リード取得エラー: {}", e)))?;
+
+        if let Some(sf_lead) = response.records.first() {
+            Ok(Some(CrmLead {
+                id: sf_lead.id.clone(),
+                markmail_form_id: sf_lead
+                    .markmail_form_id
+                    .as_ref()
+                    .and_then(|id| Uuid::parse_str(id).ok())
+                    .unwrap_or_default(),
+                markmail_submission_id: sf_lead
+                    .markmail_submission_id
+                    .as_ref()
+                    .and_then(|id| Uuid::parse_str(id).ok()),
+                email: sf_lead.email.clone(),
+                first_name: sf_lead.first_name.clone(),
+                last_name: Some(sf_lead.last_name.clone()),
+                company: Some(sf_lead.company.clone()),
+                phone: sf_lead.phone.clone(),
+                title: sf_lead.title.clone(),
+                website: sf_lead.website.clone(),
+                lead_source: sf_lead.lead_source.clone().unwrap_or_default(),
+                status: sf_lead.status.clone(),
+                description: None, // Not available in this Salesforce org
+                custom_fields: std::collections::HashMap::new(),
+                created_at: Utc::now(), // TODO: Salesforceから実際の作成日時を取得
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn convert_lead_to_contact(&self, _lead_id: &str) -> Result<CrmSyncResult, CrmError> {
+        // Salesforceのリード変換はより複雑なので、現時点では未実装
+        Err(CrmError::Unknown("リード変換機能は未実装です".to_string()))
     }
 
     async fn get_custom_fields(&self) -> Result<Vec<CrmCustomField>, CrmError> {
