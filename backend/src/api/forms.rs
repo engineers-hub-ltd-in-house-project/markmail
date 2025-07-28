@@ -8,14 +8,15 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::{
-    database::{forms, subscribers},
+    database::{crm_integrations, forms, subscribers},
     middleware::auth::AuthUser,
+    models::crm::{CrmLead, CrmProviderType},
     models::form::{
         CreateFormRequest, CreateFormSubmissionRequest, Form, FormSubmission, UpdateFormRequest,
     },
     models::sequence::TriggerType,
     models::subscriber::{CreateSubscriberRequest, SubscriberStatus},
-    services::sequence_service::SequenceService,
+    services::{crm_service::CrmService, sequence_service::SequenceService},
     AppState,
 };
 
@@ -379,7 +380,7 @@ pub async fn submit_form(
                 match forms::create_form_submission(
                     &state.db,
                     form_id,
-                    request.data,
+                    request.data.clone(),
                     subscriber_id,
                     None, // TODO: IP address
                     None, // TODO: User agent
@@ -406,6 +407,46 @@ pub async fn submit_form(
                             {
                                 tracing::error!("シーケンスエンロールメントエラー: {}", e);
                                 // エラーが発生してもレスポンスは返す（フォーム送信は成功しているため）
+                            }
+                        }
+
+                        // CRM統合をチェックしてリードを作成
+                        if let Ok(Some(integration)) = crm_integrations::get_user_crm_integration(
+                            &state.db,
+                            form.user_id,
+                            CrmProviderType::Salesforce,
+                        )
+                        .await
+                        {
+                            if integration.is_active() {
+                                // リードデータを作成
+                                let lead = CrmLead::from_form_submission(
+                                    form_id,
+                                    Some(submission.id),
+                                    &request.data,
+                                    &form.form_fields,
+                                    &form.name,
+                                );
+
+                                // CRMサービスを使用してリードを作成
+                                match CrmService::new(state.db.clone(), form.user_id).await {
+                                    Ok(crm_service) => {
+                                        if let Err(e) =
+                                            crm_service.provider().create_lead(&lead).await
+                                        {
+                                            tracing::error!("Salesforceリード作成エラー: {:?}", e);
+                                            // エラーが発生してもフォーム送信は成功しているのでレスポンスは返す
+                                        } else {
+                                            tracing::info!(
+                                                "Salesforceリードを作成しました: {}",
+                                                lead.email
+                                            );
+                                        }
+                                    }
+                                    Err(e) => {
+                                        tracing::error!("CRMサービス初期化エラー: {:?}", e);
+                                    }
+                                }
                             }
                         }
 

@@ -82,6 +82,143 @@ impl CrmContact {
     }
 }
 
+/// CRMリードデータ
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrmLead {
+    pub id: Option<String>,                   // CRM側のID
+    pub markmail_form_id: Uuid,               // MarkMail側のform ID
+    pub markmail_submission_id: Option<Uuid>, // MarkMail側のform submission ID
+    pub email: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub company: Option<String>,
+    pub phone: Option<String>,
+    pub title: Option<String>,
+    pub website: Option<String>,
+    pub lead_source: String,    // e.g., "Web Form", "MarkMail Form"
+    pub status: Option<String>, // e.g., "New", "Contacted", "Qualified"
+    pub description: Option<String>,
+    pub custom_fields: HashMap<String, Value>,
+    pub created_at: DateTime<Utc>,
+}
+
+impl CrmLead {
+    /// フォーム送信データからCrmLeadを作成
+    pub fn from_form_submission(
+        form_id: Uuid,
+        submission_id: Option<Uuid>,
+        form_data: &Value,
+        form_fields: &Value,
+        form_name: &str,
+    ) -> Self {
+        let mut lead = Self {
+            id: None,
+            markmail_form_id: form_id,
+            markmail_submission_id: submission_id,
+            email: String::new(),
+            first_name: None,
+            last_name: None,
+            company: None,
+            phone: None,
+            title: None,
+            website: None,
+            lead_source: format!("MarkMail Form: {}", form_name),
+            status: Some("New".to_string()),
+            description: None,
+            custom_fields: HashMap::new(),
+            created_at: Utc::now(),
+        };
+
+        // フォームデータから各フィールドを抽出
+        if let (Value::Object(data), Value::Array(fields)) = (form_data, form_fields) {
+            for field in fields {
+                if let Value::Object(field_obj) = field {
+                    if let (Some(Value::String(field_type)), Some(Value::String(field_name))) =
+                        (field_obj.get("field_type"), field_obj.get("name"))
+                    {
+                        if let Some(value) = data.get(field_name) {
+                            match field_type.as_str() {
+                                "email" => {
+                                    if let Value::String(email) = value {
+                                        lead.email = email.clone();
+                                    }
+                                }
+                                "text" => {
+                                    if let Value::String(text) = value {
+                                        // フィールド名に基づいて適切なフィールドに設定
+                                        if field_name.contains("first") || field_name.contains("名")
+                                        {
+                                            lead.first_name = Some(text.clone());
+                                        } else if field_name.contains("last")
+                                            || field_name.contains("姓")
+                                        {
+                                            lead.last_name = Some(text.clone());
+                                        } else if field_name.contains("company")
+                                            || field_name.contains("会社")
+                                        {
+                                            lead.company = Some(text.clone());
+                                        } else if field_name.contains("title")
+                                            || field_name.contains("役職")
+                                        {
+                                            lead.title = Some(text.clone());
+                                        } else if field_name.contains("name")
+                                            || field_name.contains("名前")
+                                        {
+                                            // フルネームの場合は分割
+                                            let parts: Vec<&str> = text.splitn(2, ' ').collect();
+                                            if parts.len() == 2 {
+                                                lead.first_name = Some(parts[0].to_string());
+                                                lead.last_name = Some(parts[1].to_string());
+                                            } else {
+                                                lead.first_name = Some(text.clone());
+                                            }
+                                        } else {
+                                            // その他のテキストフィールドはカスタムフィールドとして保存
+                                            lead.custom_fields
+                                                .insert(field_name.clone(), value.clone());
+                                        }
+                                    }
+                                }
+                                "phone" => {
+                                    if let Value::String(phone) = value {
+                                        lead.phone = Some(phone.clone());
+                                    }
+                                }
+                                "url" => {
+                                    if let Value::String(url) = value {
+                                        if field_name.contains("website")
+                                            || field_name.contains("web")
+                                        {
+                                            lead.website = Some(url.clone());
+                                        } else {
+                                            lead.custom_fields
+                                                .insert(field_name.clone(), value.clone());
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    // その他のフィールドタイプはカスタムフィールドとして保存
+                                    lead.custom_fields.insert(field_name.clone(), value.clone());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // フォーム送信の詳細を説明に追加
+        lead.description = Some(format!(
+            "Lead created from MarkMail form submission.\nForm: {}\nSubmission ID: {}\nSubmitted at: {}",
+            form_name,
+            submission_id.map(|id| id.to_string()).unwrap_or_else(|| "N/A".to_string()),
+            lead.created_at.format("%Y-%m-%d %H:%M:%S UTC")
+        ));
+
+        lead
+    }
+}
+
 /// CRMキャンペーンデータ
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrmCampaign {

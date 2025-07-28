@@ -10,7 +10,7 @@ use crate::{
     },
     models::crm::{
         CrmBulkSyncResult, CrmCampaign, CrmContact, CrmCustomField, CrmEmailActivity, CrmFeature,
-        CrmFieldMapping, CrmIntegrationSettings, CrmList, CrmProviderType, CrmSyncResult,
+        CrmFieldMapping, CrmIntegrationSettings, CrmLead, CrmList, CrmProviderType, CrmSyncResult,
     },
 };
 
@@ -60,6 +60,11 @@ pub trait CrmProvider: Send + Sync {
         &self,
         contacts: Vec<CrmContact>,
     ) -> Result<CrmBulkSyncResult, CrmError>;
+
+    // リード管理
+    async fn create_lead(&self, lead: &CrmLead) -> Result<CrmSyncResult, CrmError>;
+    async fn get_lead(&self, email: &str) -> Result<Option<CrmLead>, CrmError>;
+    async fn convert_lead_to_contact(&self, lead_id: &str) -> Result<CrmSyncResult, CrmError>;
 
     // キャンペーン・アクティビティ管理
     async fn sync_campaign(&self, campaign: &CrmCampaign) -> Result<CrmSyncResult, CrmError>;
