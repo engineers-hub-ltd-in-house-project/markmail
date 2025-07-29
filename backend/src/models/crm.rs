@@ -6,6 +6,63 @@ use uuid::Uuid;
 
 use crate::models::subscriber::Subscriber;
 
+// Salesforce Lead カスタムフィールドマッピング定数
+pub mod salesforce_field_mapping {
+    // プログラミング言語スキルフィールドマッピング
+    pub const PROGRAMMING_LANGUAGE_FIELDS: &[(&str, &str)] = &[
+        ("java", "00NIR00000FTrIJ"),
+        ("python", "00NIR00000FTrIO"),
+        ("javascript_typescript", "00NIR00000FTrIT"),
+        ("c_cpp", "00NIR00000FTrIY"),
+        ("csharp", "00NIR00000FTrId"),
+        ("php", "00NIR00000FTrIi"),
+        ("go", "00NIR00000FTrIn"),
+        ("ruby", "00NIR00000FTrIs"),
+        ("swift", "00NIR00000FTrIx"),
+        ("kotlin", "00NIR00000FTrJ2"),
+    ];
+
+    // フレームワーク・技術スタックフィールドマッピング
+    pub const TECH_STACK_FIELDS: &[(&str, &str)] = &[
+        ("react", "00NIR00000FTrNZ"),
+        ("nextjs", "00NIR00000FTrNe"),
+        ("django", "00NIR00000FTrNj"),
+        ("ruby_on_rails", "00NIR00000FTrNo"),
+        ("react_native", "00NIR00000FTrNt"),
+        ("postgresql", "00NIR00000FTrNy"),
+        ("sql_server", "00NIR00000FTrO3"),
+        ("kubernetes", "00NIR00000FTrO8"),
+        ("azure", "00NIR00000FTrOD"),
+        ("vue_js", "00NIR00000FTrOI"),
+        ("svelte", "00NIR00000FTrON"),
+        ("flask", "00NIR00000FTrOS"),
+        ("laravel", "00NIR00000FTrOX"),
+        ("flutter", "00NIR00000FTrOc"),
+        ("mongodb", "00NIR00000FTrOh"),
+        ("redis", "00NIR00000FTrOm"),
+        ("aws", "00NIR00000FTrOr"),
+        ("jenkins", "00NIR00000FTrOw"),
+        ("angular", "00NIR00000FTrP1"),
+        ("spring", "00NIR00000FTrP6"),
+        ("express", "00NIR00000FTrPB"),
+        ("asp_net", "00NIR00000FTrPG"),
+        ("mysql", "00NIR00000FTrPL"),
+        ("oracle", "00NIR00000FTrPQ"),
+        ("docker", "00NIR00000FTrPV"),
+        ("gcp", "00NIR00000FTrPa"),
+        ("github_actions", "00NIR00000FTrPf"),
+    ];
+
+    // その他のカスタムフィールドマッピング
+    pub const OTHER_FIELDS: &[(&str, &str)] = &[
+        ("github_url", "00NIR00000FTrJC"),
+        ("portfolio_url", "00NIR00000FTrJH"),
+        ("experience", "00NIR00000FTrJM"),
+        ("newsletter_opt_in", "00NIR00000FTrVO"),
+        ("state", "State"), // 標準フィールド
+    ];
+}
+
 /// CRMプロバイダーの種類
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -201,6 +258,48 @@ impl CrmLead {
                                     lead.custom_fields.insert(field_name.clone(), value.clone());
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            // Salesforceカスタムフィールドマッピングの処理
+            use crate::models::crm::salesforce_field_mapping::{
+                OTHER_FIELDS, PROGRAMMING_LANGUAGE_FIELDS, TECH_STACK_FIELDS,
+            };
+
+            // プログラミング言語フィールドのマッピング
+            for (field_name, sf_field_id) in PROGRAMMING_LANGUAGE_FIELDS {
+                if let Some(value) = data.get(*field_name) {
+                    if !value.is_null() {
+                        lead.custom_fields
+                            .insert(sf_field_id.to_string(), value.clone());
+                    }
+                }
+            }
+
+            // 技術スタックフィールドのマッピング
+            for (field_name, sf_field_id) in TECH_STACK_FIELDS {
+                if let Some(value) = data.get(*field_name) {
+                    if !value.is_null() {
+                        lead.custom_fields
+                            .insert(sf_field_id.to_string(), value.clone());
+                    }
+                }
+            }
+
+            // その他のカスタムフィールドのマッピング
+            for (field_name, sf_field_id) in OTHER_FIELDS {
+                if let Some(value) = data.get(*field_name) {
+                    if !value.is_null() {
+                        // 都道府県は標準フィールドなので特別扱い
+                        if *field_name == "state" {
+                            // Stateフィールドは後でSalesforceプロバイダーで処理
+                            lead.custom_fields
+                                .insert("State".to_string(), value.clone());
+                        } else {
+                            lead.custom_fields
+                                .insert(sf_field_id.to_string(), value.clone());
                         }
                     }
                 }

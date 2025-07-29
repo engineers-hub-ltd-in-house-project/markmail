@@ -4,6 +4,7 @@ use rustforce::response::QueryResponse;
 use rustforce::Client as SalesforceClient;
 use salesforce_bulk_api::{BulkClient, JobConfig, Operation as BulkOperation};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::models::crm::{
@@ -215,6 +216,73 @@ impl SalesforceProvider {
             markmail_form_id: Some(lead.markmail_form_id.to_string()),
             markmail_submission_id: lead.markmail_submission_id.map(|id| id.to_string()),
         }
+    }
+
+    /// カスタムフィールドを含むリードパラメータを構築
+    fn build_lead_params(&self, lead: &CrmLead) -> Result<Value, CrmError> {
+        let sf_lead = self.to_salesforce_lead(lead);
+        let mut params =
+            serde_json::to_value(&sf_lead).map_err(|e| CrmError::DataConversion(e.to_string()))?;
+
+        // カスタムフィールドを追加
+        if let Value::Object(ref mut map) = params {
+            for (field_id, value) in &lead.custom_fields {
+                // Stateは標準フィールドなので特別扱い
+                if field_id == "State" {
+                    map.insert("State".to_string(), value.clone());
+                } else if field_id.starts_with("00NIR") {
+                    // カスタムフィールドIDのマッピング
+                    // APIでは__cサフィックスが必要
+                    let field_name = match field_id.as_str() {
+                        "00NIR00000FTrIJ" => "Java__c",
+                        "00NIR00000FTrIO" => "Python__c",
+                        "00NIR00000FTrIT" => "JavaScript_TypeScript__c",
+                        "00NIR00000FTrIY" => "C_C__c",
+                        "00NIR00000FTrId" => "C__c",
+                        "00NIR00000FTrIi" => "PHP__c",
+                        "00NIR00000FTrIn" => "Go__c",
+                        "00NIR00000FTrIs" => "Ruby__c",
+                        "00NIR00000FTrIx" => "Swift__c",
+                        "00NIR00000FTrJ2" => "Kotlin__c",
+                        "00NIR00000FTrNZ" => "React__c",
+                        "00NIR00000FTrNe" => "Next_js__c",
+                        "00NIR00000FTrNj" => "Django__c",
+                        "00NIR00000FTrNo" => "Ruby_on_Rails__c",
+                        "00NIR00000FTrNt" => "React_Native__c",
+                        "00NIR00000FTrNy" => "PostgreSQL__c",
+                        "00NIR00000FTrO3" => "SQL_Server__c",
+                        "00NIR00000FTrO8" => "Kubernetes__c",
+                        "00NIR00000FTrOD" => "Azure__c",
+                        "00NIR00000FTrOI" => "Vue_js__c",
+                        "00NIR00000FTrON" => "Svelte__c",
+                        "00NIR00000FTrOS" => "Flask__c",
+                        "00NIR00000FTrOX" => "Laravel__c",
+                        "00NIR00000FTrOc" => "Flutter__c",
+                        "00NIR00000FTrOh" => "MongoDB__c",
+                        "00NIR00000FTrOm" => "Redis__c",
+                        "00NIR00000FTrOr" => "AWS__c",
+                        "00NIR00000FTrOw" => "Jenkins__c",
+                        "00NIR00000FTrP1" => "Angular__c",
+                        "00NIR00000FTrP6" => "Spring__c",
+                        "00NIR00000FTrPB" => "Express__c",
+                        "00NIR00000FTrPG" => "ASP_NET__c",
+                        "00NIR00000FTrPL" => "MySQL__c",
+                        "00NIR00000FTrPQ" => "Oracle__c",
+                        "00NIR00000FTrPV" => "Docker__c",
+                        "00NIR00000FTrPa" => "GCP__c",
+                        "00NIR00000FTrPf" => "GitHub_Actions__c",
+                        "00NIR00000FTrJC" => "GitHub_URL__c",
+                        "00NIR00000FTrJH" => "URL__c",
+                        "00NIR00000FTrJM" => "PR__c",
+                        "00NIR00000FTrVO" => "Co_Ltd__c",
+                        _ => field_id,
+                    };
+                    map.insert(field_name.to_string(), value.clone());
+                }
+            }
+        }
+
+        Ok(params)
     }
 
     /// Salesforce ContactをMarkMail CrmContactに変換
@@ -513,9 +581,8 @@ impl CrmProvider for SalesforceProvider {
         let (crm_id, _created) = if let Some(existing) = existing_lead.records.first() {
             // 既存のリードがある場合は更新
             if let Some(id) = &existing.id {
-                let sf_lead = self.to_salesforce_lead(lead);
-                let params = serde_json::to_value(&sf_lead)
-                    .map_err(|e| CrmError::DataConversion(e.to_string()))?;
+                // カスタムフィールドを含む完全なパラメータを構築
+                let params = self.build_lead_params(lead)?;
 
                 client
                     .update("Lead", id, params)
@@ -530,9 +597,8 @@ impl CrmProvider for SalesforceProvider {
             }
         } else {
             // 新規リードを作成
-            let sf_lead = self.to_salesforce_lead(lead);
-            let params = serde_json::to_value(&sf_lead)
-                .map_err(|e| CrmError::DataConversion(e.to_string()))?;
+            // カスタムフィールドを含む完全なパラメータを構築
+            let params = self.build_lead_params(lead)?;
 
             let result = client
                 .create("Lead", params)
