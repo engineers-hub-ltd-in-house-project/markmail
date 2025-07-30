@@ -166,7 +166,7 @@ impl StripeService {
             // JSONパースエラーは署名が有効な場合なので成功とする
             Err(e) => {
                 // エラーメッセージにJSONパースエラーが含まれているか確認
-                let error_msg = format!("{:?}", e);
+                let error_msg = format!("{e:?}");
                 if error_msg.contains("error parsing event object")
                     || error_msg.contains("unknown variant")
                 {

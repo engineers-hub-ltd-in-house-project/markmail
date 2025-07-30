@@ -229,10 +229,10 @@ mod tests {
         let result = SalesforceAuth::check_cli_installed();
         match result {
             Ok(installed) => {
-                println!("Salesforce CLI installed: {}", installed);
+                println!("Salesforce CLI installed: {installed}");
             }
             Err(e) => {
-                println!("Error checking CLI: {}", e);
+                println!("Error checking CLI: {e}");
             }
         }
     }

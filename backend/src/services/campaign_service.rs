@@ -39,7 +39,7 @@ impl CampaignService {
         // テンプレートが存在するか確認
         let template = templates::find_template_by_id(pool, request.template_id, Some(user_id))
             .await
-            .map_err(|e| format!("テンプレートの確認に失敗しました: {}", e))?;
+            .map_err(|e| format!("テンプレートの確認に失敗しました: {e}"))?;
 
         if template.is_none() {
             return Err(
@@ -50,7 +50,7 @@ impl CampaignService {
         // キャンペーンを作成
         let campaign = campaigns::create_campaign(pool, user_id, request)
             .await
-            .map_err(|e| format!("キャンペーン作成に失敗しました: {}", e))?;
+            .map_err(|e| format!("キャンペーン作成に失敗しました: {e}"))?;
 
         Ok(campaign)
     }
@@ -67,7 +67,7 @@ impl CampaignService {
         if let Some(template_id) = request.template_id {
             let template = templates::find_template_by_id(pool, template_id, Some(user_id))
                 .await
-                .map_err(|e| format!("テンプレートの確認に失敗しました: {}", e))?;
+                .map_err(|e| format!("テンプレートの確認に失敗しました: {e}"))?;
 
             if template.is_none() {
                 return Err(
@@ -79,7 +79,7 @@ impl CampaignService {
         // キャンペーンを更新
         let updated_campaign = campaigns::update_campaign(pool, campaign_id, user_id, request)
             .await
-            .map_err(|e| format!("キャンペーン更新に失敗しました: {}", e))?;
+            .map_err(|e| format!("キャンペーン更新に失敗しました: {e}"))?;
 
         match updated_campaign {
             Some(campaign) => Ok(campaign),
@@ -104,7 +104,7 @@ impl CampaignService {
         let updated_campaign =
             campaigns::schedule_campaign(pool, campaign_id, user_id, request.scheduled_at)
                 .await
-                .map_err(|e| format!("キャンペーンのスケジュールに失敗しました: {}", e))?;
+                .map_err(|e| format!("キャンペーンのスケジュールに失敗しました: {e}"))?;
 
         match updated_campaign {
             Some(campaign) => Ok(campaign),
@@ -122,7 +122,7 @@ impl CampaignService {
         // キャンペーンを送信開始状態に更新
         let updated_campaign = campaigns::start_campaign_sending(pool, campaign_id, user_id)
             .await
-            .map_err(|e| format!("キャンペーン送信開始に失敗しました: {}", e))?;
+            .map_err(|e| format!("キャンペーン送信開始に失敗しました: {e}"))?;
 
         match updated_campaign {
             Some(campaign) => Ok(campaign),
@@ -140,13 +140,13 @@ impl CampaignService {
         // キャンペーン情報を取得
         let campaign = campaigns::find_campaign_by_id(pool, campaign_id, user_id)
             .await
-            .map_err(|e| format!("キャンペーン情報の取得に失敗しました: {}", e))?
+            .map_err(|e| format!("キャンペーン情報の取得に失敗しました: {e}"))?
             .ok_or_else(|| "キャンペーンが見つかりません".to_string())?;
 
         // テンプレート情報を取得
         let template = templates::find_template_by_id(pool, campaign.template_id, Some(user_id))
             .await
-            .map_err(|e| format!("テンプレート情報の取得に失敗しました: {}", e))?
+            .map_err(|e| format!("テンプレート情報の取得に失敗しました: {e}"))?
             .ok_or_else(|| "テンプレートが見つかりません".to_string())?;
 
         // テストデータでHTMLを生成
@@ -165,7 +165,7 @@ impl CampaignService {
         let markdown_service = MarkdownService::new();
         let html = markdown_service
             .render_with_variables(&template.markdown_content, &test_data)
-            .map_err(|e| format!("マークダウンのレンダリングに失敗しました: {}", e))?;
+            .map_err(|e| format!("マークダウンのレンダリングに失敗しました: {e}"))?;
 
         Ok(html)
     }
@@ -190,7 +190,7 @@ impl CampaignService {
 
         let subscribers = subscribers::list_user_subscribers(pool, user_id, &options)
             .await
-            .map_err(|e| format!("購読者の取得に失敗しました: {}", e))?;
+            .map_err(|e| format!("購読者の取得に失敗しました: {e}"))?;
 
         Ok(subscribers)
     }
@@ -235,13 +235,13 @@ impl CampaignService {
         // キャンペーン情報を取得
         let campaign = campaigns::find_campaign_by_id(pool, campaign_id, user_id)
             .await
-            .map_err(|e| format!("キャンペーン情報の取得に失敗しました: {}", e))?
+            .map_err(|e| format!("キャンペーン情報の取得に失敗しました: {e}"))?
             .ok_or_else(|| "キャンペーンが見つかりません".to_string())?;
 
         // テンプレート情報を取得
         let template = templates::find_template_by_id(pool, campaign.template_id, Some(user_id))
             .await
-            .map_err(|e| format!("テンプレート情報の取得に失敗しました: {}", e))?
+            .map_err(|e| format!("テンプレート情報の取得に失敗しました: {e}"))?
             .ok_or_else(|| "テンプレートが見つかりません".to_string())?;
 
         // 購読者リストを取得
@@ -256,7 +256,7 @@ impl CampaignService {
         // メールサービスを初期化
         let email_service = EmailService::new(pool.clone())
             .await
-            .map_err(|e| format!("メールサービスの初期化に失敗しました: {}", e))?;
+            .map_err(|e| format!("メールサービスの初期化に失敗しました: {e}"))?;
 
         // マークダウンサービスを初期化
         let markdown_service = MarkdownService::new();
@@ -306,7 +306,7 @@ impl CampaignService {
             // HTMLとテキストをレンダリング
             let html_body = markdown_service
                 .render_with_variables(&template.markdown_content, &variables)
-                .map_err(|e| format!("HTMLレンダリングに失敗しました: {}", e))?;
+                .map_err(|e| format!("HTMLレンダリングに失敗しました: {e}"))?;
 
             let text_body = html2text::from_read(html_body.as_bytes(), 80);
 
@@ -315,7 +315,7 @@ impl CampaignService {
                 let mut subject = template.subject_template.clone();
                 for (key, value) in vars {
                     if let serde_json::Value::String(val) = value {
-                        subject = subject.replace(&format!("{{{{{}}}}}", key), val);
+                        subject = subject.replace(&format!("{{{{{key}}}}}"), val);
                     }
                 }
                 subject
@@ -339,7 +339,7 @@ impl CampaignService {
         let results = email_service
             .send_campaign(email_messages)
             .await
-            .map_err(|e| format!("メール送信に失敗しました: {}", e))?;
+            .map_err(|e| format!("メール送信に失敗しました: {e}"))?;
 
         // 送信結果を集計
         let mut sent_count = 0;
@@ -362,14 +362,14 @@ impl CampaignService {
             None,
         )
         .await
-        .map_err(|e| format!("統計情報の更新に失敗しました: {}", e))?;
+        .map_err(|e| format!("統計情報の更新に失敗しました: {e}"))?;
 
         // 送信結果に応じてステータスを更新
         if failed_count == 0 && sent_count > 0 {
             // 全て成功した場合
             campaigns::complete_campaign_sending(pool, campaign_id)
                 .await
-                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {e}"))?;
         } else if sent_count == 0 && failed_count > 0 {
             // 全て失敗した場合
             campaigns::update_campaign_status(
@@ -379,12 +379,12 @@ impl CampaignService {
                 crate::models::campaign::CampaignStatus::Error,
             )
             .await
-            .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+            .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {e}"))?;
         } else if failed_count > 0 {
             // 一部失敗した場合も送信完了とする（部分的成功）
             campaigns::complete_campaign_sending(pool, campaign_id)
                 .await
-                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {}", e))?;
+                .map_err(|e| format!("キャンペーン状態の更新に失敗しました: {e}"))?;
         }
 
         tracing::info!(

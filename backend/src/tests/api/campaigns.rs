@@ -38,7 +38,7 @@ pub async fn create_test_campaign(
                 .method(Method::POST)
                 .uri("/api/campaigns")
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", auth_token))
+                .header("Authorization", format!("Bearer {auth_token}"))
                 .body(Body::from(serde_json::to_string(&request).unwrap()))
                 .unwrap(),
         )
@@ -79,7 +79,7 @@ async fn test_create_campaign() {
                 .method(Method::POST)
                 .uri("/api/campaigns")
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::from(
                     serde_json::to_string(&campaign_request).unwrap(),
                 ))
@@ -133,7 +133,7 @@ async fn test_get_campaign() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!("/api/campaigns/{}", campaign.id))
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -182,7 +182,7 @@ async fn test_update_campaign() {
                 .method(Method::PUT)
                 .uri(format!("/api/campaigns/{}", campaign.id))
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::from(serde_json::to_string(&update_request).unwrap()))
                 .unwrap(),
         )
@@ -236,7 +236,7 @@ async fn test_schedule_campaign() {
                 .method(Method::POST)
                 .uri(format!("/api/campaigns/{}/schedule", campaign.id))
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::from(
                     serde_json::to_string(&schedule_request).unwrap(),
                 ))
@@ -272,9 +272,9 @@ async fn test_list_campaigns() {
     // 複数のテストキャンペーンを作成
     for i in 1..=3 {
         let campaign_request = CreateCampaignRequest {
-            name: format!("テストキャンペーン {}", i),
-            description: Some(format!("テスト説明 {}", i)),
-            subject: format!("テスト件名 {}", i),
+            name: format!("テストキャンペーン {i}"),
+            description: Some(format!("テスト説明 {i}")),
+            subject: format!("テスト件名 {i}"),
             template_id: template.id,
         };
 
@@ -285,7 +285,7 @@ async fn test_list_campaigns() {
                     .method(Method::POST)
                     .uri("/api/campaigns")
                     .header("Content-Type", "application/json")
-                    .header("Authorization", format!("Bearer {}", token))
+                    .header("Authorization", format!("Bearer {token}"))
                     .body(Body::from(
                         serde_json::to_string(&campaign_request).unwrap(),
                     ))
@@ -303,7 +303,7 @@ async fn test_list_campaigns() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/api/campaigns")
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -356,7 +356,7 @@ async fn test_campaign_preview() {
                 .method(Method::POST)
                 .uri("/api/templates")
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::from(
                     serde_json::to_string(&template_request).unwrap(),
                 ))
@@ -384,7 +384,7 @@ async fn test_campaign_preview() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!("/api/campaigns/{}/preview", campaign.id))
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -430,7 +430,7 @@ async fn test_delete_campaign() {
             Request::builder()
                 .method(Method::DELETE)
                 .uri(format!("/api/campaigns/{}", campaign.id))
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -457,7 +457,7 @@ async fn test_delete_campaign() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!("/api/campaigns/{}", campaign.id))
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -499,7 +499,7 @@ async fn test_cannot_delete_sent_campaign() {
             Request::builder()
                 .method(Method::DELETE)
                 .uri(format!("/api/campaigns/{}", campaign.id))
-                .header("Authorization", format!("Bearer {}", token))
+                .header("Authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )

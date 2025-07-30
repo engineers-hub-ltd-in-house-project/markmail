@@ -311,17 +311,17 @@ impl EmailService {
         </div>
         <div class="content">
             <h2>パスワードのリセット</h2>
-            <p>こんにちは、{} 様</p>
+            <p>こんにちは、{name} 様</p>
             <p>パスワードリセットのリクエストを受け取りました。以下のボタンをクリックして、新しいパスワードを設定してください。</p>
             <div style="text-align: center;">
-                <a href="{}" class="button">パスワードをリセット</a>
+                <a href="{reset_url}" class="button">パスワードをリセット</a>
             </div>
             <div class="warning">
-                <strong>注意:</strong> このリンクは{}時間後に有効期限が切れます。パスワードリセットをリクエストしていない場合は、このメールを無視してください。
+                <strong>注意:</strong> このリンクは{valid_hours}時間後に有効期限が切れます。パスワードリセットをリクエストしていない場合は、このメールを無視してください。
             </div>
             <p style="color: #666; font-size: 14px; margin-top: 30px;">
                 リンクが機能しない場合は、以下のURLをブラウザにコピー＆ペーストしてください：<br>
-                <span style="word-break: break-all;">{}</span>
+                <span style="word-break: break-all;">{reset_url}</span>
             </p>
         </div>
         <div class="footer">
@@ -332,27 +332,25 @@ impl EmailService {
         </div>
     </div>
 </body>
-</html>"#,
-            name, reset_url, valid_hours, reset_url
+</html>"#
         );
 
         let text_body = format!(
             r#"パスワードのリセット
 
-こんにちは、{} 様
+こんにちは、{name} 様
 
 パスワードリセットのリクエストを受け取りました。
 以下のリンクをクリックして、新しいパスワードを設定してください。
 
-{}
+{reset_url}
 
-注意: このリンクは{}時間後に有効期限が切れます。
+注意: このリンクは{valid_hours}時間後に有効期限が切れます。
 パスワードリセットをリクエストしていない場合は、このメールを無視してください。
 
 ---
 MarkMail
-このメールは自動送信されています。返信しないでください。"#,
-            name, reset_url, valid_hours
+このメールは自動送信されています。返信しないでください。"#
         );
 
         let message = EmailMessage {
@@ -401,18 +399,18 @@ impl EmailProvider for MailHogProvider {
             .from(
                 self.from_email
                     .parse()
-                    .map_err(|e| EmailError::Build(format!("無効な送信元アドレス: {}", e)))?,
+                    .map_err(|e| EmailError::Build(format!("無効な送信元アドレス: {e}")))?,
             )
             .to(to_address
                 .parse()
-                .map_err(|e| EmailError::Build(format!("無効な宛先アドレス: {}", e)))?)
+                .map_err(|e| EmailError::Build(format!("無効な宛先アドレス: {e}")))?)
             .subject(&message.subject);
 
         if let Some(reply_to) = &message.reply_to {
             email_builder = email_builder.reply_to(
                 reply_to
                     .parse()
-                    .map_err(|e| EmailError::Build(format!("無効な返信先アドレス: {}", e)))?,
+                    .map_err(|e| EmailError::Build(format!("無効な返信先アドレス: {e}")))?,
             );
         }
 
@@ -432,7 +430,7 @@ impl EmailProvider for MailHogProvider {
                             .body(message.html_body.clone()),
                     ),
             )
-            .map_err(|e| EmailError::Build(format!("メールビルドエラー: {}", e)))?;
+            .map_err(|e| EmailError::Build(format!("メールビルドエラー: {e}")))?;
 
         match self.transport.send(email).await {
             Ok(_response) => {
@@ -447,7 +445,7 @@ impl EmailProvider for MailHogProvider {
             Err(e) => Ok(EmailResult {
                 message_id: "".to_string(),
                 status: EmailStatus::Failed,
-                error: Some(format!("送信エラー: {}", e)),
+                error: Some(format!("送信エラー: {e}")),
             }),
         }
     }
@@ -538,19 +536,19 @@ impl EmailProvider for AwsSesProvider {
             .data(&message.subject)
             .charset("UTF-8")
             .build()
-            .map_err(|e| EmailError::Build(format!("件名ビルドエラー: {}", e)))?;
+            .map_err(|e| EmailError::Build(format!("件名ビルドエラー: {e}")))?;
 
         let html_content = Content::builder()
             .data(&message.html_body)
             .charset("UTF-8")
             .build()
-            .map_err(|e| EmailError::Build(format!("HTMLボディビルドエラー: {}", e)))?;
+            .map_err(|e| EmailError::Build(format!("HTMLボディビルドエラー: {e}")))?;
 
         let text_content = Content::builder()
             .data(message.text_body.as_deref().unwrap_or(""))
             .charset("UTF-8")
             .build()
-            .map_err(|e| EmailError::Build(format!("テキストボディビルドエラー: {}", e)))?;
+            .map_err(|e| EmailError::Build(format!("テキストボディビルドエラー: {e}")))?;
 
         let body = Body::builder()
             .html(html_content)
@@ -594,7 +592,7 @@ impl EmailProvider for AwsSesProvider {
                 Ok(EmailResult {
                     message_id: "".to_string(),
                     status: EmailStatus::Failed,
-                    error: Some(format!("AWS SESエラー: {}", e)),
+                    error: Some(format!("AWS SESエラー: {e}")),
                 })
             }
         }

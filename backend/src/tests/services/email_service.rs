@@ -33,9 +33,9 @@ async fn test_batch_email_creation() {
     let messages: Vec<EmailMessage> = (0..5)
         .map(|i| EmailMessage {
             to: vec![format!("user{}@example.com", i)],
-            subject: format!("Test Email {}", i),
-            html_body: format!("<h1>Hello User {}</h1>", i),
-            text_body: Some(format!("Hello User {}", i)),
+            subject: format!("Test Email {i}"),
+            html_body: format!("<h1>Hello User {i}</h1>"),
+            text_body: Some(format!("Hello User {i}")),
             reply_to: None,
             headers: None,
         })

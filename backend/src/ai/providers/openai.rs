@@ -40,7 +40,7 @@ impl OpenAIProvider {
         loop {
             let response = self
                 .client
-                .post(format!("https://api.openai.com/v1/{}", endpoint))
+                .post(format!("https://api.openai.com/v1/{endpoint}"))
                 .header("Authorization", format!("Bearer {}", self.api_key))
                 .json(body)
                 .send()

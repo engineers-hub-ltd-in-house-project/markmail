@@ -35,9 +35,7 @@ mod tests {
             assert_eq!(
                 StripeService::convert_subscription_status(&status),
                 expected,
-                "Status {:?} should convert to {}",
-                status,
-                expected
+                "Status {status:?} should convert to {expected}"
             );
         }
     }

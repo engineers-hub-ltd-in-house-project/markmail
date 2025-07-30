@@ -307,10 +307,10 @@ async fn test_list_forms() {
     let mut form_ids = Vec::new();
     for i in 0..3 {
         let create_req = CreateFormRequest {
-            name: format!("Test Form {}", i),
-            description: Some(format!("Description {}", i)),
-            slug: Some(format!("form-{}", i)),
-            markdown_content: format!("# Form {}", i),
+            name: format!("Test Form {i}"),
+            description: Some(format!("Description {i}")),
+            slug: Some(format!("form-{i}")),
+            markdown_content: format!("# Form {i}"),
             form_fields: Some(json!([])),
             settings: Some(json!({})),
         };

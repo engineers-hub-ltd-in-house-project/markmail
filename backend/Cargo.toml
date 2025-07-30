@@ -78,4 +78,4 @@ async-stripe = { version = "0.31", features = ["runtime-tokio-hyper", "checkout"
 
 # Salesforce統合
 rustforce = "0.2"
-salesforce-bulk-api = { path = "../crates/salesforce-bulk-api" }
+salesforce-bulk-api = { path = "./crates/salesforce-bulk-api" }

@@ -149,26 +149,21 @@ pub fn generate_scenario_user_prompt(
 ) -> String {
     match language {
         Language::Japanese => {
-            let mut prompt = format!(
-                "業界: {}\nターゲット層: {}\n目標: {}\n",
-                industry, target, goal
-            );
+            let mut prompt = format!("業界: {industry}\nターゲット層: {target}\n目標: {goal}\n");
 
             if let Some(ctx) = context {
-                prompt.push_str(&format!("\n追加の文脈: {}", ctx));
+                prompt.push_str(&format!("\n追加の文脈: {ctx}"));
             }
 
             prompt.push_str("\n\n上記の情報に基づいて、効果的なマーケティングシナリオを生成してください。すべての出力を日本語で記述し、必ず有効なJSONのみで応答してください。");
             prompt
         }
         Language::English => {
-            let mut prompt = format!(
-                "Industry: {}\nTarget Audience: {}\nGoal: {}\n",
-                industry, target, goal
-            );
+            let mut prompt =
+                format!("Industry: {industry}\nTarget Audience: {target}\nGoal: {goal}\n");
 
             if let Some(ctx) = context {
-                prompt.push_str(&format!("\nAdditional Context: {}", ctx));
+                prompt.push_str(&format!("\nAdditional Context: {ctx}"));
             }
 
             prompt.push_str("\n\nGenerate an effective marketing scenario based on the above information. Remember to respond with valid JSON only.");
@@ -224,14 +219,12 @@ pub fn generate_subject_optimization_prompt(
     match language {
         Language::Japanese => {
             format!(
-                "以下の件名を、{}向けに最適化してください。開封率を高めるための5つのバリエーションを提案してください。すべての提案を日本語で記述してください。\n\n元の件名: {}",
-                target_audience, original_subject
+                "以下の件名を、{target_audience}向けに最適化してください。開封率を高めるための5つのバリエーションを提案してください。すべての提案を日本語で記述してください。\n\n元の件名: {original_subject}"
             )
         }
         Language::English => {
             format!(
-                "Please optimize the following subject line for {}. Suggest 5 variations to increase open rates.\n\nOriginal subject: {}",
-                target_audience, original_subject
+                "Please optimize the following subject line for {target_audience}. Suggest 5 variations to increase open rates.\n\nOriginal subject: {original_subject}"
             )
         }
     }

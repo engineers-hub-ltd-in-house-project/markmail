@@ -49,7 +49,7 @@ mod tests {
         ];
 
         for email in valid_emails {
-            assert!(is_valid_email(email), "Email {} should be valid", email);
+            assert!(is_valid_email(email), "Email {email} should be valid");
         }
     }
 
@@ -67,7 +67,7 @@ mod tests {
         ];
 
         for email in invalid_emails {
-            assert!(!is_valid_email(email), "Email {} should be invalid", email);
+            assert!(!is_valid_email(email), "Email {email} should be invalid");
         }
     }
 
@@ -78,8 +78,7 @@ mod tests {
         for password in strong_passwords {
             assert!(
                 is_strong_password(password),
-                "Password '{}' should be strong",
-                password
+                "Password '{password}' should be strong"
             );
         }
     }
@@ -98,8 +97,7 @@ mod tests {
         for password in weak_passwords {
             assert!(
                 !is_strong_password(password),
-                "Password '{}' should be weak",
-                password
+                "Password '{password}' should be weak"
             );
         }
     }

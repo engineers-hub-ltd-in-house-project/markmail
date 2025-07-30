@@ -376,8 +376,7 @@ impl CrmProvider for SalesforceProvider {
 
         let query = format!(
             "SELECT Id, Email, FirstName, LastName, Phone, MarkMail_ID__c \
-             FROM Contact WHERE Email = '{}'",
-            email
+             FROM Contact WHERE Email = '{email}'"
         );
 
         let result: QueryResponse<SalesforceContact> = client
@@ -576,7 +575,7 @@ impl CrmProvider for SalesforceProvider {
         let existing_lead: QueryResponse<SalesforceLead> = client
             .query(&query)
             .await
-            .map_err(|e| CrmError::ApiError(format!("リード検索エラー: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("リード検索エラー: {e}")))?;
 
         let (crm_id, _created) = if let Some(existing) = existing_lead.records.first() {
             // 既存のリードがある場合は更新
@@ -587,7 +586,7 @@ impl CrmProvider for SalesforceProvider {
                 client
                     .update("Lead", id, params)
                     .await
-                    .map_err(|e| CrmError::ApiError(format!("リード更新エラー: {}", e)))?;
+                    .map_err(|e| CrmError::ApiError(format!("リード更新エラー: {e}")))?;
 
                 (id.clone(), false)
             } else {
@@ -603,7 +602,7 @@ impl CrmProvider for SalesforceProvider {
             let result = client
                 .create("Lead", params)
                 .await
-                .map_err(|e| CrmError::ApiError(format!("リード作成エラー: {}", e)))?;
+                .map_err(|e| CrmError::ApiError(format!("リード作成エラー: {e}")))?;
 
             (result.id, true)
         };
@@ -623,14 +622,13 @@ impl CrmProvider for SalesforceProvider {
         let query = format!(
             "SELECT Id, Email, FirstName, LastName, Company, Phone, Title, Website, \
              LeadSource, Status, MarkMail_Form_ID__c, MarkMail_Submission_ID__c \
-             FROM Lead WHERE Email = '{}' LIMIT 1",
-            email
+             FROM Lead WHERE Email = '{email}' LIMIT 1"
         );
 
         let response: QueryResponse<SalesforceLead> = client
             .query(&query)
             .await
-            .map_err(|e| CrmError::ApiError(format!("リード取得エラー: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("リード取得エラー: {e}")))?;
 
         if let Some(sf_lead) = response.records.first() {
             Ok(Some(CrmLead {
@@ -753,25 +751,25 @@ impl SalesforceProvider {
         let job = bulk_client
             .create_job(job_config)
             .await
-            .map_err(|e| CrmError::ApiError(format!("Failed to create bulk job: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("Failed to create bulk job: {e}")))?;
 
         // データアップロード
         bulk_client
             .upload_data(&job.id, csv_data)
             .await
-            .map_err(|e| CrmError::ApiError(format!("Failed to upload bulk data: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("Failed to upload bulk data: {e}")))?;
 
         // ジョブ開始
         let job = bulk_client
             .start_job(&job.id)
             .await
-            .map_err(|e| CrmError::ApiError(format!("Failed to start bulk job: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("Failed to start bulk job: {e}")))?;
 
         // 完了待機
         let completed_job = bulk_client
             .wait_for_completion(&job.id)
             .await
-            .map_err(|e| CrmError::ApiError(format!("Bulk job failed: {}", e)))?;
+            .map_err(|e| CrmError::ApiError(format!("Bulk job failed: {e}")))?;
 
         // 結果の処理
         let mut results = Vec::new();
