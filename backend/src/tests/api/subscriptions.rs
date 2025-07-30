@@ -113,7 +113,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -138,7 +138,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -161,7 +161,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -214,7 +214,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -251,7 +251,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -292,7 +292,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 
@@ -352,7 +352,7 @@ mod tests {
 
         let auth_user = AuthUser {
             user_id,
-            email: format!("test-{}@example.com", user_id),
+            email: format!("test-{user_id}@example.com"),
             name: "Test User".to_string(),
         };
 

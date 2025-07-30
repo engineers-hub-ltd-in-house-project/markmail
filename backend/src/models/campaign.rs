@@ -47,7 +47,7 @@ impl fmt::Display for CampaignStatus {
             CampaignStatus::Cancelled => "cancelled",
             CampaignStatus::Error => "error",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -70,7 +70,7 @@ impl<'r> sqlx::Decode<'r, sqlx::Postgres> for CampaignStatus {
             "paused" => Ok(CampaignStatus::Paused),
             "cancelled" => Ok(CampaignStatus::Cancelled),
             "error" => Ok(CampaignStatus::Error),
-            other => Err(format!("Unknown campaign status: {}", other).into()),
+            other => Err(format!("Unknown campaign status: {other}").into()),
         }
     }
 }

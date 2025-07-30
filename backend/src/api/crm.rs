@@ -99,7 +99,7 @@ pub async fn authenticate_salesforce(
         Err(e) => {
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("CLI確認エラー: {}", e),
+                format!("CLI確認エラー: {e}"),
             ));
         }
     }
@@ -128,10 +128,7 @@ pub async fn authenticate_salesforce(
                 org_info: Some(org_info),
             }))
         }
-        Err(e) => Err((
-            StatusCode::UNAUTHORIZED,
-            format!("認証に失敗しました: {}", e),
-        )),
+        Err(e) => Err((StatusCode::UNAUTHORIZED, format!("認証に失敗しました: {e}"))),
     }
 }
 
@@ -147,7 +144,7 @@ pub async fn create_crm_integration(
         .map_err(|e| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("組織情報の取得に失敗: {}", e),
+                format!("組織情報の取得に失敗: {e}"),
             )
         })?;
 
@@ -167,7 +164,7 @@ pub async fn create_crm_integration(
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("統合設定の保存に失敗: {}", e),
+                format!("統合設定の保存に失敗: {e}"),
             )
         })?;
 
@@ -194,7 +191,7 @@ pub async fn get_crm_integration(
             .map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("統合設定の取得に失敗: {}", e),
+                    format!("統合設定の取得に失敗: {e}"),
                 )
             })?
     else {
@@ -228,7 +225,7 @@ pub async fn delete_crm_integration(
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("統合の無効化に失敗: {}", e),
+                format!("統合の無効化に失敗: {e}"),
             )
         })?;
 
@@ -247,7 +244,7 @@ pub async fn sync_contacts(
         Err(e) => {
             return Err((
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("CRMサービスの初期化に失敗: {}", e),
+                format!("CRMサービスの初期化に失敗: {e}"),
             ));
         }
     };
@@ -262,7 +259,7 @@ pub async fn sync_contacts(
     .map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("統合設定の取得に失敗: {}", e),
+            format!("統合設定の取得に失敗: {e}"),
         )
     })? {
         Some(integration) => integration,
@@ -300,7 +297,7 @@ pub async fn sync_contacts(
                     entity_id,
                     crm_id: None,
                     success: false,
-                    error: Some(format!("購読者の取得に失敗: {}", e)),
+                    error: Some(format!("購読者の取得に失敗: {e}")),
                 });
                 continue;
             }
@@ -355,7 +352,7 @@ pub async fn sync_contacts(
     if let Err(e) =
         CrmService::log_sync_activity(&state.db, integration.id, "contact", &sync_results).await
     {
-        eprintln!("同期ログの記録に失敗: {}", e);
+        eprintln!("同期ログの記録に失敗: {e}");
     }
 
     let response = CrmSyncResponse {
@@ -382,7 +379,7 @@ pub async fn bulk_sync_subscribers(
         Err(e) => {
             return Err((
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("CRMサービスの初期化に失敗: {}", e),
+                format!("CRMサービスの初期化に失敗: {e}"),
             ));
         }
     };
@@ -397,7 +394,7 @@ pub async fn bulk_sync_subscribers(
     .map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("統合設定の取得に失敗: {}", e),
+            format!("統合設定の取得に失敗: {e}"),
         )
     })? {
         Some(integration) => integration,
@@ -423,7 +420,7 @@ pub async fn bulk_sync_subscribers(
     .map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("購読者の取得に失敗: {}", e),
+            format!("購読者の取得に失敗: {e}"),
         )
     })?;
 
@@ -441,7 +438,7 @@ pub async fn bulk_sync_subscribers(
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("一括同期に失敗: {}", e),
+                format!("一括同期に失敗: {e}"),
             )
         })?;
 
@@ -450,7 +447,7 @@ pub async fn bulk_sync_subscribers(
         CrmService::log_sync_activity(&state.db, integration.id, "contact", &bulk_result.results)
             .await
     {
-        eprintln!("同期ログの記録に失敗: {}", e);
+        eprintln!("同期ログの記録に失敗: {e}");
     }
 
     // レスポンスを構築
@@ -485,7 +482,7 @@ pub async fn sync_campaigns(
         Err(e) => {
             return Err((
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("CRMサービスの初期化に失敗: {}", e),
+                format!("CRMサービスの初期化に失敗: {e}"),
             ));
         }
     };
@@ -500,7 +497,7 @@ pub async fn sync_campaigns(
     .map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("統合設定の取得に失敗: {}", e),
+            format!("統合設定の取得に失敗: {e}"),
         )
     })? {
         Some(integration) => integration,
@@ -583,7 +580,7 @@ pub async fn sync_campaigns(
     if let Err(e) =
         CrmService::log_sync_activity(&state.db, integration.id, "campaign", &sync_results).await
     {
-        eprintln!("同期ログの記録に失敗: {}", e);
+        eprintln!("同期ログの記録に失敗: {e}");
     }
 
     let response = CrmSyncResponse {
@@ -604,7 +601,7 @@ pub async fn list_salesforce_orgs(
         Ok(orgs) => Ok(Json(orgs)),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("組織一覧の取得に失敗: {}", e),
+            format!("組織一覧の取得に失敗: {e}"),
         )),
     }
 }

@@ -82,7 +82,7 @@ pub async fn create_form(
         Ok(form) => Ok((StatusCode::CREATED, Json(form))),
         Err(e) => {
             tracing::error!("フォーム作成エラー: {:?}", e);
-            eprintln!("Form creation error: {:?}", e);
+            eprintln!("Form creation error: {e:?}");
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({

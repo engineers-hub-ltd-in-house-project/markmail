@@ -41,3 +41,6 @@ build/
 *.tmp
 *.temp 
 **/.claude/settings.local.json
+
+# Serena
+.serena/

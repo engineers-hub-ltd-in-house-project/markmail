@@ -67,19 +67,18 @@ pub async fn list_subscribers(
 
     // フィルタリング条件を追加
     if let Some(status_filter) = status {
-        query_string.push_str(&format!("AND status = '{:?}' ", status_filter));
+        query_string.push_str(&format!("AND status = '{status_filter:?}' "));
     }
 
     // タグフィルタリング
     if let Some(tag_filter) = tag {
-        query_string.push_str(&format!("AND '{}' = ANY(tags) ", tag_filter));
+        query_string.push_str(&format!("AND '{tag_filter}' = ANY(tags) "));
     }
 
     // 検索条件
     if let Some(search_term) = search {
         query_string.push_str(&format!(
-            "AND (email ILIKE '%{}%' OR name ILIKE '%{}%') ",
-            search_term, search_term
+            "AND (email ILIKE '%{search_term}%' OR name ILIKE '%{search_term}%') "
         ));
     }
 
@@ -110,19 +109,18 @@ pub async fn count_subscribers(
 
     // フィルタリング条件を追加
     if let Some(status_filter) = status {
-        query_string.push_str(&format!("AND status = '{:?}' ", status_filter));
+        query_string.push_str(&format!("AND status = '{status_filter:?}' "));
     }
 
     // タグフィルタリング
     if let Some(tag_filter) = tag {
-        query_string.push_str(&format!("AND '{}' = ANY(tags) ", tag_filter));
+        query_string.push_str(&format!("AND '{tag_filter}' = ANY(tags) "));
     }
 
     // 検索条件
     if let Some(search_term) = search {
         query_string.push_str(&format!(
-            "AND (email ILIKE '%{}%' OR name ILIKE '%{}%') ",
-            search_term, search_term
+            "AND (email ILIKE '%{search_term}%' OR name ILIKE '%{search_term}%') "
         ));
     }
 

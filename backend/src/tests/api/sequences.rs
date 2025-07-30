@@ -307,8 +307,8 @@ async fn test_list_sequences() {
     let mut sequence_ids = Vec::new();
     for i in 0..3 {
         let create_req = CreateSequenceRequest {
-            name: format!("テストシーケンス {}", i),
-            description: Some(format!("説明 {}", i)),
+            name: format!("テストシーケンス {i}"),
+            description: Some(format!("説明 {i}")),
             trigger_type: if i % 2 == 0 {
                 "registration".to_string()
             } else {

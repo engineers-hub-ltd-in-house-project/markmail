@@ -116,21 +116,20 @@ impl ContentGeneratorService {
                 let mut prompt = format!("{}を作成してください。\n\n", request.content_type);
 
                 if let Some(industry) = &request.context.industry {
-                    prompt.push_str(&format!("業界: {}\n", industry));
+                    prompt.push_str(&format!("業界: {industry}\n"));
                 }
 
                 if let Some(audience) = &request.context.target_audience {
-                    prompt.push_str(&format!("ターゲット層: {}\n", audience));
+                    prompt.push_str(&format!("ターゲット層: {audience}\n"));
                 }
 
                 if let Some(tone) = &request.context.tone {
-                    prompt.push_str(&format!("トーン: {:?}\n", tone));
+                    prompt.push_str(&format!("トーン: {tone:?}\n"));
                 }
 
                 if let Some(existing) = &request.context.existing_content {
                     prompt.push_str(&format!(
-                        "\n既存のコンテンツを改善してください:\n{}\n",
-                        existing
+                        "\n既存のコンテンツを改善してください:\n{existing}\n"
                     ));
                 }
 
@@ -141,21 +140,20 @@ impl ContentGeneratorService {
                 let mut prompt = format!("Create a {} content.\n\n", request.content_type);
 
                 if let Some(industry) = &request.context.industry {
-                    prompt.push_str(&format!("Industry: {}\n", industry));
+                    prompt.push_str(&format!("Industry: {industry}\n"));
                 }
 
                 if let Some(audience) = &request.context.target_audience {
-                    prompt.push_str(&format!("Target Audience: {}\n", audience));
+                    prompt.push_str(&format!("Target Audience: {audience}\n"));
                 }
 
                 if let Some(tone) = &request.context.tone {
-                    prompt.push_str(&format!("Tone: {:?}\n", tone));
+                    prompt.push_str(&format!("Tone: {tone:?}\n"));
                 }
 
                 if let Some(existing) = &request.context.existing_content {
                     prompt.push_str(&format!(
-                        "\nImprove the following existing content:\n{}\n",
-                        existing
+                        "\nImprove the following existing content:\n{existing}\n"
                     ));
                 }
 

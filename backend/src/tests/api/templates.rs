@@ -93,7 +93,7 @@ pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
         sub: user_id.to_string(),
         exp: chrono::Utc::now().timestamp() + 3600, // 1時間有効
         iat: chrono::Utc::now().timestamp(),
-        email: format!("test-{}@example.com", user_id),
+        email: format!("test-{user_id}@example.com"),
         name: "Test User".to_string(),
         token_type: TokenType::Access,
     };
@@ -449,9 +449,9 @@ async fn test_list_templates() {
     // 複数のテンプレートを作成
     for i in 1..4 {
         let create_req = CreateTemplateRequest {
-            name: format!("Test Template {}", i),
-            subject_template: format!("Test Subject {}", i),
-            markdown_content: format!("# Test Content {}", i),
+            name: format!("Test Template {i}"),
+            subject_template: format!("Test Subject {i}"),
+            markdown_content: format!("# Test Content {i}"),
             variables: None,
             is_public: None,
         };

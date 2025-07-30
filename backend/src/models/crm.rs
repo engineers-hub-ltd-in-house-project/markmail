@@ -179,7 +179,7 @@ impl CrmLead {
             phone: None,
             title: None,
             website: None,
-            lead_source: format!("MarkMail Form: {}", form_name),
+            lead_source: format!("MarkMail Form: {form_name}"),
             status: Some("New".to_string()),
             description: None,
             custom_fields: HashMap::new(),

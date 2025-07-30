@@ -46,8 +46,7 @@ impl MarkdownService {
 
     /// テンプレート変数の置換
     fn substitute_variables(&self, content: &str, variables: &Value) -> Result<String, String> {
-        let re =
-            Regex::new(r"\{\{\s*(\w+)\s*\}\}").map_err(|e| format!("正規表現エラー: {}", e))?;
+        let re = Regex::new(r"\{\{\s*(\w+)\s*\}\}").map_err(|e| format!("正規表現エラー: {e}"))?;
 
         let mut result = content.to_string();
 
@@ -64,7 +63,7 @@ impl MarkdownService {
                 };
                 result = result.replace(placeholder, &replacement);
             } else {
-                return Err(format!("変数 '{}' が見つかりません", variable_name));
+                return Err(format!("変数 '{variable_name}' が見つかりません"));
             }
         }
 
@@ -176,8 +175,7 @@ impl MarkdownService {
         format!(
             "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" \
              content=\"width=device-width, \
-             initial-scale=1.0\">\n{}\n</head>\n<body>\n{}\n</body>\n</html>",
-            email_css, html
+             initial-scale=1.0\">\n{email_css}\n</head>\n<body>\n{html}\n</body>\n</html>"
         )
     }
 
@@ -197,8 +195,8 @@ impl MarkdownService {
         }
 
         // リンクの構文チェック
-        let link_regex = Regex::new(r"\[([^\]]*)\]\(([^\)]*)\)")
-            .map_err(|e| format!("正規表現エラー: {}", e))?;
+        let link_regex =
+            Regex::new(r"\[([^\]]*)\]\(([^\)]*)\)").map_err(|e| format!("正規表現エラー: {e}"))?;
 
         for cap in link_regex.captures_iter(markdown) {
             let url = &cap[2];

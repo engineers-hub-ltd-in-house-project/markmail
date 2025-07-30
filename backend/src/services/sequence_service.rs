@@ -43,7 +43,7 @@ impl SequenceService {
         // 該当するトリガータイプのアクティブなシーケンスを取得
         let sequences = sequences::find_active_sequences_by_trigger(pool, user_id, trigger_type)
             .await
-            .map_err(|e| format!("シーケンスの取得に失敗しました: {}", e))?;
+            .map_err(|e| format!("シーケンスの取得に失敗しました: {e}"))?;
 
         let mut enrollments = Vec::new();
 
@@ -123,7 +123,7 @@ impl SequenceService {
         // 実行待ちのエンロールメントを取得
         let pending_enrollments = sequences::find_pending_sequence_enrollments(pool)
             .await
-            .map_err(|e| format!("実行待ちエンロールメントの取得に失敗しました: {}", e))?;
+            .map_err(|e| format!("実行待ちエンロールメントの取得に失敗しました: {e}"))?;
 
         for enrollment in pending_enrollments {
             if let Err(e) = self.process_enrollment_step(pool, &enrollment).await {
@@ -143,12 +143,12 @@ impl SequenceService {
         // シーケンスとステップ情報を取得
         let sequence = sequences::find_sequence_by_id(pool, enrollment.sequence_id, None)
             .await
-            .map_err(|e| format!("シーケンスの取得に失敗しました: {}", e))?
+            .map_err(|e| format!("シーケンスの取得に失敗しました: {e}"))?
             .ok_or_else(|| "シーケンスが見つかりません".to_string())?;
 
         let steps = sequences::find_sequence_steps(pool, enrollment.sequence_id)
             .await
-            .map_err(|e| format!("シーケンスステップの取得に失敗しました: {}", e))?;
+            .map_err(|e| format!("シーケンスステップの取得に失敗しました: {e}"))?;
 
         // 現在のステップ順序を取得
         let current_step_order = if let Some(current_step_id) = enrollment.current_step_id {
@@ -236,14 +236,14 @@ impl SequenceService {
         // テンプレートを取得
         let template = templates::find_template_by_id(pool, template_id, Some(sequence.user_id))
             .await
-            .map_err(|e| format!("テンプレートの取得に失敗しました: {}", e))?
+            .map_err(|e| format!("テンプレートの取得に失敗しました: {e}"))?
             .ok_or_else(|| "テンプレートが見つかりません".to_string())?;
 
         // 購読者情報を取得
         let subscriber =
             subscribers::find_subscriber_by_id(pool, enrollment.subscriber_id, sequence.user_id)
                 .await
-                .map_err(|e| format!("購読者情報の取得に失敗しました: {}", e))?
+                .map_err(|e| format!("購読者情報の取得に失敗しました: {e}"))?
                 .ok_or_else(|| "購読者が見つかりません".to_string())?;
 
         // メール送信
@@ -273,7 +273,7 @@ impl SequenceService {
         // メールサービスを初期化
         let email_service = EmailService::new(pool.clone())
             .await
-            .map_err(|e| format!("メールサービスの初期化に失敗しました: {}", e))?;
+            .map_err(|e| format!("メールサービスの初期化に失敗しました: {e}"))?;
 
         // マークダウンサービスを初期化
         let markdown_service = MarkdownService::new();
@@ -321,7 +321,7 @@ impl SequenceService {
         // HTMLとテキストをレンダリング
         let html_body = markdown_service
             .render_with_variables(&template.markdown_content, &variables)
-            .map_err(|e| format!("HTMLレンダリングに失敗しました: {}", e))?;
+            .map_err(|e| format!("HTMLレンダリングに失敗しました: {e}"))?;
 
         let text_body = html2text::from_read(html_body.as_bytes(), 80);
 
@@ -345,7 +345,7 @@ impl SequenceService {
         email_service
             .send_email(&email_message)
             .await
-            .map_err(|e| format!("メール送信に失敗しました: {}", e))?;
+            .map_err(|e| format!("メール送信に失敗しました: {e}"))?;
 
         Ok(())
     }
@@ -356,7 +356,7 @@ impl SequenceService {
         if let Value::Object(vars) = variables {
             for (key, value) in vars {
                 if let Value::String(val) = value {
-                    result = result.replace(&format!("{{{{{}}}}}", key), val);
+                    result = result.replace(&format!("{{{{{key}}}}}"), val);
                 }
             }
         }
@@ -423,7 +423,7 @@ impl SequenceService {
         // シーケンスからuser_idを取得
         let sequence = sequences::find_sequence_by_id(pool, enrollment.sequence_id, None)
             .await
-            .map_err(|e| format!("シーケンスの取得に失敗しました: {}", e))?
+            .map_err(|e| format!("シーケンスの取得に失敗しました: {e}"))?
             .ok_or_else(|| "シーケンスが見つかりません".to_string())?;
 
         // action_configからタグを取得
@@ -435,7 +435,7 @@ impl SequenceService {
                 sequence.user_id,
             )
             .await
-            .map_err(|e| format!("購読者の取得に失敗しました: {}", e))?
+            .map_err(|e| format!("購読者の取得に失敗しました: {e}"))?
             .ok_or_else(|| "購読者が見つかりません".to_string())?;
 
             let mut tags = current_subscriber.tags;
@@ -459,7 +459,7 @@ impl SequenceService {
                 &update_request,
             )
             .await
-            .map_err(|e| format!("タグの更新に失敗しました: {}", e))?;
+            .map_err(|e| format!("タグの更新に失敗しました: {e}"))?;
         }
 
         // 次のステップへ移動
@@ -483,18 +483,18 @@ impl SequenceService {
         // シーケンスの全ステップ数を取得
         let steps = sequences::find_sequence_steps(pool, enrollment.sequence_id)
             .await
-            .map_err(|e| format!("ステップ数の取得に失敗しました: {}", e))?;
+            .map_err(|e| format!("ステップ数の取得に失敗しました: {e}"))?;
 
         if next_step_order > steps.len() as i32 {
             // すべてのステップが完了
             sequences::complete_sequence_enrollment(pool, enrollment.id)
                 .await
-                .map_err(|e| format!("エンロールメントの完了に失敗しました: {}", e))?;
+                .map_err(|e| format!("エンロールメントの完了に失敗しました: {e}"))?;
         } else {
             // 次のステップへ更新
             sequences::update_enrollment_progress(pool, enrollment.id, next_step_order)
                 .await
-                .map_err(|e| format!("進捗の更新に失敗しました: {}", e))?;
+                .map_err(|e| format!("進捗の更新に失敗しました: {e}"))?;
         }
 
         Ok(())
@@ -515,7 +515,7 @@ impl SequenceService {
             next_execution_at,
         )
         .await
-        .map_err(|e| format!("次のステップのスケジューリングに失敗しました: {}", e))?;
+        .map_err(|e| format!("次のステップのスケジューリングに失敗しました: {e}"))?;
 
         Ok(())
     }
@@ -531,7 +531,7 @@ impl SequenceService {
     ) -> Result<SequenceStepLog, String> {
         sequences::create_sequence_step_log(pool, enrollment_id, step_id, status, error_message)
             .await
-            .map_err(|e| format!("ステップログの記録に失敗しました: {}", e))
+            .map_err(|e| format!("ステップログの記録に失敗しました: {e}"))
     }
 }
 
