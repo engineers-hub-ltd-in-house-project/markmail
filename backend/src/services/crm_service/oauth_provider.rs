@@ -48,29 +48,63 @@ impl OAuthSalesforceProvider {
 
     /// 内部のSalesforceプロバイダーを作成（アクセストークンを自動更新）
     async fn create_provider(&self) -> Result<SalesforceProvider, CrmError> {
+        tracing::info!("Creating Salesforce provider for user: {}", self.user_id);
+
         // 有効なアクセストークンを取得（自動リフレッシュ）
         let access_token = self
             .oauth_service
             .get_access_token(self.user_id)
             .await
-            .map_err(|e| CrmError::Authentication(format!("Failed to get access token: {e}")))?;
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to get access token for user {}: {}",
+                    self.user_id,
+                    e
+                );
+                CrmError::Authentication(format!("Failed to get access token: {e}"))
+            })?;
+
+        tracing::debug!("Successfully retrieved access token");
 
         // インスタンスURLを取得
         let instance_url = self
             .oauth_service
             .get_instance_url(self.user_id)
             .await
-            .map_err(|e| CrmError::Configuration(format!("Failed to get instance URL: {e}")))?;
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to get instance URL for user {}: {}",
+                    self.user_id,
+                    e
+                );
+                CrmError::Configuration(format!("Failed to get instance URL: {e}"))
+            })?;
+
+        tracing::debug!("Instance URL: {}", instance_url);
 
         // 認証詳細を取得
         let auth_details = self
             .oauth_service
             .get_auth_details(self.user_id)
             .await
-            .map_err(|e| CrmError::Configuration(format!("Failed to get auth details: {e}")))?
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to get auth details for user {}: {}",
+                    self.user_id,
+                    e
+                );
+                CrmError::Configuration(format!("Failed to get auth details: {e}"))
+            })?
             .ok_or_else(|| {
+                tracing::error!("No authentication details found for user {}", self.user_id);
                 CrmError::Authentication("No authentication details found".to_string())
             })?;
+
+        tracing::info!(
+            "Auth details retrieved - org_id: {}, username: {}",
+            auth_details.org_id,
+            auth_details.username
+        );
 
         // Salesforce設定を構築
         let config = SalesforceConfig {

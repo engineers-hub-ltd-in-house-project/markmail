@@ -91,24 +91,39 @@ pub struct SalesforceOAuthSettings {
     pub auth_url: String,
     pub token_url: String,
     pub redirect_url: String,
+    pub is_sandbox: bool,
 }
 
 impl SalesforceOAuthSettings {
     /// 環境変数から設定を読み込み
     pub fn from_env() -> Result<Self, String> {
+        let is_sandbox = std::env::var("SALESFORCE_IS_SANDBOX")
+            .unwrap_or_else(|_| "false".to_string())
+            .to_lowercase()
+            == "true";
+
         Ok(Self {
             client_id: std::env::var("SALESFORCE_CLIENT_ID")
                 .map_err(|_| "SALESFORCE_CLIENT_ID not set")?,
             client_secret: std::env::var("SALESFORCE_CLIENT_SECRET")
                 .map_err(|_| "SALESFORCE_CLIENT_SECRET not set")?,
             auth_url: std::env::var("SALESFORCE_AUTH_URL").unwrap_or_else(|_| {
-                "https://login.salesforce.com/services/oauth2/authorize".to_string()
+                if is_sandbox {
+                    "https://test.salesforce.com/services/oauth2/authorize".to_string()
+                } else {
+                    "https://login.salesforce.com/services/oauth2/authorize".to_string()
+                }
             }),
             token_url: std::env::var("SALESFORCE_TOKEN_URL").unwrap_or_else(|_| {
-                "https://login.salesforce.com/services/oauth2/token".to_string()
+                if is_sandbox {
+                    "https://test.salesforce.com/services/oauth2/token".to_string()
+                } else {
+                    "https://login.salesforce.com/services/oauth2/token".to_string()
+                }
             }),
             redirect_url: std::env::var("SALESFORCE_REDIRECT_URI")
                 .map_err(|_| "SALESFORCE_REDIRECT_URI not set")?,
+            is_sandbox,
         })
     }
 }
