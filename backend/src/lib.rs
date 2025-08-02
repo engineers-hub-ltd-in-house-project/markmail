@@ -2,6 +2,7 @@
 
 pub mod ai;
 pub mod api;
+pub mod crm;
 pub mod database;
 pub mod middleware;
 pub mod models;

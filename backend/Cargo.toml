@@ -70,7 +70,7 @@ csv = "1.3"
 mockall = "0.12.1"
 
 # AI/LLM統合
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 tiktoken-rs = "0.5"
 
 # 決済処理（Stripe推奨のコミュニティSDK）
@@ -79,3 +79,6 @@ async-stripe = { version = "0.31", features = ["runtime-tokio-hyper", "checkout"
 # Salesforce統合
 rustforce = "0.2"
 salesforce-bulk-api = { path = "./crates/salesforce-bulk-api" }
+
+# OAuth2
+oauth2 = { version = "5.0", features = ["reqwest"] }
