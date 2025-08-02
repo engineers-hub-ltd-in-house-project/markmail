@@ -119,17 +119,51 @@ impl SalesforceOAuthClient {
     }
 
     /// アクセストークンを使用してSalesforceのユーザー情報を取得
+    /// インスタンスURLを渡すことで、組織固有のエンドポイントを使用する
     pub async fn get_user_info(&self, access_token: &str) -> Result<SalesforceUserInfo, String> {
+        self.get_user_info_with_instance_url(access_token, None)
+            .await
+    }
+
+    /// インスタンスURLを指定してユーザー情報を取得
+    pub async fn get_user_info_with_instance_url(
+        &self,
+        access_token: &str,
+        instance_url: Option<&str>,
+    ) -> Result<SalesforceUserInfo, String> {
+        // インスタンスURLが指定されている場合はそれを使用、そうでない場合はデフォルトのURLを使用
+        let userinfo_url = if let Some(instance_url) = instance_url {
+            format!(
+                "{}/services/oauth2/userinfo",
+                instance_url.trim_end_matches('/')
+            )
+        } else {
+            // フォールバック: サンドボックスか本番環境かに応じてURLを決定
+            if self.settings.is_sandbox {
+                "https://test.salesforce.com/services/oauth2/userinfo".to_string()
+            } else {
+                "https://login.salesforce.com/services/oauth2/userinfo".to_string()
+            }
+        };
+
+        tracing::debug!("Getting user info from URL: {}", userinfo_url);
+
         let client = reqwest::Client::new();
         let response = client
-            .get("https://login.salesforce.com/services/oauth2/userinfo")
+            .get(&userinfo_url)
             .bearer_auth(access_token)
             .send()
             .await
             .map_err(|e| format!("Failed to get user info: {e}"))?;
 
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() {
             let error_text = response.text().await.unwrap_or_default();
+            tracing::error!(
+                "User info request failed: {} - Response: {}",
+                status,
+                error_text
+            );
             return Err(format!("User info request failed: {error_text}"));
         }
 
@@ -214,6 +248,7 @@ mod tests {
             auth_url: "https://login.salesforce.com/services/oauth2/authorize".to_string(),
             token_url: "https://login.salesforce.com/services/oauth2/token".to_string(),
             redirect_url: "http://localhost:3000/api/crm/oauth/salesforce/callback".to_string(),
+            is_sandbox: false,
         };
 
         let client = SalesforceOAuthClient::new(settings);
@@ -228,6 +263,7 @@ mod tests {
             auth_url: "https://login.salesforce.com/services/oauth2/authorize".to_string(),
             token_url: "https://login.salesforce.com/services/oauth2/token".to_string(),
             redirect_url: "http://localhost:3000/api/crm/oauth/salesforce/callback".to_string(),
+            is_sandbox: false,
         };
 
         let client = SalesforceOAuthClient::new(settings).unwrap();

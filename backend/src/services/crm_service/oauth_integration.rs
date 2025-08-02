@@ -61,7 +61,10 @@ impl OAuthIntegrationService {
                 let access_token = self.get_access_token(user_id).await?;
                 let settings = SalesforceOAuthSettings::from_env()?;
                 let oauth_client = SalesforceOAuthClient::new(settings)?;
-                let user_info = oauth_client.get_user_info(&access_token).await?;
+                // インスタンスURLを使用してユーザー情報を取得
+                let user_info = oauth_client
+                    .get_user_info_with_instance_url(&access_token, Some(&token.instance_url))
+                    .await?;
 
                 Ok(Some(AuthDetails {
                     org_id: user_info.organization_id,
