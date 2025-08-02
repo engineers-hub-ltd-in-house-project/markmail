@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO salesforce_token_refresh_logs \n            (user_id, status, error_message)\n            VALUES ($1, $2, $3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Text"]
+    },
+    "nullable": []
+  },
+  "hash": "3ed98c34d94c2c43725171d78051462d28b073273150d326b95cefab9378ee8b"
+}

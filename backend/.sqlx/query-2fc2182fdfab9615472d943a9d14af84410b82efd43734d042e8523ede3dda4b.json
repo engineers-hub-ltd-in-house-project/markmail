@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO salesforce_oauth_tokens \n            (user_id, access_token, refresh_token, instance_url, token_type, expires_at)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            ON CONFLICT (user_id) \n            DO UPDATE SET \n                access_token = EXCLUDED.access_token,\n                refresh_token = EXCLUDED.refresh_token,\n                instance_url = EXCLUDED.instance_url,\n                token_type = EXCLUDED.token_type,\n                expires_at = EXCLUDED.expires_at,\n                updated_at = CURRENT_TIMESTAMP\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Text", "Text", "Text", "Varchar", "Timestamptz"]
+    },
+    "nullable": []
+  },
+  "hash": "2fc2182fdfab9615472d943a9d14af84410b82efd43734d042e8523ede3dda4b"
+}
