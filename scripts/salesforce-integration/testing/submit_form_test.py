@@ -80,7 +80,8 @@ if submit_response.status_code == 201:
     print("✅ フォーム送信成功!")
     submission = submit_response.json()
     print(f"送信ID: {submission['id']}")
-    print(f"送信時刻: {submission['submitted_at']}")
+    if submission.get('submitted_at'):
+        print(f"送信時刻: {submission['submitted_at']}")
     if submission.get('subscriber_id'):
         print(f"購読者ID: {submission['subscriber_id']}")
     

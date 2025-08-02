@@ -145,6 +145,7 @@ const ecsServiceStack = new ECSServiceStack(app, `MarkMail-${environmentName}-EC
   dbSecret: databaseStack.dbSecret,
   aiSecret: databaseStack.aiSecret,
   stripeSecret: databaseStack.stripeSecret,
+  salesforceSecret: databaseStack.salesforceSecret,
   cacheCluster: databaseStack.cacheCluster,
   loadBalancer: albStack.loadBalancer,
   httpsListener: albStack.httpsListener,

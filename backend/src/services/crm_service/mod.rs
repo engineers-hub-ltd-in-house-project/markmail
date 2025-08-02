@@ -14,6 +14,8 @@ use crate::{
     },
 };
 
+pub mod oauth_integration;
+pub mod oauth_provider;
 pub mod salesforce;
 pub mod salesforce_auth;
 
@@ -125,7 +127,7 @@ impl CrmService {
         // TODO: データベースから統合設定を読み込む
         // 現在は仮の実装
         let config = Self::load_config_from_db(&pool, user_id).await?;
-        let provider = Self::create_provider(&config).await?;
+        let provider = Self::create_provider(&config, &pool, user_id).await?;
 
         Ok(Self {
             provider: Arc::new(provider),
@@ -186,15 +188,35 @@ impl CrmService {
     }
 
     /// プロバイダーを作成
-    async fn create_provider(config: &CrmConfig) -> Result<Box<dyn CrmProvider>, CrmError> {
+    async fn create_provider(
+        config: &CrmConfig,
+        pool: &PgPool,
+        user_id: Uuid,
+    ) -> Result<Box<dyn CrmProvider>, CrmError> {
         match &config.provider {
             CrmProviderType::Salesforce => {
-                if let Some(sf_config) = &config.salesforce_config {
+                // まずOAuth2認証を試みる
+                let oauth_service = oauth_integration::OAuthIntegrationService::new(pool.clone())
+                    .map_err(|e| {
+                    CrmError::Configuration(format!("OAuth service error: {e}"))
+                })?;
+
+                if oauth_service
+                    .is_authenticated(user_id)
+                    .await
+                    .map_err(CrmError::Authentication)?
+                {
+                    // OAuth2認証済みの場合
+                    let provider =
+                        oauth_provider::OAuthSalesforceProvider::new(pool.clone(), user_id).await?;
+                    Ok(Box::new(provider))
+                } else if let Some(sf_config) = &config.salesforce_config {
+                    // 従来のCLI/設定ベースの認証
                     let provider = salesforce::SalesforceProvider::new(sf_config.clone()).await?;
                     Ok(Box::new(provider))
                 } else {
                     Err(CrmError::Configuration(
-                        "Salesforce設定が見つかりません".to_string(),
+                        "Salesforce認証が設定されていません。OAuth2認証を行うか、統合設定を追加してください".to_string(),
                     ))
                 }
             }

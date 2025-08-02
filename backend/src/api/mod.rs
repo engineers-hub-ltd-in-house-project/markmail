@@ -11,6 +11,8 @@ pub mod ai_usage;
 pub mod auth;
 pub mod campaigns;
 pub mod crm;
+pub mod crm_oauth;
+pub mod crm_oauth_integration;
 pub mod email;
 pub mod forms;
 pub mod integrations;
@@ -37,6 +39,11 @@ pub fn create_routes() -> Router<AppState> {
         .route(
             "/api/stripe/webhook",
             post(stripe_webhook::handle_stripe_webhook),
+        )
+        // OAuth2 Callback (公開エンドポイント)
+        .route(
+            "/api/crm/oauth/salesforce/callback",
+            get(crm_oauth::salesforce_auth_callback),
         );
 
     // 保護されたルート（認証必要）
@@ -191,6 +198,32 @@ pub fn create_routes() -> Router<AppState> {
         .route(
             "/api/crm/sync/subscribers/bulk",
             post(crm::bulk_sync_subscribers),
+        )
+        // CRM OAuth2
+        .route(
+            "/api/crm/oauth/salesforce/init",
+            get(crm_oauth::init_salesforce_auth),
+        )
+        .route(
+            "/api/crm/oauth/salesforce/status",
+            get(crm_oauth::check_salesforce_auth_status),
+        )
+        .route(
+            "/api/crm/oauth/salesforce/revoke",
+            post(crm_oauth::revoke_salesforce_auth),
+        )
+        // CRM OAuth2 統合
+        .route(
+            "/api/crm/oauth/integration/status",
+            get(crm_oauth_integration::check_crm_oauth_status),
+        )
+        .route(
+            "/api/crm/oauth/integration",
+            post(crm_oauth_integration::create_oauth_integration),
+        )
+        .route(
+            "/api/crm/oauth/integration/sync",
+            post(crm_oauth_integration::sync_crm_data),
         )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));

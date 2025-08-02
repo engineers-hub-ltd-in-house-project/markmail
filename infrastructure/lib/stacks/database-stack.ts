@@ -17,6 +17,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly cacheCluster: cdk.aws_elasticache.CfnCacheCluster;
   public readonly aiSecret: cdk.aws_secretsmanager.Secret;
   public readonly stripeSecret: cdk.aws_secretsmanager.Secret;
+  public readonly salesforceSecret: cdk.aws_secretsmanager.Secret;
 
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
@@ -68,6 +69,25 @@ export class DatabaseStack extends cdk.Stack {
       },
     });
 
+    // Salesforce OAuth2関連のシークレット
+    this.salesforceSecret = new cdk.aws_secretsmanager.Secret(this, 'SalesforceSecret', {
+      secretName: `markmail-${environmentName}-salesforce-secret`,
+      description: 'Salesforce OAuth2 credentials',
+      secretObjectValue: {
+        SALESFORCE_CLIENT_ID: cdk.SecretValue.unsafePlainText('your-salesforce-client-id-here'),
+        SALESFORCE_CLIENT_SECRET: cdk.SecretValue.unsafePlainText(
+          'your-salesforce-client-secret-here'
+        ),
+        SALESFORCE_IS_SANDBOX: cdk.SecretValue.unsafePlainText('true'),
+        SALESFORCE_AUTH_URL: cdk.SecretValue.unsafePlainText(
+          'https://test.salesforce.com/services/oauth2/authorize'
+        ),
+        SALESFORCE_TOKEN_URL: cdk.SecretValue.unsafePlainText(
+          'https://test.salesforce.com/services/oauth2/token'
+        ),
+      },
+    });
+
     // Export values for cross-stack references
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.database.dbInstanceEndpointAddress,
@@ -97,6 +117,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'StripeSecretArn', {
       value: this.stripeSecret.secretArn,
       exportName: `${this.stackName}-StripeSecretArn`,
+    });
+
+    new cdk.CfnOutput(this, 'SalesforceSecretArn', {
+      value: this.salesforceSecret.secretArn,
+      exportName: `${this.stackName}-SalesforceSecretArn`,
     });
 
     // Stack tags
