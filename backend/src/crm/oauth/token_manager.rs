@@ -180,20 +180,24 @@ impl TokenManager {
     /// Authorization Codeを交換してトークンを保存
     pub async fn exchange_code_and_save(&self, user_id: Uuid, code: String) -> Result<(), String> {
         // Authorization Codeをトークンに交換
-        let mut tokens = self.oauth_client.exchange_code(code).await?;
+        let tokens = self.oauth_client.exchange_code(code).await?;
 
-        // ユーザー情報を取得してinstance_urlを取得
+        // Salesforceのトークンレスポンスにはinstance_urlが含まれている
+        let instance_url = tokens
+            .instance_url
+            .as_ref()
+            .ok_or("Instance URL not found in token response")?;
+
+        // ユーザー情報を取得して検証（instance_urlを使用）
         let user_info = self
             .oauth_client
-            .get_user_info(&tokens.access_token)
+            .get_user_info_with_instance_url(&tokens.access_token, Some(instance_url))
             .await?;
-        let instance_url = extract_instance_url(&user_info.urls.rest)?;
 
-        // トークンにinstance_urlを設定
-        tokens.instance_url = Some(instance_url.clone());
+        tracing::info!("Successfully authenticated user: {}", user_info.user_id);
 
         // トークンを保存
-        self.save_tokens(user_id, &tokens, &instance_url)
+        self.save_tokens(user_id, &tokens, instance_url)
             .await
             .map_err(|e| format!("Failed to save tokens: {e}"))?;
 
@@ -201,29 +205,9 @@ impl TokenManager {
     }
 }
 
-/// RESTエンドポイントからインスタンスURLを抽出
-fn extract_instance_url(rest_url: &str) -> Result<String, String> {
-    // 例: "https://na1.salesforce.com/services/data/v59.0/"
-    // から "https://na1.salesforce.com" を抽出
-    rest_url
-        .split("/services/data/")
-        .next()
-        .ok_or_else(|| "Invalid REST URL format".to_string())
-        .map(|s| s.to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_extract_instance_url() {
-        let rest_url = "https://na1.salesforce.com/services/data/v59.0/";
-        let result = extract_instance_url(rest_url);
-        assert_eq!(result.unwrap(), "https://na1.salesforce.com");
-
-        let rest_url = "https://my-domain.my.salesforce.com/services/data/v59.0/";
-        let result = extract_instance_url(rest_url);
-        assert_eq!(result.unwrap(), "https://my-domain.my.salesforce.com");
-    }
+    // TODO: Add tests for TokenManager
 }
