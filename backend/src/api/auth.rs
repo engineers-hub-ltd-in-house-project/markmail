@@ -3,7 +3,10 @@ use serde_json::{json, Value};
 use validator::Validate;
 
 use crate::{
-    models::user::{AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest},
+    models::user::{
+        AuthResponse, ForgotPasswordRequest, LoginRequest, MessageResponse, RefreshTokenRequest,
+        RegisterRequest, ResetPasswordRequest,
+    },
     services::auth_service::{AuthError, AuthService},
     AppState,
 };
@@ -113,10 +116,88 @@ pub async fn refresh_token(
     }
 }
 
+/// パスワードリセットリクエストエンドポイント
+pub async fn forgot_password(
+    State(state): State<AppState>,
+    Json(payload): Json<ForgotPasswordRequest>,
+) -> Result<Json<MessageResponse>, (StatusCode, Json<Value>)> {
+    // バリデーション
+    if let Err(errors) = payload.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "バリデーションエラー",
+                "details": errors
+            })),
+        ));
+    }
+
+    let auth_service = AuthService::new(state.db.clone());
+
+    match auth_service.request_password_reset(payload).await {
+        Ok(response) => Ok(Json(response)),
+        Err(AuthError::TooManyResetRequests) => Err((
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(json!({
+                "error": "パスワードリセットのリクエストが多すぎます。しばらくしてからもう一度お試しください。"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("パスワードリセットリクエストエラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "パスワードリセットのリクエストに失敗しました"
+                })),
+            ))
+        }
+    }
+}
+
+/// パスワードリセット実行エンドポイント
+pub async fn reset_password(
+    State(state): State<AppState>,
+    Json(payload): Json<ResetPasswordRequest>,
+) -> Result<Json<MessageResponse>, (StatusCode, Json<Value>)> {
+    // バリデーション
+    if let Err(errors) = payload.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "バリデーションエラー",
+                "details": errors
+            })),
+        ));
+    }
+
+    let auth_service = AuthService::new(state.db.clone());
+
+    match auth_service.reset_password(payload).await {
+        Ok(response) => Ok(Json(response)),
+        Err(AuthError::InvalidOrExpiredResetToken) => Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "無効またはパスワードリセットトークンの有効期限が切れています"
+            })),
+        )),
+        Err(e) => {
+            tracing::error!("パスワードリセットエラー: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "パスワードのリセットに失敗しました"
+                })),
+            ))
+        }
+    }
+}
+
 /// 認証関連のルーターを構築
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/refresh", post(refresh_token))
+        .route("/forgot-password", post(forgot_password))
+        .route("/reset-password", post(reset_password))
 }

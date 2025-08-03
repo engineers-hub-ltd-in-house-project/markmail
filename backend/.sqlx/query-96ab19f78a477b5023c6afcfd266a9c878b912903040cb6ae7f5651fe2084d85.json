@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE users\n        SET stripe_customer_id = $2,\n            updated_at = NOW()\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Varchar"]
+    },
+    "nullable": []
+  },
+  "hash": "96ab19f78a477b5023c6afcfd266a9c878b912903040cb6ae7f5651fe2084d85"
+}

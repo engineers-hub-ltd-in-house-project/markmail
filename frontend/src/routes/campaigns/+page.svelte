@@ -89,21 +89,19 @@
 
   // ステータスに応じたバッジスタイルを取得
   function getStatusBadgeClass(status: CampaignStatus): string {
-    const baseClass = "px-2 py-1 text-xs font-medium rounded-full";
-
     switch (status) {
       case CampaignStatus.DRAFT:
-        return `${baseClass} bg-gray-200 text-gray-800`;
+        return "badge badge-info";
       case CampaignStatus.SCHEDULED:
-        return `${baseClass} bg-blue-100 text-blue-800`;
+        return "badge badge-info";
       case CampaignStatus.SENDING:
-        return `${baseClass} bg-yellow-100 text-yellow-800`;
+        return "badge badge-warning";
       case CampaignStatus.SENT:
-        return `${baseClass} bg-green-100 text-green-800`;
+        return "badge badge-success";
       case CampaignStatus.CANCELED:
-        return `${baseClass} bg-red-100 text-red-800`;
+        return "badge badge-error";
       default:
-        return baseClass;
+        return "badge";
     }
   }
 
@@ -121,251 +119,340 @@
   }
 </script>
 
-<div class="max-w-7xl mx-auto px-4 py-8">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">キャンペーン管理</h1>
-    <a
-      href="/campaigns/new"
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
-    >
-      <PlusIcon class="w-4 h-4 mr-2" />
-      新規キャンペーン作成
-    </a>
-  </div>
-
-  <!-- フィルター・検索 -->
-  <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-    <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4"
-    >
-      <!-- ステータスフィルター -->
-      <div class="flex flex-wrap gap-2">
-        <button
-          class={`px-3 py-1.5 text-sm font-medium rounded-md ${!currentStatus ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-          on:click={() => filterByStatus(undefined)}
-        >
-          全て
-        </button>
-        {#each Object.values(CampaignStatus) as status}
-          <button
-            class={`px-3 py-1.5 text-sm font-medium rounded-md ${currentStatus === status ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-            on:click={() => filterByStatus(status)}
-          >
-            {formatStatus(status)}
-          </button>
-        {/each}
+<div class="section animate-in">
+  <div class="container-wide">
+    <div class="flex justify-between items-center mb-12">
+      <div>
+        <h1 class="page-header">キャンペーン管理</h1>
+        <p class="page-subtitle">メールキャンペーンの作成・配信・分析</p>
       </div>
-
-      <!-- 検索ボックス -->
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
-        >
-          <SearchIcon class="w-4 h-4 text-gray-500" />
-        </div>
-        <input
-          type="text"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
-          placeholder="キャンペーン名、説明で検索..."
-          bind:value={searchTerm}
-        />
-      </div>
+      <a href="/campaigns/new" class="btn-primary">
+        <PlusIcon class="w-5 h-5 mr-2" />
+        新規キャンペーン作成
+      </a>
     </div>
-  </div>
 
-  <!-- エラーメッセージ -->
-  {#if error}
-    <div
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-    >
-      <p>{error}</p>
-    </div>
-  {/if}
-
-  <!-- 読み込み中表示 -->
-  {#if isLoading}
-    <div class="text-center py-12">
+    <!-- フィルター・検索 -->
+    <div class="card mb-8">
       <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-      ></div>
-      <p class="mt-4 text-gray-600">読み込み中...</p>
-    </div>
-  {:else if filteredCampaigns.length === 0}
-    <div
-      class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center"
-    >
-      {#if searchTerm}
-        <p class="text-lg text-gray-600">
-          検索条件に一致するキャンペーンはありません。
-        </p>
-      {:else if currentStatus}
-        <p class="text-lg text-gray-600">
-          「{formatStatus(currentStatus)}」のキャンペーンはありません。
-        </p>
-      {:else}
-        <p class="text-lg text-gray-600">
-          キャンペーンはまだ作成されていません。
-        </p>
-        <a
-          href="/campaigns/new"
-          class="inline-block mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-        >
-          最初のキャンペーンを作成
-        </a>
-      {/if}
-    </div>
-  {:else}
-    <!-- キャンペーン一覧 -->
-    <div
-      class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200"
-    >
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >キャンペーン名</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >ステータス</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >予定日時</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >配信数</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >開封率</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >作成日</th
-              >
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >アクション</th
-              >
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            {#each filteredCampaigns as campaign}
-              <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">
-                    {campaign.name}
-                  </div>
-                  {#if campaign.description}
-                    <div class="text-sm text-gray-500 truncate max-w-xs">
-                      {campaign.description}
-                    </div>
-                  {/if}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class={getStatusBadgeClass(campaign.status)}>
-                    {formatStatus(campaign.status)}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(campaign.scheduled_at)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {campaign.total_recipients}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {campaign.total_recipients > 0
-                    ? `${Math.round((campaign.opened_count / campaign.total_recipients) * 100)}%`
-                    : "0%"}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(campaign.created_at)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div class="flex space-x-2">
-                    <a
-                      href={`/campaigns/${campaign.id}`}
-                      class="text-blue-600 hover:text-blue-900"
-                    >
-                      詳細
-                    </a>
-                    <a
-                      href={`/campaigns/${campaign.id}/edit`}
-                      class="text-indigo-600 hover:text-indigo-900"
-                    >
-                      編集
-                    </a>
-                    {#if campaign.status === CampaignStatus.DRAFT}
-                      <button
-                        class="text-red-600 hover:text-red-900"
-                        on:click={() => deleteCampaign(campaign.id)}
-                      >
-                        削除
-                      </button>
-                    {/if}
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+        class="flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
+        <!-- ステータスフィルター -->
+        <div class="flex flex-wrap gap-3">
+          <button
+            class={!currentStatus
+              ? "btn-primary btn-sm"
+              : "btn-secondary btn-sm"}
+            on:click={() => filterByStatus(undefined)}
+          >
+            全て
+          </button>
+          {#each Object.values(CampaignStatus) as status}
+            <button
+              class={currentStatus === status
+                ? "btn-primary btn-sm"
+                : "btn-secondary btn-sm"}
+              on:click={() => filterByStatus(status)}
+            >
+              {formatStatus(status)}
+            </button>
+          {/each}
+        </div>
+
+        <!-- 検索ボックス -->
+        <div class="relative md:w-80">
+          <div
+            class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none"
+          >
+            <SearchIcon class="w-5 h-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            class="input-field pl-12"
+            placeholder="キャンペーン名、説明で検索..."
+            bind:value={searchTerm}
+          />
+        </div>
       </div>
     </div>
 
-    <!-- ページネーション -->
-    {#if total > limit}
-      <div class="mt-4 flex items-center justify-between">
-        <div class="text-sm text-gray-700">
-          全 <span class="font-medium">{total}</span> 件中
-          <span class="font-medium">{offset + 1}</span> から
-          <span class="font-medium">{Math.min(offset + limit, total)}</span> 件を表示
-        </div>
-        <div class="flex space-x-2">
-          <button
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={offset === 0}
-            on:click={() => {
-              offset = Math.max(0, offset - limit);
-              fetchCampaigns();
-            }}
-          >
-            前へ
-          </button>
-          <button
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={offset + limit >= total}
-            on:click={() => {
-              offset = offset + limit;
-              fetchCampaigns();
-            }}
-          >
-            次へ
-          </button>
-        </div>
+    <!-- エラーメッセージ -->
+    {#if error}
+      <div class="card bg-red-50 border-red-100 mb-6">
+        <p class="text-red-600 font-light">{error}</p>
       </div>
     {/if}
-  {/if}
 
-  <!-- 更新ボタン -->
-  <div class="flex justify-center mt-8">
-    <button
-      class="flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-      on:click={fetchCampaigns}
-      disabled={isLoading}
-    >
-      <RefreshCwIcon class="w-4 h-4 mr-2" />
-      {isLoading ? "更新中..." : "更新"}
-    </button>
+    <!-- 読み込み中表示 -->
+    {#if isLoading}
+      <div class="text-center py-24">
+        <div class="inline-block">
+          <div
+            class="w-12 h-12 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"
+          ></div>
+        </div>
+        <p class="mt-4 text-gray-600 font-light">読み込み中...</p>
+      </div>
+    {:else if filteredCampaigns.length === 0}
+      <div class="text-center py-24">
+        <div class="max-w-sm mx-auto">
+          <div
+            class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"
+          >
+            <svg
+              class="w-10 h-10 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          </div>
+          {#if searchTerm}
+            <h3 class="text-xl font-light text-gray-900 mb-2">
+              検索結果がありません
+            </h3>
+            <p class="text-gray-600 font-light">
+              別のキーワードで検索してください
+            </p>
+          {:else if currentStatus}
+            <h3 class="text-xl font-light text-gray-900 mb-2">
+              「{formatStatus(currentStatus)}」のキャンペーンはありません
+            </h3>
+            <p class="text-gray-600 font-light">
+              他のステータスで絞り込んでみてください
+            </p>
+          {:else}
+            <h3 class="text-xl font-light text-gray-900 mb-2">
+              キャンペーンがありません
+            </h3>
+            <p class="text-gray-600 font-light mb-8">
+              最初のキャンペーンを作成しましょう
+            </p>
+            <a href="/campaigns/new" class="btn-primary">
+              最初のキャンペーンを作成
+            </a>
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <!-- キャンペーン一覧 -->
+      <div class="card overflow-hidden p-0">
+        <div class="overflow-x-auto">
+          <table class="table-minimal">
+            <thead>
+              <tr>
+                <th>キャンペーン名</th>
+                <th>ステータス</th>
+                <th>予定日時</th>
+                <th>配信数</th>
+                <th>開封率</th>
+                <th>作成日</th>
+                <th>アクション</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each filteredCampaigns as campaign}
+                <tr>
+                  <td>
+                    <div class="font-light text-gray-900">
+                      {campaign.name}
+                    </div>
+                    {#if campaign.description}
+                      <div
+                        class="text-sm text-gray-500 truncate max-w-xs font-light"
+                      >
+                        {campaign.description}
+                      </div>
+                    {/if}
+                  </td>
+                  <td>
+                    <span class={getStatusBadgeClass(campaign.status)}>
+                      {formatStatus(campaign.status)}
+                    </span>
+                  </td>
+                  <td class="text-sm text-gray-600 font-light">
+                    {formatDate(campaign.scheduled_at)}
+                  </td>
+                  <td class="text-sm text-gray-600 font-light">
+                    {campaign.stats.recipient_count}
+                  </td>
+                  <td class="text-sm text-gray-600 font-light">
+                    {campaign.stats.sent_count > 0
+                      ? `${Math.round(campaign.stats.open_rate * 100)}%`
+                      : "0%"}
+                  </td>
+                  <td class="text-sm text-gray-600 font-light">
+                    {formatDate(campaign.created_at)}
+                  </td>
+                  <td>
+                    <div class="flex items-center space-x-2">
+                      <a
+                        href={`/campaigns/${campaign.id}`}
+                        class="icon-button"
+                        title="詳細"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                      </a>
+                      <a
+                        href={`/campaigns/${campaign.id}/edit`}
+                        class="icon-button"
+                        title="編集"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </a>
+                      {#if campaign.status === CampaignStatus.DRAFT}
+                        <button
+                          class="icon-button hover:bg-red-50 hover:text-red-600"
+                          on:click={() => deleteCampaign(campaign.id)}
+                          title="削除"
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      {/if}
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ページネーション -->
+      {#if total > limit}
+        <div class="mt-6 flex items-center justify-between">
+          <div class="text-sm text-gray-600 font-light">
+            全 <span class="font-normal">{total}</span> 件中
+            <span class="font-normal">{offset + 1}</span> から
+            <span class="font-normal">{Math.min(offset + limit, total)}</span> 件を表示
+          </div>
+          <div class="flex space-x-3">
+            <button
+              class="btn-secondary btn-sm"
+              disabled={offset === 0}
+              on:click={() => {
+                offset = Math.max(0, offset - limit);
+                fetchCampaigns();
+              }}
+            >
+              <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              前へ
+            </button>
+            <button
+              class="btn-secondary btn-sm"
+              disabled={offset + limit >= total}
+              on:click={() => {
+                offset = offset + limit;
+                fetchCampaigns();
+              }}
+            >
+              次へ
+              <svg
+                class="w-4 h-4 ml-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      {/if}
+    {/if}
+
+    <!-- 更新ボタン -->
+    <div class="flex justify-center mt-12">
+      <button
+        class="btn-secondary"
+        on:click={fetchCampaigns}
+        disabled={isLoading}
+      >
+        <RefreshCwIcon class="w-5 h-5 mr-2 {isLoading ? 'animate-spin' : ''}" />
+        {isLoading ? "更新中..." : "更新"}
+      </button>
+    </div>
   </div>
 </div>
+
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.6s ease-out;
+  }
+</style>

@@ -33,6 +33,7 @@ pub enum CampaignStatus {
     Sent,
     Paused,
     Cancelled,
+    Error,
 }
 
 impl fmt::Display for CampaignStatus {
@@ -44,8 +45,9 @@ impl fmt::Display for CampaignStatus {
             CampaignStatus::Sent => "sent",
             CampaignStatus::Paused => "paused",
             CampaignStatus::Cancelled => "cancelled",
+            CampaignStatus::Error => "error",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -67,7 +69,8 @@ impl<'r> sqlx::Decode<'r, sqlx::Postgres> for CampaignStatus {
             "sent" => Ok(CampaignStatus::Sent),
             "paused" => Ok(CampaignStatus::Paused),
             "cancelled" => Ok(CampaignStatus::Cancelled),
-            other => Err(format!("Unknown campaign status: {}", other).into()),
+            "error" => Ok(CampaignStatus::Error),
+            other => Err(format!("Unknown campaign status: {other}").into()),
         }
     }
 }

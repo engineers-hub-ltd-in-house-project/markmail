@@ -12,7 +12,7 @@ pub async fn list_user_campaigns(
     options: &ListCampaignOptions,
 ) -> Result<Vec<Campaign>, sqlx::Error> {
     let status_filter = match &options.status {
-        Some(status) => format!("AND status = '{}'", status),
+        Some(status) => format!("AND status = '{status}'"),
         None => String::new(),
     };
 
@@ -62,14 +62,12 @@ pub async fn count_user_campaigns(
     status: Option<String>,
 ) -> Result<i64, sqlx::Error> {
     let status_filter = match status {
-        Some(status) => format!("AND status = '{}'", status),
+        Some(status) => format!("AND status = '{status}'"),
         None => String::new(),
     };
 
-    let query_string = format!(
-        "SELECT COUNT(*) as count FROM campaigns WHERE user_id = $1 {}",
-        status_filter
-    );
+    let query_string =
+        format!("SELECT COUNT(*) as count FROM campaigns WHERE user_id = $1 {status_filter}");
 
     let count = sqlx::query_scalar::<_, i64>(&query_string)
         .bind(user_id)
@@ -345,7 +343,7 @@ pub async fn update_campaign_status(
     };
 
     let sent_at_sql = match sent_at {
-        Some(expr) => format!("sent_at = {}, ", expr),
+        Some(expr) => format!("sent_at = {expr}, "),
         None => String::new(),
     };
 
@@ -355,15 +353,14 @@ pub async fn update_campaign_status(
         UPDATE campaigns 
         SET 
             status = $3,
-            {}
+            {sent_at_sql}
             updated_at = NOW()
         WHERE id = $1 AND user_id = $2
         RETURNING 
             id, user_id, template_id, name, description, subject, status, 
             scheduled_at, sent_at, recipient_count, sent_count, opened_count, 
             clicked_count, created_at, updated_at
-        "#,
-        sent_at_sql
+        "#
     );
 
     // 更新実行

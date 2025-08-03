@@ -5,7 +5,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Template {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -122,4 +122,13 @@ pub struct PreviewTemplateRequest {
 pub struct PreviewTemplateResponse {
     pub html: String,
     pub subject: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AnalyzeTemplateResponse {
+    pub used_variables: Vec<String>,
+    pub standard_variables: Vec<String>,
+    pub custom_variables: Vec<String>,
+    pub defined_variables: Vec<String>,
+    pub missing_variables: Vec<String>,
 }

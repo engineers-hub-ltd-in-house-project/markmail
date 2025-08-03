@@ -193,14 +193,26 @@ export const campaignService = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new ApiError(
-        errorData.error || "キャンペーンの送信に失敗しました",
-        response.status,
-      );
+      let errorMessage = "キャンペーンの送信に失敗しました";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースエラーの場合はデフォルトメッセージを使用
+      }
+      throw new ApiError(errorMessage, response.status);
     }
 
-    return await response.json();
+    // レスポンスボディを安全にパース
+    const text = await response.text();
+    if (!text) {
+      return { message: "キャンペーンの送信を開始しました" };
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: "キャンペーンの送信を開始しました" };
+    }
   },
 
   /**
@@ -242,5 +254,50 @@ export const campaignService = {
 
     const data = await response.json();
     return data.subscribers || [];
+  },
+
+  /**
+   * キャンペーンを再送
+   */
+  async resendCampaign(id: string): Promise<{ message: string }> {
+    const response = await fetch(`/api/campaigns/${id}/resend`, {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+    });
+
+    console.log(
+      "Resend campaign response:",
+      response.status,
+      response.statusText,
+    );
+
+    if (!response.ok) {
+      let errorMessage = "キャンペーンの再送に失敗しました";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースエラーの場合はデフォルトメッセージを使用
+        console.error("Failed to parse error response");
+      }
+      console.error(
+        "Resend campaign error:",
+        errorMessage,
+        "Status:",
+        response.status,
+      );
+      throw new ApiError(errorMessage, response.status);
+    }
+
+    // レスポンスボディを安全にパース
+    const text = await response.text();
+    if (!text) {
+      return { message: "キャンペーンの再送を開始しました" };
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: "キャンペーンの再送を開始しました" };
+    }
   },
 };

@@ -4,24 +4,185 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+  }
+
+  /* Typography */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-light tracking-tight;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
 @layer components {
+  /* Buttons - TypeForm/Squarespace style */
   .btn-primary {
-    @apply bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors;
+    @apply px-8 py-4 bg-black text-white hover:bg-gray-900 transition-all duration-300 font-light rounded-full inline-flex items-center justify-center;
   }
-  
+
   .btn-secondary {
-    @apply bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors;
+    @apply px-8 py-4 border border-gray-300 text-black hover:border-black transition-all duration-300 font-light rounded-full inline-flex items-center justify-center;
   }
-  
+
+  .btn-sm {
+    @apply px-6 py-3 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-10 py-5 text-lg;
+  }
+
+  /* Form Elements - Minimal style */
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply w-full px-6 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-light text-gray-900 placeholder-gray-400 transition-all duration-200;
   }
-  
+
+  .input-field:hover {
+    @apply border-gray-300;
+  }
+
+  .label {
+    @apply block text-sm text-gray-700 mb-2 font-light;
+  }
+
+  /* Cards - Clean, minimal design */
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-2xl border border-gray-100 p-8 hover:shadow-xl transition-all duration-300;
   }
-} 
+
+  .card-compact {
+    @apply p-6;
+  }
+
+  .card-large {
+    @apply p-10;
+  }
+
+  /* Sections */
+  .section {
+    @apply px-6 lg:px-12 py-20;
+  }
+
+  .container-narrow {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .container-wide {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Page Headers */
+  .page-header {
+    @apply text-4xl md:text-5xl font-light text-black mb-4;
+  }
+
+  .page-subtitle {
+    @apply text-xl text-gray-600 font-light;
+  }
+
+  /* Tables - Minimal style */
+  .table-minimal {
+    @apply w-full;
+  }
+
+  .table-minimal thead {
+    @apply border-b border-gray-200;
+  }
+
+  .table-minimal th {
+    @apply text-left py-4 px-6 text-sm font-light text-gray-700;
+  }
+
+  .table-minimal td {
+    @apply py-4 px-6 border-b border-gray-100;
+  }
+
+  .table-minimal tbody tr:hover {
+    @apply bg-gray-50 transition-colors;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-light;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-gray-700 hover:text-black transition-colors font-light;
+  }
+
+  .nav-link-active {
+    @apply text-black font-normal;
+  }
+
+  /* Animations */
+  .animate-in {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded-lg;
+  }
+
+  /* Icon buttons */
+  .icon-button {
+    @apply p-3 rounded-full hover:bg-gray-100 transition-colors inline-flex items-center justify-center;
+  }
+
+  /* Dropdown */
+  .dropdown-item {
+    @apply px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors font-light;
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  }
+
+  /* Modal content */
+  .modal-content {
+    @apply bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-auto p-8;
+  }
+}

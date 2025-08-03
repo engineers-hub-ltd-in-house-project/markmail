@@ -281,6 +281,57 @@ pub async fn delete_template(
     Ok(result.rows_affected() > 0)
 }
 
+/// テンプレートが他から参照されているかチェック
+pub async fn is_template_referenced(pool: &PgPool, template_id: Uuid) -> Result<bool, sqlx::Error> {
+    // キャンペーンからの参照をチェック
+    let campaign_count = sqlx::query_scalar!(
+        r#"
+        SELECT COUNT(*) as "count!"
+        FROM campaigns
+        WHERE template_id = $1
+        "#,
+        template_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    if campaign_count > 0 {
+        return Ok(true);
+    }
+
+    // シーケンスステップからの参照をチェック
+    let sequence_step_count = sqlx::query_scalar!(
+        r#"
+        SELECT COUNT(*) as "count!"
+        FROM sequence_steps
+        WHERE template_id = $1
+        "#,
+        template_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(sequence_step_count > 0)
+}
+
+/// 参照されていないテンプレートを削除
+pub async fn delete_unreferenced_template(
+    pool: &PgPool,
+    template_id: Uuid,
+    user_id: Uuid,
+) -> Result<bool, sqlx::Error> {
+    // 参照チェック
+    let is_referenced = is_template_referenced(pool, template_id).await?;
+
+    if is_referenced {
+        // 他から参照されている場合は削除しない
+        Ok(false)
+    } else {
+        // 参照されていない場合は削除
+        delete_template(pool, template_id, user_id).await
+    }
+}
+
 /// HTMLコンテンツを更新（キャッシュ用）
 pub async fn update_html_content(
     pool: &PgPool,

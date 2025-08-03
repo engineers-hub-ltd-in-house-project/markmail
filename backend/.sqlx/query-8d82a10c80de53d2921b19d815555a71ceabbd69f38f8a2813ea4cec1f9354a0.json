@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id,\n                user_id,\n                provider,\n                org_id,\n                instance_url,\n                credentials,\n                settings,\n                salesforce_settings,\n                field_mappings,\n                sync_enabled,\n                last_sync_at,\n                created_at,\n                updated_at\n            FROM crm_integrations\n            WHERE sync_enabled = true\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "provider",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "org_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "instance_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "credentials",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "salesforce_settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "field_mappings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "sync_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_sync_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [false, false, false, true, true, false, false, true, false, false, true, false, false]
+  },
+  "hash": "8d82a10c80de53d2921b19d815555a71ceabbd69f38f8a2813ea4cec1f9354a0"
+}

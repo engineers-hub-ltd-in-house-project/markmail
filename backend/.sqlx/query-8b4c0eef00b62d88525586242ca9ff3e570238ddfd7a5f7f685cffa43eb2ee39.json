@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE sequence_steps\n        SET name = COALESCE($2, name),\n            step_order = COALESCE($3, step_order),\n            step_type = COALESCE($4, step_type),\n            delay_value = COALESCE($5, delay_value),\n            delay_unit = COALESCE($6, delay_unit),\n            template_id = COALESCE($7, template_id),\n            subject = COALESCE($8, subject),\n            conditions = COALESCE($9, conditions),\n            action_config = COALESCE($10, action_config),\n            updated_at = NOW()\n        WHERE id = $1\n        RETURNING id, sequence_id, name, step_order, step_type, delay_value, delay_unit, template_id, subject, conditions, action_config, created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "sequence_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "step_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "step_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "delay_value",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "delay_unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "template_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "subject",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "conditions",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "action_config",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Int4", "Varchar", "Int4", "Varchar", "Uuid", "Varchar", "Jsonb", "Jsonb"]
+    },
+    "nullable": [false, false, false, false, false, false, false, true, true, false, false, false, false]
+  },
+  "hash": "8b4c0eef00b62d88525586242ca9ff3e570238ddfd7a5f7f685cffa43eb2ee39"
+}

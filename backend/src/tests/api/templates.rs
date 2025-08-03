@@ -12,21 +12,10 @@ use axum::{
     http::StatusCode,
 };
 use serde_json::json;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 // テスト用のヘルパー関数
-async fn setup_test_db() -> PgPool {
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL environment variable must be set for tests");
-
-    PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await
-        .expect("Failed to connect to database")
-}
-
 pub async fn create_test_user(pool: &PgPool) -> Uuid {
     let user_id = Uuid::new_v4();
     let hashed_password = crate::utils::password::hash_password("password123").unwrap();
@@ -104,7 +93,7 @@ pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
         sub: user_id.to_string(),
         exp: chrono::Utc::now().timestamp() + 3600, // 1時間有効
         iat: chrono::Utc::now().timestamp(),
-        email: format!("test-{}@example.com", user_id),
+        email: format!("test-{user_id}@example.com"),
         name: "Test User".to_string(),
         token_type: TokenType::Access,
     };
@@ -119,11 +108,10 @@ pub async fn get_test_user_with_jwt(pool: &PgPool) -> (Uuid, String) {
 
 #[tokio::test]
 async fn test_create_and_get_template() {
-    let pool = setup_test_db().await;
-    let user_id = create_test_user(&pool).await;
-
     // AppState::new_for_test()を使用してテスト用のAppStateを作成
     let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
 
     let auth_user = AuthUser {
         user_id,
@@ -221,10 +209,9 @@ async fn test_create_and_get_template() {
 
 #[tokio::test]
 async fn test_update_template() {
-    let pool = setup_test_db().await;
-    let user_id = create_test_user(&pool).await;
-
     let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
 
     let auth_user = AuthUser {
         user_id,
@@ -314,10 +301,9 @@ async fn test_update_template() {
 
 #[tokio::test]
 async fn test_delete_template() {
-    let pool = setup_test_db().await;
-    let user_id = create_test_user(&pool).await;
-
     let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
 
     let auth_user = AuthUser {
         user_id,
@@ -378,10 +364,9 @@ async fn test_delete_template() {
 
 #[tokio::test]
 async fn test_template_preview() {
-    let pool = setup_test_db().await;
-    let user_id = create_test_user(&pool).await;
-
     let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
 
     let auth_user = AuthUser {
         user_id,
@@ -451,10 +436,9 @@ async fn test_template_preview() {
 
 #[tokio::test]
 async fn test_list_templates() {
-    let pool = setup_test_db().await;
-    let user_id = create_test_user(&pool).await;
-
     let app_state = AppState::new_for_test().await;
+    let pool = app_state.db.clone();
+    let user_id = create_test_user(&pool).await;
 
     let auth_user = AuthUser {
         user_id,
@@ -465,9 +449,9 @@ async fn test_list_templates() {
     // 複数のテンプレートを作成
     for i in 1..4 {
         let create_req = CreateTemplateRequest {
-            name: format!("Test Template {}", i),
-            subject_template: format!("Test Subject {}", i),
-            markdown_content: format!("# Test Content {}", i),
+            name: format!("Test Template {i}"),
+            subject_template: format!("Test Subject {i}"),
+            markdown_content: format!("# Test Content {i}"),
             variables: None,
             is_public: None,
         };

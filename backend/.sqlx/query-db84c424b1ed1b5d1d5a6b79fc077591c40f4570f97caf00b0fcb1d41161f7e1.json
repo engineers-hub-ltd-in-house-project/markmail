@@ -1,0 +1,73 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO forms (user_id, name, description, slug, markdown_content, form_fields, settings, status)\n        VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft')\n        RETURNING id, user_id, name, description, slug, markdown_content, form_fields, settings, status, submission_count, created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "markdown_content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "form_fields",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "submission_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Text", "Varchar", "Text", "Jsonb", "Jsonb"]
+    },
+    "nullable": [false, false, false, true, false, false, false, false, false, false, false, false]
+  },
+  "hash": "db84c424b1ed1b5d1d5a6b79fc077591c40f4570f97caf00b0fcb1d41161f7e1"
+}

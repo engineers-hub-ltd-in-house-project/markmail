@@ -15,6 +15,9 @@ export class DatabaseStack extends cdk.Stack {
   public readonly database: cdk.aws_rds.DatabaseInstance;
   public readonly dbSecret: cdk.aws_secretsmanager.Secret;
   public readonly cacheCluster: cdk.aws_elasticache.CfnCacheCluster;
+  public readonly aiSecret: cdk.aws_secretsmanager.Secret;
+  public readonly stripeSecret: cdk.aws_secretsmanager.Secret;
+  public readonly salesforceSecret: cdk.aws_secretsmanager.Secret;
 
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
@@ -42,6 +45,49 @@ export class DatabaseStack extends cdk.Stack {
     this.dbSecret = database.dbSecret;
     this.cacheCluster = database.cacheCluster;
 
+    // AI関連のシークレット（OPENAI_API_KEY、ANTHROPIC_API_KEY等）
+    this.aiSecret = new cdk.aws_secretsmanager.Secret(this, 'AISecret', {
+      secretName: `markmail-${environmentName}-ai-secret`,
+      description: 'AI provider API keys (OpenAI, Anthropic)',
+      secretObjectValue: {
+        OPENAI_API_KEY: cdk.SecretValue.unsafePlainText('your-openai-api-key-here'),
+        ANTHROPIC_API_KEY: cdk.SecretValue.unsafePlainText('your-anthropic-api-key-here'),
+        AI_PROVIDER: cdk.SecretValue.unsafePlainText('openai'),
+        OPENAI_MODEL: cdk.SecretValue.unsafePlainText('gpt-4'),
+        ANTHROPIC_MODEL: cdk.SecretValue.unsafePlainText('claude-3-opus-20240229'),
+      },
+    });
+
+    // Stripe関連のシークレット
+    this.stripeSecret = new cdk.aws_secretsmanager.Secret(this, 'StripeSecret', {
+      secretName: `markmail-${environmentName}-stripe-secret`,
+      description: 'Stripe API keys and webhook secrets',
+      secretObjectValue: {
+        STRIPE_SECRET_KEY: cdk.SecretValue.unsafePlainText('your-stripe-secret-key-here'),
+        STRIPE_PUBLISHABLE_KEY: cdk.SecretValue.unsafePlainText('your-stripe-publishable-key-here'),
+        STRIPE_WEBHOOK_SECRET: cdk.SecretValue.unsafePlainText('your-stripe-webhook-secret-here'),
+      },
+    });
+
+    // Salesforce OAuth2関連のシークレット
+    this.salesforceSecret = new cdk.aws_secretsmanager.Secret(this, 'SalesforceSecret', {
+      secretName: `markmail-${environmentName}-salesforce-secret`,
+      description: 'Salesforce OAuth2 credentials',
+      secretObjectValue: {
+        SALESFORCE_CLIENT_ID: cdk.SecretValue.unsafePlainText('your-salesforce-client-id-here'),
+        SALESFORCE_CLIENT_SECRET: cdk.SecretValue.unsafePlainText(
+          'your-salesforce-client-secret-here'
+        ),
+        SALESFORCE_IS_SANDBOX: cdk.SecretValue.unsafePlainText('true'),
+        SALESFORCE_AUTH_URL: cdk.SecretValue.unsafePlainText(
+          'https://test.salesforce.com/services/oauth2/authorize'
+        ),
+        SALESFORCE_TOKEN_URL: cdk.SecretValue.unsafePlainText(
+          'https://test.salesforce.com/services/oauth2/token'
+        ),
+      },
+    });
+
     // Export values for cross-stack references
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.database.dbInstanceEndpointAddress,
@@ -61,6 +107,21 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'CachePort', {
       value: this.cacheCluster.attrRedisEndpointPort,
       exportName: `${this.stackName}-CachePort`,
+    });
+
+    new cdk.CfnOutput(this, 'AISecretArn', {
+      value: this.aiSecret.secretArn,
+      exportName: `${this.stackName}-AISecretArn`,
+    });
+
+    new cdk.CfnOutput(this, 'StripeSecretArn', {
+      value: this.stripeSecret.secretArn,
+      exportName: `${this.stackName}-StripeSecretArn`,
+    });
+
+    new cdk.CfnOutput(this, 'SalesforceSecretArn', {
+      value: this.salesforceSecret.secretArn,
+      exportName: `${this.stackName}-SalesforceSecretArn`,
     });
 
     // Stack tags

@@ -12,6 +12,9 @@ WORKDIR /usr/src/app
 # 依存関係のキャッシュのために、まずCargo.tomlとCargo.lockをコピー
 COPY Cargo.toml Cargo.lock ./
 
+# ローカルクレートをコピー（CodeBuildでbackend/にコピーされたもの）
+COPY crates ./crates
+
 # ダミーのmain.rsを作成して依存関係をビルド
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \

@@ -10,6 +10,7 @@ import { ALBStack } from '../lib/stacks/alb-stack';
 import { ECSServiceStack } from '../lib/stacks/ecs-service-stack';
 import { CICDStack } from '../lib/stacks/cicd-stack';
 import { MonitoringStack } from '../lib/stacks/monitoring-stack';
+import { BastionStack } from '../lib/stacks/bastion-stack';
 
 const app = new cdk.App();
 
@@ -27,7 +28,7 @@ const config = {
     notificationEmail: process.env.NOTIFICATION_EMAIL || 'admin@example.com',
     githubOwner: process.env.GITHUB_OWNER || 'engineers-hub-ltd-in-house-project',
     githubRepo: process.env.GITHUB_REPO || 'markmail',
-    githubBranch: process.env.GITHUB_BRANCH || 'develop',
+    githubBranch: process.env.GITHUB_BRANCH || 'dev',
     desiredCount: 1,
     cpu: 512,
     memoryLimitMiB: 1024,
@@ -95,6 +96,8 @@ const ecsClusterStack = new ECSClusterStack(app, `MarkMail-${environmentName}-EC
   environmentName: config.environmentName,
   vpc: networkStack.vpc,
   dbSecret: databaseStack.dbSecret,
+  aiSecret: databaseStack.aiSecret,
+  stripeSecret: databaseStack.stripeSecret,
   description: `MarkMail ECS Cluster Stack for ${environmentName} environment`,
 });
 ecsClusterStack.addDependency(networkStack);
@@ -140,6 +143,9 @@ const ecsServiceStack = new ECSServiceStack(app, `MarkMail-${environmentName}-EC
   frontendRepo: ecrStack.frontendRepo,
   database: databaseStack.database,
   dbSecret: databaseStack.dbSecret,
+  aiSecret: databaseStack.aiSecret,
+  stripeSecret: databaseStack.stripeSecret,
+  salesforceSecret: databaseStack.salesforceSecret,
   cacheCluster: databaseStack.cacheCluster,
   loadBalancer: albStack.loadBalancer,
   httpsListener: albStack.httpsListener,
@@ -183,6 +189,19 @@ const monitoringStack = new MonitoringStack(app, `MarkMail-${environmentName}-Mo
 });
 monitoringStack.addDependency(albStack);
 monitoringStack.addDependency(ecsServiceStack);
+
+// Bastion Stack (独立したスタック - 依存関係なし)
+// 環境変数 CREATE_BASTION=true の場合のみ作成
+if (process.env.CREATE_BASTION === 'true') {
+  const bastionStack = new BastionStack(app, `MarkMail-${environmentName}-BastionStack`, {
+    stackName: `MarkMail-${environmentName}-BastionStack`,
+    env: { account, region },
+    environmentName,
+    description: `MarkMail Bastion Host Stack for ${environmentName} environment (TEMPORARY)`,
+  });
+  // 依存関係を明示的に追加しない - 独立したスタックとして扱う
+  console.log(`\n[TEMPORARY] Bastion Stack: ${bastionStack.stackName}`);
+}
 
 // Output stack deployment order
 console.log(`\n Stack deployment order for ${environmentName} environment:`);

@@ -8,12 +8,7 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod api;
-mod database;
-mod middleware;
-mod models;
-mod services;
-mod utils;
+use markmail_backend::{api, database, utils, workers, AppState};
 
 #[tokio::main]
 async fn main() {
@@ -43,10 +38,13 @@ async fn main() {
 
     // アプリケーション状態
     let app_state = AppState {
-        db: pool,
+        db: pool.clone(),
         redis: redis_client,
         config,
     };
+
+    // シーケンスワーカーを起動
+    workers::sequence_worker::spawn_sequence_worker(std::sync::Arc::new(pool));
 
     // ルーター作成
     let app = create_app(app_state);
@@ -96,11 +94,4 @@ async fn health_check() -> Result<Json<Value>, StatusCode> {
         "status": "healthy",
         "timestamp": chrono::Utc::now().to_rfc3339()
     })))
-}
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db: sqlx::PgPool,
-    pub redis: redis::Client,
-    pub config: std::sync::Arc<utils::config::Config>,
 }

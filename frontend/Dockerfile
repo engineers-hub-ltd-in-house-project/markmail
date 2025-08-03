@@ -17,10 +17,10 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # アプリケーションをビルド
-RUN npm run build || true
+RUN npm run build
 
 # ビルド出力ディレクトリを確認
-RUN ls -la /app/.svelte-kit/output/client || true
+RUN ls -la /app/build || true
 
 # 実行ステージ - Nginxを使用
 FROM nginx:alpine
@@ -28,9 +28,8 @@ FROM nginx:alpine
 # Nginxの設定ファイルをコピー
 COPY --from=builder /app/nginx.conf /etc/nginx/nginx.conf
 
-# ビルドしたファイルをコピー（SvelteKitの出力ディレクトリから）
-COPY --from=builder /app/.svelte-kit/output/client /usr/share/nginx/html
-COPY --from=builder /app/.svelte-kit/output/prerendered/pages /usr/share/nginx/html
+# ビルドしたファイルをコピー（static adapterの出力ディレクトリから）
+COPY --from=builder /app/build /usr/share/nginx/html
 
 # 非rootユーザーで実行するための設定
 RUN chown -R nginx:nginx /usr/share/nginx/html && \

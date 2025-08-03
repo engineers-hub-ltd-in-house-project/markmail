@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            id, user_id, metric_type, threshold_percentage,\n            is_enabled, last_alerted_at, created_at, updated_at\n        FROM usage_alerts\n        WHERE user_id = $1 AND is_enabled = true\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "metric_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "threshold_percentage",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "last_alerted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid"]
+    },
+    "nullable": [false, false, false, false, false, true, false, false]
+  },
+  "hash": "c49256eb21b3e320a3ac9defbf45f4e136aa5c191c41a5538186752912247275"
+}

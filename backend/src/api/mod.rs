@@ -6,12 +6,21 @@ use axum::{
 
 use crate::{middleware::auth::auth_middleware, AppState};
 
+pub mod ai;
+pub mod ai_usage;
 pub mod auth;
 pub mod campaigns;
+pub mod crm;
+pub mod crm_oauth;
+pub mod crm_oauth_integration;
 pub mod email;
+pub mod forms;
 pub mod integrations;
 pub mod markdown;
+pub mod sequences;
+pub mod stripe_webhook;
 pub mod subscribers;
+pub mod subscriptions;
 pub mod templates;
 pub mod users;
 
@@ -20,7 +29,22 @@ pub fn create_routes() -> Router<AppState> {
     let public_routes = Router::new()
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/register", post(auth::register))
-        .route("/api/auth/refresh", post(auth::refresh_token));
+        .route("/api/auth/refresh", post(auth::refresh_token))
+        .route("/api/auth/forgot-password", post(auth::forgot_password))
+        .route("/api/auth/reset-password", post(auth::reset_password))
+        // フォームの公開エンドポイント
+        .route("/api/forms/:id/public", get(forms::get_public_form))
+        .route("/api/forms/:id/submit", post(forms::submit_form))
+        // Stripe Webhook
+        .route(
+            "/api/stripe/webhook",
+            post(stripe_webhook::handle_stripe_webhook),
+        )
+        // OAuth2 Callback (公開エンドポイント)
+        .route(
+            "/api/crm/oauth/salesforce/callback",
+            get(crm_oauth::salesforce_auth_callback),
+        );
 
     // 保護されたルート（認証必要）
     let protected_routes = Router::new()
@@ -37,6 +61,10 @@ pub fn create_routes() -> Router<AppState> {
             "/api/templates/:id/preview",
             post(templates::preview_template),
         )
+        .route(
+            "/api/templates/:id/analyze",
+            get(templates::analyze_template_variables),
+        )
         // キャンペーン管理
         .route("/api/campaigns", get(campaigns::list_campaigns))
         .route("/api/campaigns", post(campaigns::create_campaign))
@@ -44,6 +72,14 @@ pub fn create_routes() -> Router<AppState> {
         .route("/api/campaigns/:id", put(campaigns::update_campaign))
         .route("/api/campaigns/:id", delete(campaigns::delete_campaign))
         .route("/api/campaigns/:id/send", post(campaigns::send_campaign))
+        .route(
+            "/api/campaigns/:id/resend",
+            post(campaigns::resend_campaign),
+        )
+        .route(
+            "/api/campaigns/:id/validate",
+            get(campaigns::validate_campaign_before_send),
+        )
         .route(
             "/api/campaigns/:id/schedule",
             post(campaigns::schedule_campaign),
@@ -71,6 +107,123 @@ pub fn create_routes() -> Router<AppState> {
         .route(
             "/api/integrations/github/import",
             post(integrations::import_from_github),
+        )
+        // フォーム管理
+        .route("/api/forms", get(forms::get_forms))
+        .route("/api/forms", post(forms::create_form))
+        .route("/api/forms/:id", get(forms::get_form))
+        .route("/api/forms/:id", put(forms::update_form))
+        .route("/api/forms/:id", delete(forms::delete_form))
+        .route(
+            "/api/forms/:id/submissions",
+            get(forms::get_form_submissions),
+        )
+        // シーケンス管理
+        .route("/api/sequences", get(sequences::get_sequences))
+        .route("/api/sequences", post(sequences::create_sequence))
+        .route("/api/sequences/:id", get(sequences::get_sequence))
+        .route("/api/sequences/:id", put(sequences::update_sequence))
+        .route("/api/sequences/:id", delete(sequences::delete_sequence))
+        .route(
+            "/api/sequences/:id/full",
+            get(sequences::get_sequence_with_steps),
+        )
+        .route(
+            "/api/sequences/:id/steps",
+            post(sequences::create_sequence_step),
+        )
+        .route(
+            "/api/sequences/:sequence_id/steps/:step_id",
+            put(sequences::update_sequence_step),
+        )
+        .route(
+            "/api/sequences/:sequence_id/steps/:step_id",
+            delete(sequences::delete_sequence_step),
+        )
+        .route(
+            "/api/sequences/:id/activate",
+            post(sequences::activate_sequence),
+        )
+        .route("/api/sequences/:id/pause", post(sequences::pause_sequence))
+        // サブスクリプション管理
+        .route("/api/subscriptions/plans", get(subscriptions::get_plans))
+        .route(
+            "/api/subscriptions/current",
+            get(subscriptions::get_subscription),
+        )
+        .route(
+            "/api/subscriptions/upgrade",
+            post(subscriptions::upgrade_plan),
+        )
+        .route(
+            "/api/subscriptions/cancel",
+            post(subscriptions::cancel_subscription),
+        )
+        .route(
+            "/api/subscriptions/payment-history",
+            get(subscriptions::get_payment_history),
+        )
+        .route(
+            "/api/subscriptions/checkout",
+            post(subscriptions::create_checkout_session),
+        )
+        .route("/api/subscriptions/usage", get(subscriptions::get_usage))
+        // AI機能
+        .route("/api/ai/scenarios/generate", post(ai::generate_scenario))
+        .route("/api/ai/content/generate", post(ai::generate_content))
+        .route(
+            "/api/ai/content/optimize-subject",
+            post(ai::optimize_subject),
+        )
+        // AI使用量
+        .route("/api/ai/usage/stats", get(ai_usage::get_ai_usage_stats))
+        .route("/api/ai/usage/history", get(ai_usage::get_ai_usage_history))
+        // CRM統合
+        .route(
+            "/api/crm/auth/salesforce",
+            post(crm::authenticate_salesforce),
+        )
+        .route("/api/crm/salesforce/orgs", get(crm::list_salesforce_orgs))
+        .route("/api/crm/integrations", post(crm::create_crm_integration))
+        .route(
+            "/api/crm/integrations/current",
+            get(crm::get_crm_integration),
+        )
+        .route(
+            "/api/crm/integrations/:id",
+            delete(crm::delete_crm_integration),
+        )
+        .route("/api/crm/sync/contacts", post(crm::sync_contacts))
+        .route("/api/crm/sync/campaigns", post(crm::sync_campaigns))
+        .route(
+            "/api/crm/sync/subscribers/bulk",
+            post(crm::bulk_sync_subscribers),
+        )
+        // CRM OAuth2
+        .route(
+            "/api/crm/oauth/salesforce/init",
+            get(crm_oauth::init_salesforce_auth),
+        )
+        .route(
+            "/api/crm/oauth/salesforce/status",
+            get(crm_oauth::check_salesforce_auth_status),
+        )
+        .route(
+            "/api/crm/oauth/salesforce/revoke",
+            post(crm_oauth::revoke_salesforce_auth),
+        )
+        // CRM OAuth2 統合
+        .route(
+            "/api/crm/oauth/integration/status",
+            get(crm_oauth_integration::check_crm_oauth_status),
+        )
+        .route(
+            "/api/crm/oauth/integration",
+            post(crm_oauth_integration::create_oauth_integration),
+        )
+        .route(
+            "/api/crm/oauth/integration/sync",
+            post(crm_oauth_integration::sync_crm_data),
         )
         // 認証ミドルウェアをレイヤーとして適用
         .layer(middleware::from_fn(auth_middleware));

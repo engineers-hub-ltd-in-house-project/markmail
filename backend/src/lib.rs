@@ -1,11 +1,14 @@
 //! MarkMail バックエンドライブラリ
 
+pub mod ai;
 pub mod api;
+pub mod crm;
 pub mod database;
 pub mod middleware;
 pub mod models;
 pub mod services;
 pub mod utils;
+pub mod workers;
 
 #[cfg(test)]
 pub mod tests;

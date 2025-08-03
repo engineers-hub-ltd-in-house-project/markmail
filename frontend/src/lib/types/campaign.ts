@@ -9,6 +9,19 @@ export enum CampaignStatus {
   SENDING = "sending",
   SENT = "sent",
   CANCELED = "canceled",
+  ERROR = "error",
+}
+
+/**
+ * キャンペーン統計情報
+ */
+export interface CampaignStats {
+  recipient_count: number;
+  sent_count: number;
+  opened_count: number;
+  clicked_count: number;
+  open_rate: number;
+  click_rate: number;
 }
 
 /**
@@ -16,19 +29,14 @@ export enum CampaignStatus {
  */
 export interface Campaign {
   id: string;
-  user_id: string;
+  template_id: string;
   name: string;
   description?: string;
-  status: CampaignStatus;
-  template_id: string;
   subject: string;
-  recipient_list?: string[];
+  status: CampaignStatus;
   scheduled_at?: string;
   sent_at?: string;
-  recipient_count: number;
-  sent_count: number;
-  opened_count: number;
-  clicked_count: number;
+  stats: CampaignStats;
   created_at: string;
   updated_at: string;
 }

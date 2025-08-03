@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO sequence_step_logs (enrollment_id, step_id, status, error_message)\n        VALUES ($1, $2, $3, $4)\n        RETURNING id, enrollment_id, step_id, status, error_message, executed_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "enrollment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "step_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "error_message",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "executed_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Uuid", "Varchar", "Text"]
+    },
+    "nullable": [false, false, false, false, true, false]
+  },
+  "hash": "6ce5a3a3c0bd55595788465afb425e08b687b7db53ff30aca20a56d44cc3f2e6"
+}

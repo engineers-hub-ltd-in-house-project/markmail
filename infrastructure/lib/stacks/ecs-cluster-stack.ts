@@ -10,6 +10,8 @@ export interface ECSClusterStackProps extends cdk.StackProps {
   environmentName: string;
   vpc: ec2.Vpc;
   dbSecret: secretsmanager.Secret;
+  aiSecret?: secretsmanager.Secret;
+  stripeSecret?: secretsmanager.Secret;
 }
 
 export class ECSClusterStack extends cdk.Stack {
@@ -21,7 +23,7 @@ export class ECSClusterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ECSClusterStackProps) {
     super(scope, id, props);
 
-    const { environmentName, vpc, dbSecret } = props;
+    const { environmentName, vpc, dbSecret, aiSecret, stripeSecret } = props;
 
     // ECS Cluster
     this.cluster = new ecs.Cluster(this, 'Cluster', {
@@ -66,11 +68,19 @@ export class ECSClusterStack extends cdk.Stack {
     );
 
     // Secrets Manager permissions for task execution role
+    const secretArns = [dbSecret.secretArn];
+    if (aiSecret) {
+      secretArns.push(aiSecret.secretArn);
+    }
+    if (stripeSecret) {
+      secretArns.push(stripeSecret.secretArn);
+    }
+
     this.taskExecutionRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['secretsmanager:GetSecretValue'],
-        resources: [dbSecret.secretArn],
+        resources: secretArns,
       })
     );
 

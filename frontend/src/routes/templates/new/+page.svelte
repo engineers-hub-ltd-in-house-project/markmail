@@ -151,15 +151,15 @@
     // サンプルデータを設定
     markdownContent =
       "# こんにちは " +
-      "{{user_name}}" +
+      "{{first_name}}" +
       " さん\n\n" +
-      "{{company_name}}" +
+      "{{company}}" +
       "からのお知らせです。\n\n" +
       "## 重要なお知らせ\n\n" +
       "ご登録いただきありがとうございます。\n\n" +
       "よろしくお願いいたします。";
 
-    variablesText = "user_name=田中太郎\ncompany_name=株式会社MarkMail";
+    variablesText = "first_name=太郎\nlast_name=田中\ncompany=株式会社MarkMail";
   });
 </script>
 
@@ -235,9 +235,9 @@
               type="text"
               bind:value={subjectTemplate}
               placeholder={"例: " +
-                "{{company_name}}" +
+                "{{company}}" +
                 "へようこそ、" +
-                "{{user_name}}" +
+                "{{first_name}}" +
                 "さん！"}
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -289,9 +289,9 @@
               id="content"
               bind:value={markdownContent}
               placeholder={"# タイトル\n\nこんにちは " +
-                "{{user_name}}" +
+                "{{first_name}}" +
                 " さん\n\n" +
-                "{{company_name}}" +
+                "{{company}}" +
                 "からのお知らせです。"}
               rows="20"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
@@ -313,17 +313,17 @@
 
         <textarea
           bind:value={variablesText}
-          placeholder="user_name=田中太郎&#10;company_name=株式会社例"
+          placeholder="first_name=太郎&#10;last_name=田中&#10;company=株式会社例"
           rows="8"
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
         ></textarea>
       </div>
 
-      <!-- よく使う変数 -->
+      <!-- 利用可能な変数 -->
       <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">よく使う変数</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">利用可能な変数</h3>
         <div class="space-y-2">
-          {#each ["user_name", "company_name", "email", "date", "unsubscribe_url"] as variable}
+          {#each ["first_name", "last_name", "name", "email", "company", "unsubscribe_url"] as variable}
             <button
               on:click={() => insertVariable(variable)}
               class="block w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border transition-colors"

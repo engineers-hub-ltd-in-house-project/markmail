@@ -22,6 +22,9 @@ export interface ECSServiceStackProps extends cdk.StackProps {
   frontendRepo: ecr.Repository;
   database: rds.DatabaseInstance;
   dbSecret: secretsmanager.Secret;
+  aiSecret?: secretsmanager.Secret;
+  stripeSecret?: secretsmanager.Secret;
+  salesforceSecret?: secretsmanager.Secret;
   cacheCluster: elasticache.CfnCacheCluster;
   loadBalancer: elbv2.ApplicationLoadBalancer;
   httpsListener?: elbv2.ApplicationListener;
@@ -56,6 +59,9 @@ export class ECSServiceStack extends cdk.Stack {
       frontendRepo,
       database,
       dbSecret,
+      aiSecret,
+      stripeSecret,
+      salesforceSecret,
       cacheCluster,
       httpsListener,
       httpListener,
@@ -87,9 +93,54 @@ export class ECSServiceStack extends cdk.Stack {
         // Email configuration
         EMAIL_PROVIDER: 'aws_ses',
         AWS_SES_FROM_EMAIL: 'no-reply@engineers-hub.ltd',
+        // Salesforce OAuth2 redirect URI
+        SALESFORCE_REDIRECT_URI:
+          environmentName === 'prod'
+            ? 'https://markmail.engineers-hub.ltd/api/crm/oauth/salesforce/callback'
+            : `https://${environmentName}.markmail.engineers-hub.ltd/api/crm/oauth/salesforce/callback`,
       },
       secrets: {
         JWT_SECRET: ecs.Secret.fromSecretsManager(dbSecret, 'password'),
+        ...(aiSecret && {
+          OPENAI_API_KEY: ecs.Secret.fromSecretsManager(aiSecret, 'OPENAI_API_KEY'),
+          ANTHROPIC_API_KEY: ecs.Secret.fromSecretsManager(aiSecret, 'ANTHROPIC_API_KEY'),
+          AI_PROVIDER: ecs.Secret.fromSecretsManager(aiSecret, 'AI_PROVIDER'),
+          OPENAI_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'OPENAI_MODEL'),
+          ANTHROPIC_MODEL: ecs.Secret.fromSecretsManager(aiSecret, 'ANTHROPIC_MODEL'),
+        }),
+        ...(stripeSecret && {
+          STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(stripeSecret, 'STRIPE_SECRET_KEY'),
+          STRIPE_PUBLISHABLE_KEY: ecs.Secret.fromSecretsManager(
+            stripeSecret,
+            'STRIPE_PUBLISHABLE_KEY'
+          ),
+          STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(
+            stripeSecret,
+            'STRIPE_WEBHOOK_SECRET'
+          ),
+        }),
+        ...(salesforceSecret && {
+          SALESFORCE_CLIENT_ID: ecs.Secret.fromSecretsManager(
+            salesforceSecret,
+            'SALESFORCE_CLIENT_ID'
+          ),
+          SALESFORCE_CLIENT_SECRET: ecs.Secret.fromSecretsManager(
+            salesforceSecret,
+            'SALESFORCE_CLIENT_SECRET'
+          ),
+          SALESFORCE_IS_SANDBOX: ecs.Secret.fromSecretsManager(
+            salesforceSecret,
+            'SALESFORCE_IS_SANDBOX'
+          ),
+          SALESFORCE_AUTH_URL: ecs.Secret.fromSecretsManager(
+            salesforceSecret,
+            'SALESFORCE_AUTH_URL'
+          ),
+          SALESFORCE_TOKEN_URL: ecs.Secret.fromSecretsManager(
+            salesforceSecret,
+            'SALESFORCE_TOKEN_URL'
+          ),
+        }),
       },
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'backend',

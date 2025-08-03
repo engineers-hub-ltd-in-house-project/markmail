@@ -56,5 +56,18 @@
   "editor.insertSpaces": true,
   "[rust]": {
     "editor.tabSize": 4
-  }
+  },
+  "cSpell.words": [
+    "Apalis",
+    "clippy",
+    "Faktory",
+    "Fargate",
+    "lefthook",
+    "mailhog",
+    "markmail",
+    "prerender",
+    "psql",
+    "Sidekiq",
+    "sqlx"
+  ]
 } 

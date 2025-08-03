@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            id, user_id, metric_type, usage_count, \n            period_start, period_end, created_at, updated_at\n        FROM usage_records\n        WHERE user_id = $1\n          AND period_start = $2\n          AND period_end = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "metric_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "usage_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "period_start",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 5,
+        "name": "period_end",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Date", "Date"]
+    },
+    "nullable": [false, false, false, false, false, false, false, false]
+  },
+  "hash": "fe5f5969354ecf26d63dae378ee8c765f1690620287d4e58c9d077a961278441"
+}

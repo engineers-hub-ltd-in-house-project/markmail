@@ -67,19 +67,18 @@ pub async fn list_subscribers(
 
     // フィルタリング条件を追加
     if let Some(status_filter) = status {
-        query_string.push_str(&format!("AND status = '{:?}' ", status_filter));
+        query_string.push_str(&format!("AND status = '{status_filter:?}' "));
     }
 
     // タグフィルタリング
     if let Some(tag_filter) = tag {
-        query_string.push_str(&format!("AND '{}' = ANY(tags) ", tag_filter));
+        query_string.push_str(&format!("AND '{tag_filter}' = ANY(tags) "));
     }
 
     // 検索条件
     if let Some(search_term) = search {
         query_string.push_str(&format!(
-            "AND (email ILIKE '%{}%' OR name ILIKE '%{}%') ",
-            search_term, search_term
+            "AND (email ILIKE '%{search_term}%' OR name ILIKE '%{search_term}%') "
         ));
     }
 
@@ -110,19 +109,18 @@ pub async fn count_subscribers(
 
     // フィルタリング条件を追加
     if let Some(status_filter) = status {
-        query_string.push_str(&format!("AND status = '{:?}' ", status_filter));
+        query_string.push_str(&format!("AND status = '{status_filter:?}' "));
     }
 
     // タグフィルタリング
     if let Some(tag_filter) = tag {
-        query_string.push_str(&format!("AND '{}' = ANY(tags) ", tag_filter));
+        query_string.push_str(&format!("AND '{tag_filter}' = ANY(tags) "));
     }
 
     // 検索条件
     if let Some(search_term) = search {
         query_string.push_str(&format!(
-            "AND (email ILIKE '%{}%' OR name ILIKE '%{}%') ",
-            search_term, search_term
+            "AND (email ILIKE '%{search_term}%' OR name ILIKE '%{search_term}%') "
         ));
     }
 
@@ -160,6 +158,38 @@ pub async fn find_subscriber_by_id(
         "#,
     )
     .bind(subscriber_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(subscriber)
+}
+
+/// メールアドレスで購読者を検索
+pub async fn find_subscriber_by_email(
+    pool: &PgPool,
+    email: &str,
+    user_id: Uuid,
+) -> Result<Option<Subscriber>, sqlx::Error> {
+    let subscriber = sqlx::query_as::<_, Subscriber>(
+        r#"
+        SELECT 
+            id,
+            user_id,
+            email,
+            name,
+            status,
+            tags,
+            custom_fields,
+            subscribed_at,
+            unsubscribed_at,
+            created_at,
+            updated_at
+        FROM subscribers 
+        WHERE email = $1 AND user_id = $2
+        "#,
+    )
+    .bind(email)
     .bind(user_id)
     .fetch_optional(pool)
     .await?;

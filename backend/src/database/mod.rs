@@ -1,6 +1,11 @@
 pub mod campaigns;
 pub mod connection;
+pub mod crm_integrations;
+pub mod forms;
+pub mod password_reset;
 pub mod refresh_tokens;
+pub mod sequences;
 pub mod subscribers;
+pub mod subscriptions;
 pub mod templates;
 pub mod users;

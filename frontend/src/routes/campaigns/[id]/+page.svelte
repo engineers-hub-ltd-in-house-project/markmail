@@ -13,6 +13,7 @@
     EditIcon,
     EyeIcon,
     Trash2Icon,
+    RefreshCwIcon,
   } from "lucide-svelte";
 
   // URLパラメータからキャンペーンIDを取得
@@ -211,6 +212,30 @@
     }
   }
 
+  // キャンペーン再送
+  async function resendCampaign() {
+    if (!campaign) return;
+
+    if (!confirm("このキャンペーンを再送してもよろしいですか？")) {
+      return;
+    }
+
+    error = null;
+    isSending = true;
+
+    try {
+      await campaignService.resendCampaign(campaignId);
+      // 再送後、キャンペーン情報を再取得
+      await fetchCampaign();
+    } catch (err) {
+      console.error("キャンペーン再送エラー:", err);
+      error =
+        err instanceof Error ? err.message : "キャンペーンの再送に失敗しました";
+    } finally {
+      isSending = false;
+    }
+  }
+
   // キャンペーンステータスのフォーマット
   function formatStatus(status: CampaignStatus): string {
     const statusMap: Record<CampaignStatus, string> = {
@@ -219,6 +244,7 @@
       [CampaignStatus.SENDING]: "送信中",
       [CampaignStatus.SENT]: "送信済み",
       [CampaignStatus.CANCELED]: "キャンセル",
+      [CampaignStatus.ERROR]: "エラー",
     };
     return statusMap[status] || status;
   }
@@ -237,6 +263,8 @@
       case CampaignStatus.SENT:
         return `${baseClass} bg-green-100 text-green-800`;
       case CampaignStatus.CANCELED:
+        return `${baseClass} bg-red-100 text-red-800`;
+      case CampaignStatus.ERROR:
         return `${baseClass} bg-red-100 text-red-800`;
       default:
         return baseClass;
@@ -268,6 +296,13 @@
   $: canSend =
     campaign?.status === CampaignStatus.DRAFT ||
     campaign?.status === CampaignStatus.SCHEDULED;
+
+  // キャンペーンの再送可否
+  $: canResend =
+    campaign?.status === CampaignStatus.SENT ||
+    campaign?.status === CampaignStatus.ERROR ||
+    campaign?.status === CampaignStatus.CANCELED ||
+    campaign?.status === CampaignStatus.SENDING;
 </script>
 
 <div class="max-w-7xl mx-auto px-4 py-8">
@@ -364,6 +399,24 @@
                 {:else}
                   <Send class="w-4 h-4 mr-2" />
                   今すぐ送信
+                {/if}
+              </button>
+            {/if}
+
+            {#if canResend}
+              <button
+                class="flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                on:click={resendCampaign}
+                disabled={isSending}
+              >
+                {#if isSending}
+                  <div
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                  ></div>
+                  再送中...
+                {:else}
+                  <RefreshCwIcon class="w-4 h-4 mr-2" />
+                  再送
                 {/if}
               </button>
             {/if}
@@ -472,15 +525,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">送信数</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.sent_count || 0}
+                    {campaign.stats.sent_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封率</dt>
                   <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                    {campaign.sent_count > 0
-                      ? `${Math.round((campaign.opened_count / campaign.sent_count) * 100)}%`
+                    {campaign.stats.sent_count > 0
+                      ? `${Math.round(campaign.stats.open_rate * 100)}%`
                       : "0%"}
                   </dd>
                 </div>
@@ -488,15 +541,15 @@
                 <div>
                   <dt class="text-sm font-medium text-gray-500">開封数</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.opened_count || 0}
+                    {campaign.stats.opened_count || 0}
                   </dd>
                 </div>
 
                 <div>
                   <dt class="text-sm font-medium text-gray-500">クリック率</dt>
                   <dd class="mt-1 text-xl font-semibold text-gray-900">
-                    {campaign.sent_count > 0
-                      ? `${Math.round((campaign.clicked_count / campaign.sent_count) * 100)}%`
+                    {campaign.stats.sent_count > 0
+                      ? `${Math.round(campaign.stats.click_rate * 100)}%`
                       : "0%"}
                   </dd>
                 </div>

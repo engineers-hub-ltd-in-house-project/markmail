@@ -1,27 +1,15 @@
-use crate::services::email_service::{
-    EmailConfig, EmailMessage, EmailProvider, EmailProviderType, EmailService, EmailStatus,
-    SmtpConfig,
-};
+use crate::services::email_service::{EmailMessage, EmailProvider, EmailService, EmailStatus};
+use sqlx::PgPool;
 
-#[tokio::test]
-async fn test_email_service_creation() {
-    let config = EmailConfig {
-        provider: EmailProviderType::MailHog,
-        from_email: "test@example.com".to_string(),
-        from_name: Some("Test Sender".to_string()),
-        smtp_config: Some(SmtpConfig {
-            host: "localhost".to_string(),
-            port: 1025,
-            username: None,
-            password: None,
-            use_tls: false,
-        }),
-        aws_config: None,
-        rate_limit: 10,
-        batch_size: 50,
-    };
+#[sqlx::test]
+async fn test_email_service_creation(pool: PgPool) {
+    // 環境変数を設定
+    std::env::set_var("EMAIL_PROVIDER", "mailhog");
+    std::env::set_var("SMTP_FROM", "test@example.com");
+    std::env::set_var("SMTP_HOST", "localhost");
+    std::env::set_var("SMTP_PORT", "1025");
 
-    let service = EmailService::new(config).await;
+    let service = EmailService::new(pool).await;
     assert!(service.is_ok());
 }
 
@@ -45,9 +33,9 @@ async fn test_batch_email_creation() {
     let messages: Vec<EmailMessage> = (0..5)
         .map(|i| EmailMessage {
             to: vec![format!("user{}@example.com", i)],
-            subject: format!("Test Email {}", i),
-            html_body: format!("<h1>Hello User {}</h1>", i),
-            text_body: Some(format!("Hello User {}", i)),
+            subject: format!("Test Email {i}"),
+            html_body: format!("<h1>Hello User {i}</h1>"),
+            text_body: Some(format!("Hello User {i}")),
             reply_to: None,
             headers: None,
         })
@@ -60,6 +48,8 @@ async fn test_batch_email_creation() {
 
 #[test]
 fn test_email_config_from_env() {
+    use crate::services::email_service::EmailProviderType;
+
     // 環境変数をクリア
     std::env::remove_var("EMAIL_PROVIDER");
     std::env::remove_var("AWS_SES_FROM_EMAIL");
@@ -81,6 +71,8 @@ fn test_email_config_from_env() {
 
 #[test]
 fn test_aws_ses_config_from_env() {
+    use crate::services::email_service::EmailProviderType;
+
     // 前のテストの環境変数をクリア
     std::env::remove_var("SMTP_FROM");
 

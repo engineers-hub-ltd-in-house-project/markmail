@@ -11,10 +11,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::middleware::auth::AuthUser;
+use crate::models::sequence::TriggerType;
 use crate::models::subscriber::{
     CreateSubscriberRequest, ImportSubscribersRequest, SubscriberStatus, UpdateSubscriberRequest,
 };
-use crate::services::subscriber_service;
+use crate::services::{sequence_service::SequenceService, subscriber_service};
 use crate::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -56,7 +57,7 @@ pub async fn list_subscribers(
     )
     .await
     .map_err(|e| {
-        eprintln!("購読者一覧取得エラー: {}", e);
+        eprintln!("購読者一覧取得エラー: {e}");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -79,7 +80,7 @@ pub async fn get_subscriber(
         subscriber_service::get_subscriber(&state.db, subscriber_id, auth_user.user_id)
             .await
             .map_err(|e| {
-                eprintln!("購読者取得エラー: {}", e);
+                eprintln!("購読者取得エラー: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
@@ -108,9 +109,25 @@ pub async fn add_subscriber(
             if e.to_string().contains("既に登録されています") {
                 return StatusCode::CONFLICT;
             }
-            eprintln!("購読者追加エラー: {}", e);
+            eprintln!("購読者追加エラー: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    // シーケンスへの自動エンロールメントをトリガー
+    let sequence_service = SequenceService::new();
+    if let Err(e) = sequence_service
+        .process_trigger_enrollment(
+            &state.db,
+            auth_user.user_id,
+            TriggerType::SubscriberCreated,
+            subscriber.id,
+            None,
+        )
+        .await
+    {
+        eprintln!("シーケンスエンロールメントエラー: {e}");
+        // エラーが発生してもレスポンスは返す（購読者作成は成功しているため）
+    }
 
     Ok(Json(json!({
         "message": "購読者が追加されました",
@@ -139,7 +156,7 @@ pub async fn update_subscriber(
                 if e.to_string().contains("既に別の購読者に登録されています") {
                     return StatusCode::CONFLICT;
                 }
-                eprintln!("購読者更新エラー: {}", e);
+                eprintln!("購読者更新エラー: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
@@ -162,7 +179,7 @@ pub async fn delete_subscriber_by_id(
         subscriber_service::delete_subscriber(&state.db, subscriber_id, auth_user.user_id)
             .await
             .map_err(|e| {
-                eprintln!("購読者削除エラー: {}", e);
+                eprintln!("購読者削除エラー: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
@@ -186,7 +203,7 @@ pub async fn import_subscribers_from_csv(
         subscriber_service::import_subscribers_from_csv(&state.db, auth_user.user_id, payload)
             .await
             .map_err(|e| {
-                eprintln!("購読者インポートエラー: {}", e);
+                eprintln!("購読者インポートエラー: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
@@ -205,7 +222,7 @@ pub async fn get_subscriber_tags(
     let tags = crate::database::subscribers::get_all_tags(&state.db, auth_user.user_id)
         .await
         .map_err(|e| {
-            eprintln!("タグ一覧取得エラー: {}", e);
+            eprintln!("タグ一覧取得エラー: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 

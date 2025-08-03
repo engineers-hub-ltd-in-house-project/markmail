@@ -96,7 +96,8 @@ export const subscriberService = {
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.subscriber || data;
   },
 
   /**
@@ -116,7 +117,8 @@ export const subscriberService = {
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.subscriber || data;
   },
 
   /**
@@ -140,7 +142,8 @@ export const subscriberService = {
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.subscriber || data;
   },
 
   /**

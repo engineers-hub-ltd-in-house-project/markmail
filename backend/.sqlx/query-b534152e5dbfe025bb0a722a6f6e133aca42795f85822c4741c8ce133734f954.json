@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO crm_sync_status (\n            integration_id, entity_type, markmail_id,\n            crm_id, sync_status, sync_direction\n        )\n        VALUES ($1, $2, $3, $4, $5, 'to_crm')\n        ON CONFLICT (integration_id, entity_type, markmail_id)\n        DO UPDATE SET\n            crm_id = EXCLUDED.crm_id,\n            sync_status = EXCLUDED.sync_status,\n            updated_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Uuid", "Varchar", "Varchar"]
+    },
+    "nullable": []
+  },
+  "hash": "b534152e5dbfe025bb0a722a6f6e133aca42795f85822c4741c8ce133734f954"
+}

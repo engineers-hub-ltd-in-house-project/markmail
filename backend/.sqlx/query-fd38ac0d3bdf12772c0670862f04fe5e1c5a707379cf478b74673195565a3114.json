@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO form_submissions (form_id, subscriber_id, data, ip_address, user_agent, referrer, confirmation_token)\n        VALUES ($1, $2, $3, $4, $5, $6, $7)\n        RETURNING id, form_id, subscriber_id, data, ip_address, user_agent, referrer, confirmation_token, confirmed_at, created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "form_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "subscriber_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "ip_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "user_agent",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "referrer",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "confirmation_token",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "confirmed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid", "Uuid", "Jsonb", "Varchar", "Text", "Text", "Varchar"]
+    },
+    "nullable": [false, false, true, false, true, true, true, true, true, false]
+  },
+  "hash": "fd38ac0d3bdf12772c0670862f04fe5e1c5a707379cf478b74673195565a3114"
+}

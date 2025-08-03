@@ -132,10 +132,17 @@ export GITHUB_OWNER=your-github-username
 export GITHUB_REPO=markmail
 export GITHUB_BRANCH=main
 
+# ⚠️ 重要: ドメインが設定されている環境では必須
+export DEV_DOMAIN=dev.markmail.example.com    # 開発環境のドメイン
+export STAGING_DOMAIN=staging.markmail.example.com  # ステージング環境のドメイン
+export PROD_DOMAIN=markmail.example.com      # 本番環境のドメイン
+
 # オプション（デフォルト値あり）
 export AWS_ACCOUNT_ID=123456789012
 export AWS_REGION=ap-northeast-1
 ```
+
+⚠️ **重要**: ドメイン環境変数を設定しないと、ALBがHTTPSリスナーを作成せず、ECSServiceStackのデプロイが失敗します。
 
 ### 3. CDKのブートストラップ（初回のみ）
 
@@ -167,13 +174,26 @@ npm run deploy:cluster
      --secret-string "your-github-personal-access-token"
    ```
 
-2. **ドメイン設定**（本番環境の場合）
+2. **Docker Hub 認証情報の設定**（CodeBuildでのrate limit回避）
+
+   ```bash
+   # 環境変数を設定
+   export DOCKERHUB_USERNAME="your-dockerhub-username"
+   export DOCKERHUB_TOKEN="your-dockerhub-access-token"
+
+   # スクリプトを実行
+   ./scripts/setup-dockerhub-secret.sh
+   ```
+
+   Docker Hub Pro契約がある場合は、[Docker Hub](https://hub.docker.com/) でアクセストークンを生成してください。
+
+3. **ドメイン設定**（本番環境の場合）
 
    - Route 53 でドメインを設定
    - ACM で SSL 証明書を取得
    - ALB にドメインを関連付け
 
-3. **SES 設定**
+4. **SES 設定**
    - ドメイン検証
    - DKIM 設定
    - SPF レコード追加
@@ -277,19 +297,30 @@ npm run deploy:cicd
 
 ### デプロイが失敗する場合
 
-1. **IAM権限の確認**
+1. **環境変数の確認（最重要）**
+
+   ```bash
+   # ドメイン設定の確認
+   echo $DEV_DOMAIN
+   echo $STAGING_DOMAIN
+   echo $PROD_DOMAIN
+   ```
+
+   ⚠️ **ドメイン環境変数が未設定の場合、ALBStackとECSServiceStackで依存関係エラーが発生します**
+
+2. **IAM権限の確認**
 
    ```bash
    aws sts get-caller-identity
    ```
 
-2. **Docker daemon の確認**
+3. **Docker daemon の確認**
 
    ```bash
    docker info
    ```
 
-3. **スタック状態の確認**
+4. **スタック状態の確認**
    ```bash
    aws cloudformation describe-stacks --stack-name MarkMail-dev-*
    ```
@@ -311,6 +342,8 @@ aws logs tail /aws/codebuild/markmail-build --follow
 | `Stack is in ROLLBACK_COMPLETE state` | 前回のデプロイ失敗 | スタックを削除して再作成     |
 | `Resource limit exceeded`             | リソース制限       | Service Quotasで上限緩和申請 |
 | `Access Denied`                       | IAM権限不足        | 必要な権限を追加             |
+| `Cannot delete export...in use by`    | スタック間の依存   | 依存スタックを先に削除       |
+| `No export named...found`             | 環境変数未設定     | DEV_DOMAIN等を設定して再実行 |
 
 ## 📚 参考資料
 

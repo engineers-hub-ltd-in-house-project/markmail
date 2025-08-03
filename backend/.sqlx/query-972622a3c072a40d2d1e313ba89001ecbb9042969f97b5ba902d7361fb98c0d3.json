@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE sequence_enrollments\n            SET status = $2,\n                current_step_id = $3,\n                updated_at = NOW()\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": ["Uuid", "Varchar", "Uuid"]
+    },
+    "nullable": []
+  },
+  "hash": "972622a3c072a40d2d1e313ba89001ecbb9042969f97b5ba902d7361fb98c0d3"
+}

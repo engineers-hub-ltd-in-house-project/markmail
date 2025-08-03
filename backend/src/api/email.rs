@@ -1,18 +1,23 @@
+use axum::Router;
+use serde::Deserialize;
+
+use crate::AppState;
+
+// 開発環境用のインポート
+#[cfg(debug_assertions)]
+use crate::{
+    middleware::auth::AuthUser,
+    services::email_service::{EmailMessage, EmailService},
+};
+#[cfg(debug_assertions)]
 use axum::{
     extract::{Extension, State},
     http::StatusCode,
     response::Json,
     routing::post,
-    Router,
 };
-use serde::Deserialize;
+#[cfg(debug_assertions)]
 use serde_json::{json, Value};
-
-use crate::{
-    middleware::auth::AuthUser,
-    services::email_service::{EmailMessage, EmailService},
-    AppState,
-};
 
 /// テストメール送信リクエスト
 #[derive(Debug, Deserialize)]
@@ -26,21 +31,11 @@ pub struct SendTestEmailRequest {
 #[cfg(debug_assertions)]
 pub async fn send_test_email(
     Extension(_auth_user): Extension<AuthUser>,
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<SendTestEmailRequest>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     // メールサービスを初期化
-    let email_config = EmailService::from_env().map_err(|e| {
-        tracing::error!("メール設定エラー: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("メール設定の読み込みに失敗しました: {}", e)
-            })),
-        )
-    })?;
-
-    let email_service = EmailService::new(email_config).await.map_err(|e| {
+    let email_service = EmailService::new(state.db.clone()).await.map_err(|e| {
         tracing::error!("メールサービス初期化エラー: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
