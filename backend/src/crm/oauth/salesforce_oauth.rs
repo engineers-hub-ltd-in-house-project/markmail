@@ -3,8 +3,8 @@ use oauth2::{
         BasicClient, BasicErrorResponse, BasicRevocationErrorResponse,
         BasicTokenIntrospectionResponse, BasicTokenResponse,
     },
-    AuthUrl, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, EndpointNotSet,
-    EndpointSet, RedirectUrl, RefreshToken, Scope, StandardRevocableToken, TokenResponse, TokenUrl,
+    AuthUrl, Client, ClientId, ClientSecret, CsrfToken, EndpointNotSet, EndpointSet, RedirectUrl,
+    Scope, StandardRevocableToken, TokenUrl,
 };
 use serde::{Deserialize, Serialize};
 
@@ -70,27 +70,44 @@ impl SalesforceOAuthClient {
 
     /// Authorization Codeをアクセストークンに交換
     pub async fn exchange_code(&self, code: String) -> Result<SalesforceTokenResponse, String> {
-        let token_response = self
-            .client
-            .exchange_code(AuthorizationCode::new(code))
-            .request_async(&self.http_client)
+        // Salesforceのトークンエンドポイントに直接リクエストを送信
+        let params = [
+            ("grant_type", "authorization_code"),
+            ("code", &code),
+            ("client_id", &self.settings.client_id),
+            ("client_secret", &self.settings.client_secret),
+            ("redirect_uri", &self.settings.redirect_url),
+        ];
+
+        let response = self
+            .http_client
+            .post(&self.settings.token_url)
+            .form(&params)
+            .send()
             .await
-            .map_err(|e| format!("Token exchange failed: {e}"))?;
+            .map_err(|e| format!("Token exchange request failed: {e}"))?;
 
-        // Salesforce固有のレスポンス形式に変換
-        let response = SalesforceTokenResponse {
-            access_token: token_response.access_token().secret().to_string(),
-            refresh_token: token_response
-                .refresh_token()
-                .map(|t| t.secret().to_string()),
-            token_type: token_response.token_type().as_ref().to_string(),
-            expires_in: token_response.expires_in().map(|d| d.as_secs()),
-            instance_url: None, // 後でSalesforceのAPIから取得
-            id: None,
-            issued_at: None,
-        };
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("Token exchange failed: {error_text}"));
+        }
 
-        Ok(response)
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response: {e}"))?;
+        tracing::debug!("Token exchange response: {}", response_text);
+
+        let token_response: SalesforceTokenResponse = serde_json::from_str(&response_text)
+            .map_err(|e| {
+                format!("Failed to parse token response: {e}. Response was: {response_text}")
+            })?;
+
+        tracing::info!(
+            "Token exchange successful. Instance URL: {:?}",
+            token_response.instance_url
+        );
+        Ok(token_response)
     }
 
     /// リフレッシュトークンを使用してアクセストークンを更新
@@ -98,24 +115,42 @@ impl SalesforceOAuthClient {
         &self,
         refresh_token: &str,
     ) -> Result<SalesforceTokenResponse, String> {
-        let token_response = self
-            .client
-            .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
-            .request_async(&self.http_client)
+        let params = [
+            ("grant_type", "refresh_token"),
+            ("refresh_token", refresh_token),
+            ("client_id", &self.settings.client_id),
+            ("client_secret", &self.settings.client_secret),
+        ];
+
+        let response = self
+            .http_client
+            .post(&self.settings.token_url)
+            .form(&params)
+            .send()
             .await
-            .map_err(|e| format!("Token refresh failed: {e}"))?;
+            .map_err(|e| format!("Token refresh request failed: {e}"))?;
 
-        let response = SalesforceTokenResponse {
-            access_token: token_response.access_token().secret().to_string(),
-            refresh_token: None, // リフレッシュ時は新しいリフレッシュトークンは返されない
-            token_type: token_response.token_type().as_ref().to_string(),
-            expires_in: token_response.expires_in().map(|d| d.as_secs()),
-            instance_url: None,
-            id: None,
-            issued_at: None,
-        };
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("Token refresh failed: {error_text}"));
+        }
 
-        Ok(response)
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response: {e}"))?;
+        tracing::debug!("Token exchange response: {}", response_text);
+
+        let token_response: SalesforceTokenResponse = serde_json::from_str(&response_text)
+            .map_err(|e| {
+                format!("Failed to parse token response: {e}. Response was: {response_text}")
+            })?;
+
+        tracing::info!(
+            "Token exchange successful. Instance URL: {:?}",
+            token_response.instance_url
+        );
+        Ok(token_response)
     }
 
     /// アクセストークンを使用してSalesforceのユーザー情報を取得
