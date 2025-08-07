@@ -44,3 +44,8 @@ build/
 
 # Serena
 .serena/
+
+# Cipher/MCP
+memAgent/
+.mcp.json
+data/
