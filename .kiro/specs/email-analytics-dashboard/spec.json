@@ -1,0 +1,33 @@
+{
+  "name": "email-analytics-dashboard",
+  "description": "Email analytics dashboard for tracking send counts, open rates, and engagement metrics with real-time updates and export capabilities",
+  "created_at": "2025-01-09T18:30:00Z",
+  "status": "tasks-generated",
+  "updated_at": "2025-01-09T19:15:00Z",
+  "phases": {
+    "requirements": {
+      "status": "approved",
+      "approved": true,
+      "file": "requirements.md",
+      "generated_at": "2025-01-09T18:45:00Z"
+    },
+    "design": {
+      "status": "approved",
+      "approved": true,
+      "file": "design.md",
+      "generated_at": "2025-01-09T19:00:00Z"
+    },
+    "tasks": {
+      "status": "generated",
+      "approved": false,
+      "file": "tasks.md",
+      "generated_at": "2025-01-09T19:15:00Z"
+    }
+  },
+  "metadata": {
+    "priority": "high",
+    "estimated_effort": "medium",
+    "target_release": "v1.5.0",
+    "tags": ["analytics", "dashboard", "metrics", "reporting"]
+  }
+}
